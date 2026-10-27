@@ -26,7 +26,7 @@ export const App: React.FC = () => {
 
   // Load summary on mount
   useEffect(() => {
-    fetch('./data/sections_summary.json')
+    fetch(`${import.meta.env.BASE_URL}data/sections_summary.json`)
       .then((res) => res.json())
       .then((data: SectionSummary[]) => {
         setSectionsSummary(data);
@@ -42,7 +42,7 @@ export const App: React.FC = () => {
   const handleSelectSection = (sectionId: number) => {
     setIsLoading(true);
     setSelectedSectionId(sectionId);
-    fetch(`./data/sections/section_${sectionId}.json`)
+    fetch(`${import.meta.env.BASE_URL}data/sections/section_${sectionId}.json`)
       .then((res) => res.json())
       .then((detail: SectionDetail) => {
         setSelectedSectionDetail(detail);
