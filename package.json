@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "enrich:retry": "python scripts/enrich_elevations_reliable.py"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.3",

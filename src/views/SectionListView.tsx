@@ -1,30 +1,42 @@
 import React, { useState, useMemo } from 'react';
 import { SectionSummary, TrekProgress } from '../types';
-import { Search, MapPin, TrendingUp, CheckCircle, ChevronRight } from 'lucide-react';
+import { Search, MapPin, TrendingUp, CheckCircle, ChevronRight, Map, Clock, AlertCircle } from 'lucide-react';
 
 interface SectionListViewProps {
   sections: SectionSummary[];
   progress: TrekProgress;
   onSelectSection: (sectionId: number) => void;
   onToggleComplete: (sectionId: number, e: React.MouseEvent) => void;
+  onOpenAllMap: () => void;
 }
 
 const REGION_GROUPS = [
-  { key: 'all', label: '전체 (32)' },
-  { key: 'chungnam', label: '서해·충남 (1~14)' },
-  { key: 'daejeon', label: '대전권 (20~22)' },
-  { key: 'chungbuk_gyeongbuk', label: '괴산·문경 (32~36)' },
-  { key: 'east_sea', label: '봉화·울진·동해 (46~55)' }
+  { key: 'all', label: '전체 (55)' },
+  { key: 'opened', label: '개통 완료 (32)' },
+  { key: 'unopened', label: '미개통 (23)' },
+  { key: 'chungnam', label: '충남·서해 (1~14)' },
+  { key: 'daejeon', label: '대전권 (15~22)' },
+  { key: 'central', label: '충북·경북 (23~45)' },
+  { key: 'east_sea', label: '영주·봉화·울진 (46~55)' }
 ];
 
 export const SectionListView: React.FC<SectionListViewProps> = ({
   sections,
   progress,
   onSelectSection,
-  onToggleComplete
+  onToggleComplete,
+  onOpenAllMap
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('all');
+
+  const openedSectionsCount = useMemo(() => {
+    return sections.filter((s) => s.is_opened).length;
+  }, [sections]);
+
+  const unopenedSectionsCount = useMemo(() => {
+    return sections.filter((s) => !s.is_opened).length;
+  }, [sections]);
 
   const totalDistance = useMemo(() => {
     return sections.reduce((acc, s) => acc + s.official_distance_km, 0).toFixed(1);
@@ -38,16 +50,18 @@ export const SectionListView: React.FC<SectionListViewProps> = ({
   }, [sections, progress.completedSections]);
 
   const completionPercent = useMemo(() => {
-    if (sections.length === 0) return 0;
-    return Math.round((progress.completedSections.length / sections.length) * 100);
-  }, [sections, progress.completedSections]);
+    const baseCount = openedSectionsCount || 32;
+    return Math.round((progress.completedSections.length / baseCount) * 100);
+  }, [openedSectionsCount, progress.completedSections]);
 
   const filteredSections = useMemo(() => {
     return sections.filter((s) => {
       // Group filter
+      if (selectedGroup === 'opened' && !s.is_opened) return false;
+      if (selectedGroup === 'unopened' && s.is_opened) return false;
       if (selectedGroup === 'chungnam' && (s.section_id < 1 || s.section_id > 14)) return false;
-      if (selectedGroup === 'daejeon' && (s.section_id < 20 || s.section_id > 22)) return false;
-      if (selectedGroup === 'chungbuk_gyeongbuk' && (s.section_id < 32 || s.section_id > 36)) return false;
+      if (selectedGroup === 'daejeon' && (s.section_id < 15 || s.section_id > 22)) return false;
+      if (selectedGroup === 'central' && (s.section_id < 23 || s.section_id > 45)) return false;
       if (selectedGroup === 'east_sea' && (s.section_id < 46 || s.section_id > 55)) return false;
 
       // Search filter
@@ -65,12 +79,12 @@ export const SectionListView: React.FC<SectionListViewProps> = ({
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
       {/* Trekking Dashboard Card */}
-      <div className="bg-gradient-to-br from-emerald-800 to-emerald-950 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-br from-emerald-800 to-slate-900 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden">
         <div className="relative z-10">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
             <div>
-              <span className="text-xs font-bold text-emerald-300 bg-emerald-900/80 px-3 py-1 rounded-full uppercase tracking-wider">
-                East-West Trail Progress
+              <span className="text-xs font-bold text-emerald-300 bg-emerald-950/80 px-3 py-1 rounded-full uppercase tracking-wider">
+                East-West Trail 55 Sections
               </span>
               <h2 className="text-2xl sm:text-3xl font-extrabold mt-1">
                 동서트레일 대장정 현황
@@ -81,36 +95,48 @@ export const SectionListView: React.FC<SectionListViewProps> = ({
                 {completionPercent}%
               </div>
               <div className="text-xs text-emerald-200">
-                {progress.completedSections.length}개 / 32개 구간 완주
+                개통 {progress.completedSections.length} / {openedSectionsCount || 32} 구간 완주
               </div>
             </div>
           </div>
 
           {/* Progress bar */}
-          <div className="w-full bg-emerald-950/60 rounded-full h-3.5 mb-4 overflow-hidden border border-emerald-700/50">
+          <div className="w-full bg-slate-950/60 rounded-full h-3.5 mb-4 overflow-hidden border border-emerald-700/50">
             <div
               className="bg-gradient-to-r from-emerald-400 to-teal-300 h-full rounded-full transition-all duration-500 ease-out"
-              style={{ width: `${completionPercent}%` }}
+              style={{ width: `${Math.min(100, completionPercent)}%` }}
             />
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 text-xs sm:text-sm">
-            <div className="bg-emerald-900/50 rounded-2xl p-3 border border-emerald-700/40">
-              <div className="text-emerald-300 font-medium">총 개통 연장</div>
-              <div className="text-lg font-bold">{totalDistance} km</div>
+            <div className="bg-emerald-900/40 rounded-2xl p-3 border border-emerald-700/40">
+              <div className="text-emerald-300 font-medium">총 코스 연장</div>
+              <div className="text-lg font-bold">{totalDistance} km <span className="text-xs font-normal text-emerald-200">(55개 구간)</span></div>
             </div>
-            <div className="bg-emerald-900/50 rounded-2xl p-3 border border-emerald-700/40">
+            <div className="bg-emerald-900/40 rounded-2xl p-3 border border-emerald-700/40">
               <div className="text-emerald-300 font-medium">나의 누적 완주</div>
               <div className="text-lg font-bold text-emerald-300">{completedDistance} km</div>
             </div>
-            <div className="bg-emerald-900/50 rounded-2xl p-3 border border-emerald-700/40 col-span-2 sm:col-span-1">
-              <div className="text-emerald-300 font-medium">완주 인증 구간</div>
-              <div className="text-lg font-bold">
-                {progress.completedSections.length > 0
-                  ? `${progress.completedSections.length}개 구간 달성`
-                  : '도전 대기 중'}
+            <div className="bg-emerald-900/40 rounded-2xl p-3 border border-emerald-700/40 col-span-2 sm:col-span-1">
+              <div className="text-emerald-300 font-medium">구간 개통 현황</div>
+              <div className="text-base font-bold">
+                개통 32 <span className="text-xs text-amber-300">· 미개통 {unopenedSectionsCount}</span>
               </div>
             </div>
+          </div>
+
+          {/* Quick Action: Open All Sections Map */}
+          <div className="mt-5 pt-4 border-t border-emerald-700/40 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-xs text-emerald-200 text-center sm:text-left">
+              서해 안면도 꽃지해변부터 동해 울진 망양정까지 55개 전 구간을 지도에서 확인하세요.
+            </p>
+            <button
+              onClick={onOpenAllMap}
+              className="w-full sm:w-auto px-5 py-3 bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-slate-900 font-extrabold rounded-2xl shadow-lg flex items-center justify-center gap-2 text-sm transition-transform active:scale-95 shrink-0"
+            >
+              <Map className="w-4 h-4 text-slate-900" />
+              <span>🗺️ 55개 전 구간 전국 대지도 보기</span>
+            </button>
           </div>
         </div>
       </div>
@@ -123,7 +149,7 @@ export const SectionListView: React.FC<SectionListViewProps> = ({
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="구간 번호, 지역명(태안, 문경, 울진 등), 경유지 검색..."
+            placeholder="구간 번호(예: 25구간), 지역명(태안, 보은, 문경, 울진 등), 경유지 검색..."
             className="w-full pl-12 pr-4 py-3.5 bg-white rounded-2xl border border-gray-200 shadow-xs text-base focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder-gray-400"
           />
         </div>
@@ -138,7 +164,7 @@ export const SectionListView: React.FC<SectionListViewProps> = ({
                 onClick={() => setSelectedGroup(grp.key)}
                 className={`px-4 py-2.5 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
                   isSelected
-                    ? 'bg-emerald-700 text-white shadow-md'
+                    ? 'bg-slate-900 text-white shadow-md'
                     : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
                 }`}
               >
@@ -163,6 +189,8 @@ export const SectionListView: React.FC<SectionListViewProps> = ({
         ) : (
           filteredSections.map((sec) => {
             const isDone = progress.completedSections.includes(sec.section_id);
+            const isOpened = sec.is_opened !== false;
+
             return (
               <div
                 key={sec.section_id}
@@ -170,31 +198,53 @@ export const SectionListView: React.FC<SectionListViewProps> = ({
                 className={`group bg-white rounded-3xl p-5 border transition-all cursor-pointer shadow-xs hover:shadow-md ${
                   isDone
                     ? 'border-emerald-300 bg-emerald-50/40 ring-1 ring-emerald-300'
+                    : !isOpened
+                    ? 'border-amber-200/80 bg-amber-50/20 hover:border-amber-400'
                     : 'border-gray-200 hover:border-emerald-400'
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <span className="w-12 h-12 rounded-2xl bg-emerald-700 text-white font-extrabold flex items-center justify-center text-base shadow-sm shrink-0">
+                    <span
+                      className={`w-12 h-12 rounded-2xl font-black flex items-center justify-center text-base shadow-xs shrink-0 ${
+                        isOpened
+                          ? 'bg-emerald-700 text-white'
+                          : 'bg-amber-600 text-white'
+                      }`}
+                    >
                       {sec.section_id}
                     </span>
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                         <span className="font-extrabold text-lg text-gray-900">
                           {sec.section_number}
                         </span>
                         <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md font-medium">
                           {sec.region}
                         </span>
+
+                        {isOpened ? (
+                          <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md font-bold">
+                            개통 완료
+                          </span>
+                        ) : (
+                          <span className="text-xs bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3 text-amber-600" />
+                            <span>미개통 · 조성 중</span>
+                          </span>
+                        )}
+
                         {isDone && (
                           <span className="text-xs bg-emerald-600 text-white px-2 py-0.5 rounded-md font-bold">
-                            완주완료
+                            완주 완료
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                        <span>{sec.course.replace(`${sec.section_number} : `, '')}</span>
+                      <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                        <span className="truncate max-w-[240px] sm:max-w-md">
+                          {sec.course.replace(`${sec.section_number} : `, '')}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -214,16 +264,25 @@ export const SectionListView: React.FC<SectionListViewProps> = ({
 
                 {/* Section Stats & Details */}
                 <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-600">
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                     <div>
                       거리: <strong className="text-gray-900 text-sm">{sec.official_distance_km} km</strong>
                     </div>
+
+                    {sec.hiking_time_text && (
+                      <div className="flex items-center gap-1 text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                        <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>{sec.hiking_time_text}</span>
+                      </div>
+                    )}
+
                     {sec.elevation_gain_m > 0 && (
                       <div className="flex items-center gap-1 text-emerald-700 font-semibold">
                         <TrendingUp className="w-3.5 h-3.5" />
                         <span>+{sec.elevation_gain_m}m</span>
                       </div>
                     )}
+
                     {sec.pois_count > 0 && (
                       <span className="bg-amber-50 text-amber-800 px-2 py-0.5 rounded-md border border-amber-200">
                         시설 {sec.pois_count}개

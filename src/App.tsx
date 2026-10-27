@@ -4,6 +4,7 @@ import { Header } from './components/Header';
 import { SectionListView } from './views/SectionListView';
 import { SectionDetailView } from './views/SectionDetailView';
 import { TrailMapView } from './views/TrailMapView';
+import { AllSectionsMapView } from './views/AllSectionsMapView';
 import { CertificationModal } from './components/CertificationModal';
 import {
   loadTrekProgress,
@@ -15,7 +16,7 @@ import {
 } from './services/storage';
 
 export const App: React.FC = () => {
-  const [currentStep, setCurrentStep] = useState<'list' | 'detail' | 'map'>('list');
+  const [currentStep, setCurrentStep] = useState<'list' | 'detail' | 'map' | 'all_map'>('list');
   const [sectionsSummary, setSectionsSummary] = useState<SectionSummary[]>([]);
   const [selectedSectionId, setSelectedSectionId] = useState<number | null>(null);
   const [selectedSectionDetail, setSelectedSectionDetail] = useState<SectionDetail | null>(null);
@@ -84,6 +85,9 @@ export const App: React.FC = () => {
   };
 
   const getHeaderTitle = () => {
+    if (currentStep === 'all_map') {
+      return '전국 55개 코스 대지도';
+    }
     if (currentStep === 'map' && selectedSectionDetail) {
       return `${selectedSectionDetail.section_number} 지도 보기`;
     }
@@ -107,7 +111,7 @@ export const App: React.FC = () => {
         }}
         title={getHeaderTitle()}
         completedCount={progress.completedSections.length}
-        totalCount={sectionsSummary.length || 32}
+        totalCount={sectionsSummary.length || 55}
       />
 
       <main className="flex-1">
@@ -122,10 +126,18 @@ export const App: React.FC = () => {
             progress={progress}
             onSelectSection={handleSelectSection}
             onToggleComplete={handleToggleComplete}
+            onOpenAllMap={() => setCurrentStep('all_map')}
+          />
+        ) : currentStep === 'all_map' ? (
+          <AllSectionsMapView
+            onBack={() => setCurrentStep('list')}
+            onSelectSection={handleSelectSection}
+            summaryList={sectionsSummary}
           />
         ) : currentStep === 'detail' && selectedSectionDetail ? (
           <SectionDetailView
             section={selectedSectionDetail}
+            allSections={sectionsSummary}
             isCompleted={progress.completedSections.includes(selectedSectionDetail.section_id)}
             checkpoints={progress.checkpoints[selectedSectionDetail.section_id] || []}
             userFacilities={userFacilities}
@@ -134,6 +146,7 @@ export const App: React.FC = () => {
             onAddFacility={handleAddFacility}
             onAddCheckpoint={handleAddCheckpoint}
             onRemoveCheckpoint={handleRemoveCheckpoint}
+            onNavigateSection={handleSelectSection}
           />
         ) : currentStep === 'map' && selectedSectionDetail ? (
           <TrailMapView

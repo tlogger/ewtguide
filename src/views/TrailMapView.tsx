@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   Map as KakaoMap,
   Polyline,
@@ -77,6 +77,22 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
   // Path coordinates for Kakao Polyline
   const kakaoPath = section.points.map((p) => ({ lat: p.lat, lng: p.lng }));
 
+  // Sampled points for bottom elevation mini-chart (approx 90 points)
+  const elevationSamples = useMemo(() => {
+    if (!section.points || section.points.length === 0) return [];
+    const step = Math.max(1, Math.floor(section.points.length / 90));
+    return section.points.filter((_, i) => i % step === 0);
+  }, [section.points]);
+
+  const handleElevationTrack = (clientX: number, target: HTMLDivElement) => {
+    if (elevationSamples.length === 0) return;
+    const rect = target.getBoundingClientRect();
+    const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
+    const ratio = x / rect.width;
+    const index = Math.min(elevationSamples.length - 1, Math.floor(ratio * elevationSamples.length));
+    setHoveredPoint(elevationSamples[index]);
+  };
+
   // Fit bounds for Kakao Map on load
   const onKakaoMapCreate = (map: any) => {
     kakaoMapRef.current = map;
@@ -107,18 +123,21 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
 
     // Trail Polyline
     const latLngs: L.LatLngExpression[] = section.points.map((p) => [p.lat, p.lng]);
+    // 1. High contrast dark halo casing
     L.polyline(latLngs, {
-      color: '#064e3b',
-      weight: 8,
-      opacity: 0.5,
+      color: '#0f172a',
+      weight: 9,
+      opacity: 0.75,
       lineCap: 'round',
       lineJoin: 'round'
     }).addTo(map);
 
+    // 2. Core track line: Vibrant Orange (#ea580c) for opened, Amber dashed (#f59e0b) for unopened
     const polyline = L.polyline(latLngs, {
-      color: '#059669',
+      color: section.is_opened !== false ? '#ea580c' : '#f59e0b',
       weight: 5,
-      opacity: 0.95,
+      opacity: 1.0,
+      dashArray: section.is_opened !== false ? undefined : '6, 8',
       lineCap: 'round',
       lineJoin: 'round'
     }).addTo(map);
@@ -339,13 +358,21 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
               }}
               className="w-full h-full z-10"
             >
-              {/* Trail Polyline */}
+              {/* High contrast dark halo casing */}
               <Polyline
                 path={kakaoPath}
-                strokeWeight={6}
-                strokeColor="#059669"
-                strokeOpacity={0.95}
+                strokeWeight={9}
+                strokeColor="#0f172a"
+                strokeOpacity={0.75}
                 strokeStyle="solid"
+              />
+              {/* Core track line: Vibrant Orange for opened, Amber dashed for unopened */}
+              <Polyline
+                path={kakaoPath}
+                strokeWeight={5}
+                strokeColor={section.is_opened !== false ? '#ea580c' : '#f59e0b'}
+                strokeOpacity={1.0}
+                strokeStyle={section.is_opened !== false ? 'solid' : 'shortdash'}
               />
 
               {/* Start Marker */}
@@ -375,6 +402,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
                   fac.category === 'shelter' ? '⛺' :
                   fac.category === 'toilet' ? '🚻' :
                   fac.category === 'restaurant' ? '🍚' :
+                  fac.category === 'viewpoint' ? '📸' :
                   fac.category === 'lodging' ? '🏡' :
                   fac.category === 'mart' ? '🏪' :
                   fac.category === 'transport' ? '🚕' :
@@ -515,33 +543,50 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
         <span>시설 등록</span>
       </button>
 
-      {/* Bottom Mini Elevation Bar */}
-      <div className="absolute bottom-4 left-4 right-4 z-20 bg-white/95 backdrop-blur-xs rounded-2xl p-3 shadow-xl border border-gray-200">
+      {/* Bottom Mini Elevation Bar with Full-Height Hit Testing */}
+      <div className="absolute bottom-4 left-4 right-4 z-20 bg-white/95 backdrop-blur-md rounded-2xl p-3 shadow-xl border border-gray-200">
         <div className="flex items-center justify-between text-xs font-semibold text-gray-700 mb-1 px-1">
-          <span>⛰️ 노선 고도 프로필 (터치 시 지도 실시간 동기화)</span>
-          <span className="text-emerald-700 font-bold">
-            {hoveredPoint ? `${hoveredPoint.dist}km / ${hoveredPoint.ele}m` : `최고 ${section.max_elevation_m}m`}
+          <span className="flex items-center gap-1.5">
+            <span>⛰️ 노선 고도 프로필</span>
+            <span className="text-[11px] text-gray-500 font-normal hidden sm:inline">
+              (차트 상하 전체 호버/터치로 실시간 위치 동기화)
+            </span>
+          </span>
+          <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+            {hoveredPoint ? `${hoveredPoint.dist}km 지점 · ${hoveredPoint.ele}m` : `최고 ${section.max_elevation_m}m · 최저 ${section.min_elevation_m}m`}
           </span>
         </div>
-        <div className="h-14 w-full flex items-end gap-[1px] bg-gray-50 rounded-lg p-1 overflow-hidden">
-          {section.points
-            .filter((_, i) => i % Math.max(1, Math.floor(section.points.length / 80)) === 0)
-            .map((p, idx) => {
-              const maxE = Math.max(section.max_elevation_m, 100);
-              const heightPercent = Math.max(10, Math.min(100, (p.ele / maxE) * 100));
-              const isHover = hoveredPoint && hoveredPoint.dist === p.dist;
-              return (
+        <div
+          onMouseMove={(e) => handleElevationTrack(e.clientX, e.currentTarget)}
+          onTouchMove={(e) => {
+            if (e.touches.length > 0) {
+              handleElevationTrack(e.touches[0].clientX, e.currentTarget);
+            }
+          }}
+          className="relative h-14 w-full flex items-end gap-[1px] bg-slate-900/5 rounded-xl p-1 overflow-hidden cursor-crosshair group"
+        >
+          {elevationSamples.map((p: TrailPoint, idx: number) => {
+            const maxE = Math.max(section.max_elevation_m, 100);
+            const heightPercent = Math.max(12, Math.min(100, (p.ele / maxE) * 100));
+            const isHover = hoveredPoint && Math.abs(hoveredPoint.dist - p.dist) < 0.25;
+            return (
+              <div
+                key={idx}
+                className="flex-1 h-full flex items-end pointer-events-none"
+              >
                 <div
-                  key={idx}
-                  onMouseEnter={() => setHoveredPoint(p)}
-                  onClick={() => setHoveredPoint(p)}
-                  className={`flex-1 rounded-xs transition-colors cursor-pointer ${
-                    isHover ? 'bg-red-500 ring-2 ring-red-400' : 'bg-emerald-600 hover:bg-emerald-400'
+                  className={`w-full rounded-t-xs transition-colors ${
+                    isHover
+                      ? 'bg-red-500 ring-2 ring-red-400'
+                      : section.is_opened !== false
+                      ? 'bg-emerald-600 group-hover:bg-emerald-500'
+                      : 'bg-amber-600 group-hover:bg-amber-500'
                   }`}
                   style={{ height: `${heightPercent}%` }}
                 />
-              );
-            })}
+              </div>
+            );
+          })}
         </div>
       </div>
 

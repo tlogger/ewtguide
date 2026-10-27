@@ -6,14 +6,15 @@ export interface TrailPoint {
 }
 
 export type FacilityCategory = 
-  | 'lodging'      // 숙소
-  | 'restaurant'   // 식당
-  | 'mart'         // 마트/편의점
+  | 'viewpoint'    // 관광지 / 뷰포인트 / 명소 (NEW)
+  | 'shelter'      // 쉼터 / 정자
   | 'toilet'       // 화장실
-  | 'shelter'      // 쉼터/정자
-  | 'cert_center'  // 인증센터/안내소
-  | 'transport'    // 대중교통/콜택시
-  | 'other';       // 기타
+  | 'restaurant'   // 식당 / 카페
+  | 'lodging'      // 숙소 / 민박 / 야영장
+  | 'mart'         // 마트 / 편의점
+  | 'transport'    // 대중교통 / 콜택시
+  | 'cert_center'  // 인증센터 / 안내소
+  | 'other';       // 기타 / 위험지역
 
 export interface POI {
   id?: string;
@@ -25,6 +26,7 @@ export interface POI {
   phone?: string;
   business_hours?: string;
   memo?: string;
+  photo_url?: string; // Base64 or URL
   is_official?: boolean;
   created_at?: string;
 }
@@ -35,12 +37,15 @@ export interface SectionSummary {
   title: string;
   region: string;
   course: string;
+  is_opened: boolean; // 개통 여부 (true: 개통 32개, false: 미개통 23개)
   official_distance_km: number;
   actual_distance_km: number;
   elevation_gain_m: number;
   elevation_loss_m: number;
   min_elevation_m: number;
   max_elevation_m: number;
+  hiking_time_hours?: number;
+  hiking_time_text?: string;
   start_point: { lat: number; lng: number };
   end_point: { lat: number; lng: number };
   pois_count: number;
