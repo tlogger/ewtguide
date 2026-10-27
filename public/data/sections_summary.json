@@ -1,0 +1,738 @@
+[
+  {
+    "section_id": 1,
+    "section_number": "1구간",
+    "title": "1구간 (태안군)",
+    "region": "태안군",
+    "course": "1구간 : 안면도 자연휴양림 ~ 안면도수목원 ~ 방포해수욕장 ~ 백사장항",
+    "official_distance_km": 15.9,
+    "actual_distance_km": 16.16,
+    "elevation_gain_m": 423,
+    "elevation_loss_m": 435,
+    "min_elevation_m": 2,
+    "max_elevation_m": 69,
+    "start_point": {
+      "lat": 36.496766,
+      "lng": 126.358909
+    },
+    "end_point": {
+      "lat": 36.591232,
+      "lng": 126.312506
+    },
+    "pois_count": 2,
+    "points_count": 279
+  },
+  {
+    "section_id": 2,
+    "section_number": "2구간",
+    "title": "2구간 (태안군)",
+    "region": "태안군",
+    "course": "2구간 : 백사장항 ~ 청포대해수욕장 ~ 몽산포해수욕장",
+    "official_distance_km": 14.6,
+    "actual_distance_km": 14.83,
+    "elevation_gain_m": 162,
+    "elevation_loss_m": 182,
+    "min_elevation_m": 5,
+    "max_elevation_m": 71,
+    "start_point": {
+      "lat": 36.591534,
+      "lng": 126.312345
+    },
+    "end_point": {
+      "lat": 36.684138,
+      "lng": 126.269843
+    },
+    "pois_count": 3,
+    "points_count": 224
+  },
+  {
+    "section_id": 3,
+    "section_number": "3구간",
+    "title": "3구간 (태안군)",
+    "region": "태안군",
+    "course": "3구간 : 몽산포해수욕장 ~ 진산리해변 ~ 태안읍행정복지센터",
+    "official_distance_km": 13.7,
+    "actual_distance_km": 13.78,
+    "elevation_gain_m": 250,
+    "elevation_loss_m": 55,
+    "min_elevation_m": 36,
+    "max_elevation_m": 269,
+    "start_point": {
+      "lat": 36.685244,
+      "lng": 126.269668
+    },
+    "end_point": {
+      "lat": 36.768525,
+      "lng": 126.302245
+    },
+    "pois_count": 1,
+    "points_count": 239
+  },
+  {
+    "section_id": 4,
+    "section_number": "4구간",
+    "title": "4구간 (태안군, 서산시)",
+    "region": "태안군, 서산시",
+    "course": "4구간 : 태안읍행정복지센터 ~ 흥주사 ~ 오석산 ~ 팔봉산주차장",
+    "official_distance_km": 14.7,
+    "actual_distance_km": 14.92,
+    "elevation_gain_m": 922,
+    "elevation_loss_m": 860,
+    "min_elevation_m": 2,
+    "max_elevation_m": 305,
+    "start_point": {
+      "lat": 36.76883,
+      "lng": 126.302743
+    },
+    "end_point": {
+      "lat": 36.794553,
+      "lng": 126.400549
+    },
+    "pois_count": 2,
+    "points_count": 322
+  },
+  {
+    "section_id": 5,
+    "section_number": "5구간",
+    "title": "5구간 (서산시)",
+    "region": "서산시",
+    "course": "5구간 : 팔봉산주차장 ~ 금강산 ~ 풍전저수지 ~ 율목리마을",
+    "official_distance_km": 20.4,
+    "actual_distance_km": 20.69,
+    "elevation_gain_m": 889,
+    "elevation_loss_m": 998,
+    "min_elevation_m": 25,
+    "max_elevation_m": 266,
+    "start_point": {
+      "lat": 36.794544,
+      "lng": 126.400766
+    },
+    "end_point": {
+      "lat": 36.826094,
+      "lng": 126.530477
+    },
+    "pois_count": 3,
+    "points_count": 440
+  },
+  {
+    "section_id": 6,
+    "section_number": "6구간",
+    "title": "6구간 (서산시, 당진시)",
+    "region": "서산시, 당진시",
+    "course": "6구간 : 율목리마을 ~ 간대산 ~ 안국사지 ~ 성당초등학교 ~ 삼웅2리마을회관",
+    "official_distance_km": 14.0,
+    "actual_distance_km": 14.17,
+    "elevation_gain_m": 184,
+    "elevation_loss_m": 192,
+    "min_elevation_m": 5,
+    "max_elevation_m": 71,
+    "start_point": {
+      "lat": 36.826036,
+      "lng": 126.530602
+    },
+    "end_point": {
+      "lat": 36.825337,
+      "lng": 126.631329
+    },
+    "pois_count": 2,
+    "points_count": 249
+  },
+  {
+    "section_id": 7,
+    "section_number": "7구간",
+    "title": "7구간 (당진시, 서산시)",
+    "region": "당진시, 서산시",
+    "course": "7구간 : 삼웅2리마을회관 ~ 팔중리마을회관 ~ 보원사지 ~ 용현리",
+    "official_distance_km": 16.6,
+    "actual_distance_km": 16.82,
+    "elevation_gain_m": 258,
+    "elevation_loss_m": 287,
+    "min_elevation_m": 5,
+    "max_elevation_m": 71,
+    "start_point": {
+      "lat": 36.825159,
+      "lng": 126.631339
+    },
+    "end_point": {
+      "lat": 36.746325,
+      "lng": 126.612264
+    },
+    "pois_count": 2,
+    "points_count": 356
+  },
+  {
+    "section_id": 8,
+    "section_number": "8구간",
+    "title": "8구간 (서산시, 예산군)",
+    "region": "서산시, 예산군",
+    "course": "8구간 : 용현리 ~ 내포문화숲길예산센터 ~ 옥계리 ~ 대치리 ~ 충의사",
+    "official_distance_km": 20.6,
+    "actual_distance_km": 20.9,
+    "elevation_gain_m": 1381,
+    "elevation_loss_m": 1539,
+    "min_elevation_m": 36,
+    "max_elevation_m": 536,
+    "start_point": {
+      "lat": 36.746297,
+      "lng": 126.61236
+    },
+    "end_point": {
+      "lat": 36.644171,
+      "lng": 126.661893
+    },
+    "pois_count": 2,
+    "points_count": 460
+  },
+  {
+    "section_id": 9,
+    "section_number": "9구간",
+    "title": "9구간 (예산군, 홍성군)",
+    "region": "예산군, 홍성군",
+    "course": "9구간 : 충의사 ~ 뫼넘이고개 ~ 용봉산입구 ~ 이응노생가기념관",
+    "official_distance_km": 11.5,
+    "actual_distance_km": 11.69,
+    "elevation_gain_m": 539,
+    "elevation_loss_m": 549,
+    "min_elevation_m": 37,
+    "max_elevation_m": 376,
+    "start_point": {
+      "lat": 36.643929,
+      "lng": 126.662154
+    },
+    "end_point": {
+      "lat": 36.579287,
+      "lng": 126.637874
+    },
+    "pois_count": 3,
+    "points_count": 216
+  },
+  {
+    "section_id": 10,
+    "section_number": "10구간",
+    "title": "10구간 (홍성군)",
+    "region": "홍성군",
+    "course": "10구간 : 이응노생가기념관 ~ 홍천문화마을 ~ 살포쟁이고개 ~ 맞고개 ~ 내포문화숲길홍성센터",
+    "official_distance_km": 11.7,
+    "actual_distance_km": 11.75,
+    "elevation_gain_m": 191,
+    "elevation_loss_m": 204,
+    "min_elevation_m": 74,
+    "max_elevation_m": 146,
+    "start_point": {
+      "lat": 36.578729,
+      "lng": 126.638029
+    },
+    "end_point": {
+      "lat": 36.515508,
+      "lng": 126.63025
+    },
+    "pois_count": 2,
+    "points_count": 247
+  },
+  {
+    "section_id": 11,
+    "section_number": "11구간",
+    "title": "11구간 (홍성군)",
+    "region": "홍성군",
+    "course": "11구간 : 내포문화숲길홍성센터 ~ 척괴마을 ~ 광천읍 ~ 오서산상담마을",
+    "official_distance_km": 15.4,
+    "actual_distance_km": 15.56,
+    "elevation_gain_m": 271,
+    "elevation_loss_m": 277,
+    "min_elevation_m": 74,
+    "max_elevation_m": 146,
+    "start_point": {
+      "lat": 36.515521,
+      "lng": 126.628402
+    },
+    "end_point": {
+      "lat": 36.471576,
+      "lng": 126.687791
+    },
+    "pois_count": 2,
+    "points_count": 326
+  },
+  {
+    "section_id": 12,
+    "section_number": "12구간",
+    "title": "12구간 (홍성군)",
+    "region": "홍성군",
+    "course": "12구간 : 오서산상담마을 ~ 내원사 ~ 기러기재 ~ 대현1리마을회관",
+    "official_distance_km": 15.8,
+    "actual_distance_km": 16.05,
+    "elevation_gain_m": 411,
+    "elevation_loss_m": 539,
+    "min_elevation_m": 31,
+    "max_elevation_m": 213,
+    "start_point": {
+      "lat": 36.471582,
+      "lng": 126.688049
+    },
+    "end_point": {
+      "lat": 36.512695,
+      "lng": 126.786489
+    },
+    "pois_count": 2,
+    "points_count": 334
+  },
+  {
+    "section_id": 13,
+    "section_number": "13구간",
+    "title": "13구간 (홍성군, 청양군)",
+    "region": "홍성군, 청양군",
+    "course": "13구간 : 대현1리마을회관 ~ 산성리 ~ 위라1리마을회관",
+    "official_distance_km": 17.6,
+    "actual_distance_km": 17.43,
+    "elevation_gain_m": 1667,
+    "elevation_loss_m": 1289,
+    "min_elevation_m": 46,
+    "max_elevation_m": 434,
+    "start_point": {
+      "lat": 36.512632,
+      "lng": 126.786594
+    },
+    "end_point": {
+      "lat": 36.526544,
+      "lng": 126.894588
+    },
+    "pois_count": 1,
+    "points_count": 405
+  },
+  {
+    "section_id": 14,
+    "section_number": "14구간",
+    "title": "14구간 (청양군, 공주시)",
+    "region": "청양군, 공주시",
+    "course": "14구간 : 위라1리마을회관 ~ 금자봉 ~ 국사봉 ~ 대룡1리",
+    "official_distance_km": 19.0,
+    "actual_distance_km": 18.7,
+    "elevation_gain_m": 185,
+    "elevation_loss_m": 204,
+    "min_elevation_m": 74,
+    "max_elevation_m": 146,
+    "start_point": {
+      "lat": 36.523772,
+      "lng": 126.902521
+    },
+    "end_point": {
+      "lat": 36.49632,
+      "lng": 126.934291
+    },
+    "pois_count": 1,
+    "points_count": 244
+  },
+  {
+    "section_id": 20,
+    "section_number": "20구간",
+    "title": "20구간 (대전시)",
+    "region": "대전시",
+    "course": "20구간 : 봉산동버스기점 ~ 문평동 ~ 신탄진동 ~ 삼정생태공원",
+    "official_distance_km": 14.7,
+    "actual_distance_km": 15.1,
+    "elevation_gain_m": 174,
+    "elevation_loss_m": 181,
+    "min_elevation_m": 74,
+    "max_elevation_m": 146,
+    "start_point": {
+      "lat": 36.448465,
+      "lng": 127.384509
+    },
+    "end_point": {
+      "lat": 36.451945,
+      "lng": 127.473453
+    },
+    "pois_count": 2,
+    "points_count": 216
+  },
+  {
+    "section_id": 21,
+    "section_number": "21구간",
+    "title": "21구간 (대전시)",
+    "region": "대전시",
+    "course": "21구간 : 삼정생태공원 ~ 계족산성 ~ 절고개 ~ 대청호자연생태관",
+    "official_distance_km": 20.6,
+    "actual_distance_km": 21.07,
+    "elevation_gain_m": 939,
+    "elevation_loss_m": 932,
+    "min_elevation_m": 84,
+    "max_elevation_m": 351,
+    "start_point": {
+      "lat": 36.451907,
+      "lng": 127.473172
+    },
+    "end_point": {
+      "lat": 36.368533,
+      "lng": 127.46538
+    },
+    "pois_count": 1,
+    "points_count": 514
+  },
+  {
+    "section_id": 22,
+    "section_number": "22구간",
+    "title": "22구간 (대전시)",
+    "region": "대전시",
+    "course": "22구간 : 대청호자연생태관 ~ 주산동 ~ 신상동 ~ 신촌동 ~ 와정삼거리",
+    "official_distance_km": 19.4,
+    "actual_distance_km": 19.89,
+    "elevation_gain_m": 506,
+    "elevation_loss_m": 611,
+    "min_elevation_m": 69,
+    "max_elevation_m": 197,
+    "start_point": {
+      "lat": 36.368894,
+      "lng": 127.465315
+    },
+    "end_point": {
+      "lat": 36.390471,
+      "lng": 127.532151
+    },
+    "pois_count": 1,
+    "points_count": 413
+  },
+  {
+    "section_id": 32,
+    "section_number": "32구간",
+    "title": "32구간 (괴산군)",
+    "region": "괴산군",
+    "course": "32구간 : 태성리 ~ 유하리 ~ 행촌리 ~ 삼풍리",
+    "official_distance_km": 16.2,
+    "actual_distance_km": 16.21,
+    "elevation_gain_m": 174,
+    "elevation_loss_m": 204,
+    "min_elevation_m": 244,
+    "max_elevation_m": 316,
+    "start_point": {
+      "lat": 36.776178,
+      "lng": 127.888181
+    },
+    "end_point": {
+      "lat": 36.763329,
+      "lng": 127.996223
+    },
+    "pois_count": 2,
+    "points_count": 234
+  },
+  {
+    "section_id": 33,
+    "section_number": "33구간",
+    "title": "33구간 (괴산군, 문경시)",
+    "region": "괴산군, 문경시",
+    "course": "33구간 : 삼풍리 ~ 분지제 ~ 분지리 ~ 평전치 ~ 하내리",
+    "official_distance_km": 19.0,
+    "actual_distance_km": 19.0,
+    "elevation_gain_m": 307,
+    "elevation_loss_m": 307,
+    "min_elevation_m": 244,
+    "max_elevation_m": 316,
+    "start_point": {
+      "lat": 36.762742,
+      "lng": 127.996362
+    },
+    "end_point": {
+      "lat": 36.656567,
+      "lng": 128.0712
+    },
+    "pois_count": 2,
+    "points_count": 378
+  },
+  {
+    "section_id": 34,
+    "section_number": "34구간",
+    "title": "34구간 (문경시)",
+    "region": "문경시",
+    "course": "34구간 : 하내리 ~ 가은읍 ~ 갈전리 ~ 수예리마을회관",
+    "official_distance_km": 12.1,
+    "actual_distance_km": 12.14,
+    "elevation_gain_m": 877,
+    "elevation_loss_m": 634,
+    "min_elevation_m": 135,
+    "max_elevation_m": 553,
+    "start_point": {
+      "lat": 36.656409,
+      "lng": 128.07109
+    },
+    "end_point": {
+      "lat": 36.598273,
+      "lng": 128.07241
+    },
+    "pois_count": 2,
+    "points_count": 263
+  },
+  {
+    "section_id": 35,
+    "section_number": "35구간",
+    "title": "35구간 (문경시, 상주시)",
+    "region": "문경시, 상주시",
+    "course": "35구간 : 수예리마을회관 ~ 안용2리 ~ 양범리 ~ 대조못 ~ 모전동",
+    "official_distance_km": 19.6,
+    "actual_distance_km": 19.48,
+    "elevation_gain_m": 1178,
+    "elevation_loss_m": 1570,
+    "min_elevation_m": 83,
+    "max_elevation_m": 753,
+    "start_point": {
+      "lat": 36.598283,
+      "lng": 128.072433
+    },
+    "end_point": {
+      "lat": 36.581301,
+      "lng": 128.198304
+    },
+    "pois_count": 2,
+    "points_count": 455
+  },
+  {
+    "section_id": 36,
+    "section_number": "36구간",
+    "title": "36구간 (문경시)",
+    "region": "문경시",
+    "course": "36구간 : 모정동 ~ 점촌2동 ~ 의곡리 ~ 율곡2리 ~ 이목리",
+    "official_distance_km": 17.4,
+    "actual_distance_km": 17.43,
+    "elevation_gain_m": 174,
+    "elevation_loss_m": 183,
+    "min_elevation_m": 244,
+    "max_elevation_m": 316,
+    "start_point": {
+      "lat": 36.580951,
+      "lng": 128.198806
+    },
+    "end_point": {
+      "lat": 36.553111,
+      "lng": 128.265551
+    },
+    "pois_count": 2,
+    "points_count": 217
+  },
+  {
+    "section_id": 46,
+    "section_number": "46구간",
+    "title": "46구간 (단양군, 영주시, 봉화군)",
+    "region": "단양군, 영주시, 봉화군",
+    "course": "46구간 : 의풍1리마을회관 ~ 강변방면 ~ 남대교 ~ 오전리 ~ 오전약수관광지주차장",
+    "official_distance_km": 16.8,
+    "actual_distance_km": 16.75,
+    "elevation_gain_m": 277,
+    "elevation_loss_m": 277,
+    "min_elevation_m": 414,
+    "max_elevation_m": 486,
+    "start_point": {
+      "lat": 37.068866,
+      "lng": 128.609171
+    },
+    "end_point": {
+      "lat": 37.011918,
+      "lng": 128.7458
+    },
+    "pois_count": 2,
+    "points_count": 336
+  },
+  {
+    "section_id": 47,
+    "section_number": "47구간",
+    "title": "47구간 (봉화군)",
+    "region": "봉화군",
+    "course": "47구간 : 오전약수관광지주차장 ~ 박달령 ~ 주실령 ~ 도심3리마을회관 ~ 애당교",
+    "official_distance_km": 18.2,
+    "actual_distance_km": 18.14,
+    "elevation_gain_m": 562,
+    "elevation_loss_m": 882,
+    "min_elevation_m": 390,
+    "max_elevation_m": 800,
+    "start_point": {
+      "lat": 37.012296,
+      "lng": 128.746289
+    },
+    "end_point": {
+      "lat": 36.982789,
+      "lng": 128.873228
+    },
+    "pois_count": 2,
+    "points_count": 388
+  },
+  {
+    "section_id": 48,
+    "section_number": "48구간",
+    "title": "48구간 (봉화군)",
+    "region": "봉화군",
+    "course": "48구간 : 애당교 ~ 거포재 ~ 한국산림과학고 ~ 춘양면사무소",
+    "official_distance_km": 10.9,
+    "actual_distance_km": 10.87,
+    "elevation_gain_m": 476,
+    "elevation_loss_m": 551,
+    "min_elevation_m": 313,
+    "max_elevation_m": 542,
+    "start_point": {
+      "lat": 36.982543,
+      "lng": 128.873342
+    },
+    "end_point": {
+      "lat": 36.93748,
+      "lng": 128.919545
+    },
+    "pois_count": 3,
+    "points_count": 196
+  },
+  {
+    "section_id": 49,
+    "section_number": "49구간",
+    "title": "49구간 (봉화군)",
+    "region": "봉화군",
+    "course": "49구간 : 춘양면사무소 ~ 구영재골 ~ 새장골 ~ 아홉사리봉 ~ 현동삼거리",
+    "official_distance_km": 10.2,
+    "actual_distance_km": 10.18,
+    "elevation_gain_m": 1129,
+    "elevation_loss_m": 1025,
+    "min_elevation_m": 319,
+    "max_elevation_m": 675,
+    "start_point": {
+      "lat": 36.937607,
+      "lng": 128.919539
+    },
+    "end_point": {
+      "lat": 36.945885,
+      "lng": 128.994621
+    },
+    "pois_count": 1,
+    "points_count": 257
+  },
+  {
+    "section_id": 50,
+    "section_number": "50구간",
+    "title": "50구간 (봉화군)",
+    "region": "봉화군",
+    "course": "50구간 : 현동삼거리 ~ 현동3리마을회관 ~ 분천1리 마을회관 ~ 길이박골 ~ 풍애교 ~ 분천역",
+    "official_distance_km": 15.4,
+    "actual_distance_km": 15.35,
+    "elevation_gain_m": 259,
+    "elevation_loss_m": 277,
+    "min_elevation_m": 414,
+    "max_elevation_m": 486,
+    "start_point": {
+      "lat": 36.946107,
+      "lng": 128.994947
+    },
+    "end_point": {
+      "lat": 36.933301,
+      "lng": 129.05029
+    },
+    "pois_count": 3,
+    "points_count": 320
+  },
+  {
+    "section_id": 51,
+    "section_number": "51구간",
+    "title": "51구간 (봉화군, 울진군)",
+    "region": "봉화군, 울진군",
+    "course": "51구간 : 분천역 ~ 척구마을 ~ 승부역 ~ 원곡교",
+    "official_distance_km": 16.5,
+    "actual_distance_km": 16.49,
+    "elevation_gain_m": 226,
+    "elevation_loss_m": 207,
+    "min_elevation_m": 414,
+    "max_elevation_m": 486,
+    "start_point": {
+      "lat": 36.933118,
+      "lng": 129.050342
+    },
+    "end_point": {
+      "lat": 36.957671,
+      "lng": 129.095999
+    },
+    "pois_count": 2,
+    "points_count": 270
+  },
+  {
+    "section_id": 52,
+    "section_number": "52구간",
+    "title": "52구간 (울진군)",
+    "region": "울진군",
+    "course": "52구간 : 원곡교 ~ 쌍전리 ~ 큰넓재 ~ 한나무재 ~ 소광리",
+    "official_distance_km": 12.2,
+    "actual_distance_km": 12.16,
+    "elevation_gain_m": 261,
+    "elevation_loss_m": 475,
+    "min_elevation_m": 469,
+    "max_elevation_m": 770,
+    "start_point": {
+      "lat": 36.957498,
+      "lng": 129.096146
+    },
+    "end_point": {
+      "lat": 36.982009,
+      "lng": 129.189938
+    },
+    "pois_count": 3,
+    "points_count": 339
+  },
+  {
+    "section_id": 53,
+    "section_number": "53구간",
+    "title": "53구간 (울진군)",
+    "region": "울진군",
+    "course": "53구간 : 소광리 ~ 너삼밭재 ~ 찬물내기 ~ 바릿재 ~ 두천리",
+    "official_distance_km": 13.2,
+    "actual_distance_km": 13.18,
+    "elevation_gain_m": 927,
+    "elevation_loss_m": 1338,
+    "min_elevation_m": 102,
+    "max_elevation_m": 630,
+    "start_point": {
+      "lat": 36.982014,
+      "lng": 129.189945
+    },
+    "end_point": {
+      "lat": 37.030979,
+      "lng": 129.288768
+    },
+    "pois_count": 2,
+    "points_count": 225
+  },
+  {
+    "section_id": 54,
+    "section_number": "54구간",
+    "title": "54구간 (울진군)",
+    "region": "울진군",
+    "course": "54구간 : 두천1리 ~ 흥륜사 ~ 보부천상부계곡 ~ 중섬교",
+    "official_distance_km": 15.0,
+    "actual_distance_km": 15.0,
+    "elevation_gain_m": 562,
+    "elevation_loss_m": 257,
+    "min_elevation_m": 121,
+    "max_elevation_m": 426,
+    "start_point": {
+      "lat": 37.030866,
+      "lng": 129.288613
+    },
+    "end_point": {
+      "lat": 36.949841,
+      "lng": 129.27835
+    },
+    "pois_count": 2,
+    "points_count": 355
+  },
+  {
+    "section_id": 55,
+    "section_number": "55구간",
+    "title": "55구간 (울진군)",
+    "region": "울진군",
+    "course": "55구간 : 중섬교 ~ 찬물내기 ~ 막금마을 ~ 수곡대교 ~ 망양정해수욕장",
+    "official_distance_km": 20.0,
+    "actual_distance_km": 19.96,
+    "elevation_gain_m": 328,
+    "elevation_loss_m": 363,
+    "min_elevation_m": 214,
+    "max_elevation_m": 286,
+    "start_point": {
+      "lat": 36.949843,
+      "lng": 129.278472
+    },
+    "end_point": {
+      "lat": 36.96806,
+      "lng": 129.412604
+    },
+    "pois_count": 3,
+    "points_count": 416
+  }
+]
