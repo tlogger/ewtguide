@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SectionSummary, SectionDetail, TrekProgress, POI } from './types';
 import { Header } from './components/Header';
+import { TitleScreenView } from './views/TitleScreenView';
 import { SectionListView } from './views/SectionListView';
 import { SectionDetailView } from './views/SectionDetailView';
 import { TrailMapView } from './views/TrailMapView';
@@ -16,7 +17,9 @@ import {
 } from './services/storage';
 
 export const App: React.FC = () => {
-  const [currentStep, setCurrentStep] = useState<'list' | 'detail' | 'map' | 'all_map'>('list');
+  const [currentStep, setCurrentStep] = useState<'title' | 'list' | 'detail' | 'map' | 'all_map'>(() => {
+    return localStorage.getItem('ewtguide_skip_title') === 'true' ? 'list' : 'title';
+  });
   const [sectionsSummary, setSectionsSummary] = useState<SectionSummary[]>([]);
   const [selectedSectionId, setSelectedSectionId] = useState<number | null>(null);
   const [selectedSectionDetail, setSelectedSectionDetail] = useState<SectionDetail | null>(null);
@@ -97,6 +100,26 @@ export const App: React.FC = () => {
     return '동서트레일 가이드';
   };
 
+  // 1. Title Screen View (Immersive illustrated map artwork)
+  if (currentStep === 'title') {
+    return (
+      <TitleScreenView
+        onStartList={() => {
+          setCurrentStep('list');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onOpenMap={() => {
+          setCurrentStep('all_map');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        totalDistance="867.1"
+        totalSections={55}
+        openedSectionsCount={32}
+      />
+    );
+  }
+
+  // 2. Main Application Flow (List, Detail, Map, All-Map)
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans pb-12 sm:pb-0">
       <Header

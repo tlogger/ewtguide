@@ -8,3 +8,6 @@ dist-ssr
 Thumbs.db
 *.log
 .cursor/
+__pycache__/
+*.pyc
+scripts/elevation_cache.json

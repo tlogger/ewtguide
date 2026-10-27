@@ -2,8 +2,8 @@ import React from 'react';
 import { ArrowLeft, Compass, CheckCircle2, Map } from 'lucide-react';
 
 interface HeaderProps {
-  currentStep: 'list' | 'detail' | 'map' | 'all_map';
-  onNavigate: (step: 'list' | 'detail' | 'map' | 'all_map') => void;
+  currentStep: 'title' | 'list' | 'detail' | 'map' | 'all_map';
+  onNavigate: (step: 'title' | 'list' | 'detail' | 'map' | 'all_map') => void;
   title?: string;
   completedCount?: number;
   totalCount?: number;
@@ -33,10 +33,14 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          <div className="flex items-center gap-2">
-            <Compass className="w-7 h-7 text-emerald-300 shrink-0" />
+          <div
+            onClick={() => onNavigate('title')}
+            className="flex items-center gap-2 cursor-pointer group select-none"
+            title="타이틀 스크린 (동서트레일 일러스트) 보기"
+          >
+            <Compass className="w-7 h-7 text-emerald-300 shrink-0 group-hover:rotate-45 transition-transform duration-300" />
             <div>
-              <h1 className="text-lg sm:text-xl font-bold tracking-tight leading-tight">
+              <h1 className="text-lg sm:text-xl font-bold tracking-tight leading-tight group-hover:text-amber-200 transition-colors">
                 {title || '동서트레일 가이드'}
               </h1>
               {currentStep === 'list' && (
