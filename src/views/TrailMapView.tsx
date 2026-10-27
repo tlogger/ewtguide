@@ -1,4 +1,10 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  Map as KakaoMap,
+  Polyline,
+  CustomOverlayMap,
+  useKakaoLoader
+} from 'react-kakao-maps-sdk';
 import L from 'leaflet';
 import { SectionDetail, POI, TrailPoint } from '../types';
 import { FacilityModal } from '../components/FacilityModal';
@@ -13,6 +19,9 @@ import {
   Phone
 } from 'lucide-react';
 
+// Kakao Map JavaScript Key imported from exfish
+const KAKAO_APP_KEY = import.meta.env.VITE_KAKAO_MAP_API_KEY || '61ebf0b7a0daf24cba357d92677c8d8a';
+
 interface TrailMapViewProps {
   section: SectionDetail;
   userFacilities: POI[];
@@ -20,49 +29,32 @@ interface TrailMapViewProps {
   onBackToDetail: () => void;
 }
 
-const TILE_PROVIDERS = {
-  topo: {
-    name: '등고선 등산도',
-    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    options: {
-      maxZoom: 17,
-      attribution: '© OpenTopoMap, OSM'
-    }
-  },
-  roadmap: {
-    name: '일반 지도',
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    options: {
-      maxZoom: 19,
-      attribution: '© CartoDB, OSM'
-    }
-  },
-  satellite: {
-    name: '항공 위성',
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    options: {
-      maxZoom: 19,
-      attribution: '© Esri, Maxar'
-    }
-  }
-};
-
 export const TrailMapView: React.FC<TrailMapViewProps> = ({
   section,
   userFacilities,
   onAddFacility,
   onBackToDetail
 }) => {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<L.Map | null>(null);
-  const tileLayerRef = useRef<L.TileLayer | null>(null);
-  const polylineRef = useRef<L.Polyline | null>(null);
-  const hoverMarkerRef = useRef<L.Marker | null>(null);
-  const userMarkerRef = useRef<L.Marker | null>(null);
+  // Load Kakao SDK
+  const [kakaoLoading, kakaoError] = useKakaoLoader({
+    appkey: KAKAO_APP_KEY,
+    libraries: ['services', 'clusterer']
+  });
 
-  const [currentLayerType, setCurrentLayerType] = useState<'topo' | 'roadmap' | 'satellite'>('roadmap');
+  const [mapEngine, setMapEngine] = useState<'kakao' | 'leaflet'>('kakao');
+  const [kakaoMapType, setKakaoMapType] = useState<'ROADMAP' | 'HYBRID'>('ROADMAP');
+  const [kakaoLevel, setKakaoLevel] = useState<number>(6);
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({
+    lat: section.start_point.lat,
+    lng: section.start_point.lng
+  });
+
+  // GPS Tracking
   const [gpsActive, setGpsActive] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [offTrackDist, setOffTrackDist] = useState<number | null>(null);
+
+  // Modals & Popups
   const [selectedFacility, setSelectedFacility] = useState<POI | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalCoords, setModalCoords] = useState<{ lat: number; lng: number }>({
@@ -71,29 +63,50 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
   });
   const [hoveredPoint, setHoveredPoint] = useState<TrailPoint | null>(null);
 
+  // Leaflet references when in Topo mode
+  const leafletContainerRef = useRef<HTMLDivElement>(null);
+  const leafletMapRef = useRef<L.Map | null>(null);
+  const leafletHoverMarkerRef = useRef<L.Marker | null>(null);
+  const leafletUserMarkerRef = useRef<L.Marker | null>(null);
+
+  const kakaoMapRef = useRef<any>(null);
+
   // Combine official + user facilities
   const allFacilities: POI[] = [...userFacilities, ...(section.pois || [])];
 
-  // Initialize Leaflet Map
-  useEffect(() => {
-    if (!mapContainerRef.current) return;
+  // Path coordinates for Kakao Polyline
+  const kakaoPath = section.points.map((p) => ({ lat: p.lat, lng: p.lng }));
 
-    // Create map instance
-    const map = L.map(mapContainerRef.current, {
+  // Fit bounds for Kakao Map on load
+  const onKakaoMapCreate = (map: any) => {
+    kakaoMapRef.current = map;
+    if (window.kakao && window.kakao.maps) {
+      const bounds = new window.kakao.maps.LatLngBounds();
+      section.points.forEach((p) => {
+        bounds.extend(new window.kakao.maps.LatLng(p.lat, p.lng));
+      });
+      map.setBounds(bounds);
+    }
+  };
+
+  // Switch to Leaflet Topo Map when requested
+  useEffect(() => {
+    if (mapEngine !== 'leaflet' || !leafletContainerRef.current) return;
+
+    const map = L.map(leafletContainerRef.current, {
       zoomControl: false,
       attributionControl: false
     });
-    mapRef.current = map;
+    leafletMapRef.current = map;
 
-    // Default tile layer
-    const provider = TILE_PROVIDERS[currentLayerType];
-    const tileLayer = L.tileLayer(provider.url, provider.options).addTo(map);
-    tileLayerRef.current = tileLayer;
+    // OpenTopoMap tile layer
+    L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+      maxZoom: 17,
+      attribution: '© OpenTopoMap, OSM'
+    }).addTo(map);
 
     // Trail Polyline
     const latLngs: L.LatLngExpression[] = section.points.map((p) => [p.lat, p.lng]);
-    
-    // Polyline shadow/outline for contrast
     L.polyline(latLngs, {
       color: '#064e3b',
       weight: 8,
@@ -102,7 +115,6 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
       lineJoin: 'round'
     }).addTo(map);
 
-    // Main Polyline
     const polyline = L.polyline(latLngs, {
       color: '#059669',
       weight: 5,
@@ -110,34 +122,31 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
       lineCap: 'round',
       lineJoin: 'round'
     }).addTo(map);
-    polylineRef.current = polyline;
 
-    // Fit Bounds
     map.fitBounds(polyline.getBounds(), { padding: [40, 40] });
 
-    // Start Marker
+    // Start / End Markers
     const startIcon = L.divIcon({
       className: 'custom-start-marker',
       html: `
-        <div style="background:#047857;color:white;font-weight:800;font-size:11px;padding:4px 9px;border-radius:14px;box-shadow:0 3px 8px rgba(0,0,0,0.35);border:2px solid white;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;transform:translate(-50%,-100%);">
-          <span>🚩</span> <span>시점: ${section.section_number}</span>
+        <div style="background:#047857;color:white;font-weight:800;font-size:11px;padding:4px 9px;border-radius:14px;box-shadow:0 3px 8px rgba(0,0,0,0.35);border:2px solid white;white-space:nowrap;transform:translate(-50%,-100%);">
+          🚩 시점: ${section.section_number}
         </div>`,
       iconSize: [0, 0]
     });
     L.marker([section.start_point.lat, section.start_point.lng], { icon: startIcon }).addTo(map);
 
-    // End Marker
     const endIcon = L.divIcon({
       className: 'custom-end-marker',
       html: `
-        <div style="background:#0f766e;color:white;font-weight:800;font-size:11px;padding:4px 9px;border-radius:14px;box-shadow:0 3px 8px rgba(0,0,0,0.35);border:2px solid white;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;transform:translate(-50%,-100%);">
-          <span>🏁</span> <span>종점</span>
+        <div style="background:#0f766e;color:white;font-weight:800;font-size:11px;padding:4px 9px;border-radius:14px;box-shadow:0 3px 8px rgba(0,0,0,0.35);border:2px solid white;white-space:nowrap;transform:translate(-50%,-100%);">
+          🏁 종점
         </div>`,
       iconSize: [0, 0]
     });
     L.marker([section.end_point.lat, section.end_point.lng], { icon: endIcon }).addTo(map);
 
-    // Facility Markers
+    // Facilities
     allFacilities.forEach((fac) => {
       if (!fac.lat || !fac.lng) return;
       const iconChar =
@@ -152,86 +161,60 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
       const facIcon = L.divIcon({
         className: 'custom-fac-marker',
         html: `
-          <div style="background:white;color:#111827;font-weight:700;font-size:11px;padding:3px 7px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,0.25);border:1.5px solid #059669;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;cursor:pointer;transform:translate(-50%,-50%);">
+          <div style="background:white;color:#111827;font-weight:700;font-size:11px;padding:3px 7px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,0.25);border:1.5px solid #059669;white-space:nowrap;cursor:pointer;transform:translate(-50%,-50%);">
             <span>${iconChar}</span> <span>${fac.name}</span>
           </div>`,
         iconSize: [0, 0]
       });
 
       const marker = L.marker([fac.lat, fac.lng], { icon: facIcon }).addTo(map);
-      marker.on('click', () => {
-        setSelectedFacility(fac);
-      });
+      marker.on('click', () => setSelectedFacility(fac));
     });
 
-    // Click map to register facility
     map.on('click', (e: L.LeafletMouseEvent) => {
-      setModalCoords({
-        lat: e.latlng.lat,
-        lng: e.latlng.lng
-      });
+      setModalCoords({ lat: e.latlng.lat, lng: e.latlng.lng });
       setIsModalOpen(true);
     });
 
-    // Force resize calculation
-    setTimeout(() => {
-      map.invalidateSize();
-    }, 150);
+    setTimeout(() => map.invalidateSize(), 150);
 
     return () => {
       map.remove();
-      mapRef.current = null;
+      leafletMapRef.current = null;
     };
-  }, [section]);
+  }, [mapEngine, section]);
 
-  // Switch Tile Layer
-  const handleSwitchLayer = () => {
-    if (!mapRef.current) return;
-    const nextType: 'topo' | 'roadmap' | 'satellite' =
-      currentLayerType === 'roadmap' ? 'topo' :
-      currentLayerType === 'topo' ? 'satellite' : 'roadmap';
-
-    if (tileLayerRef.current) {
-      mapRef.current.removeLayer(tileLayerRef.current);
-    }
-
-    const provider = TILE_PROVIDERS[nextType];
-    const newLayer = L.tileLayer(provider.url, provider.options).addTo(mapRef.current);
-    tileLayerRef.current = newLayer;
-    setCurrentLayerType(nextType);
-  };
-
-  // Sync Hovered Point from Elevation Bar to Map
+  // Leaflet Hover Marker Sync
   useEffect(() => {
-    if (!mapRef.current) return;
-    const map = mapRef.current;
-
+    if (mapEngine !== 'leaflet' || !leafletMapRef.current) return;
+    const map = leafletMapRef.current;
     if (hoveredPoint) {
       const pos: L.LatLngExpression = [hoveredPoint.lat, hoveredPoint.lng];
-      if (!hoverMarkerRef.current) {
+      if (!leafletHoverMarkerRef.current) {
         const hoverIcon = L.divIcon({
           className: 'custom-hover-pin',
           html: `<div style="width:18px;height:18px;border-radius:50%;background:#ef4444;border:3px solid white;box-shadow:0 0 10px rgba(239,68,68,0.9);transform:translate(-50%,-50%);"></div>`,
           iconSize: [0, 0]
         });
-        hoverMarkerRef.current = L.marker(pos, { icon: hoverIcon }).addTo(map);
+        leafletHoverMarkerRef.current = L.marker(pos, { icon: hoverIcon }).addTo(map);
       } else {
-        hoverMarkerRef.current.setLatLng(pos);
+        leafletHoverMarkerRef.current.setLatLng(pos);
       }
-    } else if (hoverMarkerRef.current) {
-      map.removeLayer(hoverMarkerRef.current);
-      hoverMarkerRef.current = null;
+    } else if (leafletHoverMarkerRef.current) {
+      map.removeLayer(leafletHoverMarkerRef.current);
+      leafletHoverMarkerRef.current = null;
     }
-  }, [hoveredPoint]);
+  }, [hoveredPoint, mapEngine]);
 
-  // GPS Tracking
+  // Toggle GPS Track
   const toggleGps = useCallback(() => {
     if (gpsActive) {
       setGpsActive(false);
+      setUserLocation(null);
       setOffTrackDist(null);
-      if (userMarkerRef.current && mapRef.current) {
-        mapRef.current.removeLayer(userMarkerRef.current);
-        userMarkerRef.current = null;
+      if (leafletUserMarkerRef.current && leafletMapRef.current) {
+        leafletMapRef.current.removeLayer(leafletUserMarkerRef.current);
+        leafletUserMarkerRef.current = null;
       }
       return;
     }
@@ -246,8 +229,9 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
       (pos) => {
         const uLat = pos.coords.latitude;
         const uLng = pos.coords.longitude;
+        setUserLocation({ lat: uLat, lng: uLng });
 
-        // Calculate minimum distance to section points
+        // Calculate minimum distance to section points (cross track error)
         let minDist = 999999;
         section.points.forEach((p) => {
           const d = Math.hypot(
@@ -258,22 +242,11 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
         });
         setOffTrackDist(Math.round(minDist));
 
-        // Update GPS marker
-        if (mapRef.current) {
-          const map = mapRef.current;
-          const userPos: L.LatLngExpression = [uLat, uLng];
-
-          if (!userMarkerRef.current) {
-            const gpsIcon = L.divIcon({
-              className: 'custom-gps-pin',
-              html: `<div style="width:22px;height:22px;border-radius:50%;background:#2563eb;border:3px solid white;box-shadow:0 0 12px rgba(37,99,235,0.95);transform:translate(-50%,-50%);"></div>`,
-              iconSize: [0, 0]
-            });
-            userMarkerRef.current = L.marker(userPos, { icon: gpsIcon }).addTo(map);
-            map.panTo(userPos);
-          } else {
-            userMarkerRef.current.setLatLng(userPos);
-          }
+        // Pan map to user position
+        if (mapEngine === 'kakao' && kakaoMapRef.current && window.kakao) {
+          kakaoMapRef.current.panTo(new window.kakao.maps.LatLng(uLat, uLng));
+        } else if (mapEngine === 'leaflet' && leafletMapRef.current) {
+          leafletMapRef.current.panTo([uLat, uLng]);
         }
       },
       (err) => {
@@ -285,19 +258,176 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [gpsActive, section]);
+  }, [gpsActive, section, mapEngine]);
 
+  // Map Controls
   const zoomIn = () => {
-    if (mapRef.current) mapRef.current.zoomIn();
+    if (mapEngine === 'kakao' && kakaoMapRef.current) {
+      kakaoMapRef.current.setLevel(kakaoMapRef.current.getLevel() - 1);
+    } else if (mapEngine === 'leaflet' && leafletMapRef.current) {
+      leafletMapRef.current.zoomIn();
+    }
   };
+
   const zoomOut = () => {
-    if (mapRef.current) mapRef.current.zoomOut();
+    if (mapEngine === 'kakao' && kakaoMapRef.current) {
+      kakaoMapRef.current.setLevel(kakaoMapRef.current.getLevel() + 1);
+    } else if (mapEngine === 'leaflet' && leafletMapRef.current) {
+      leafletMapRef.current.zoomOut();
+    }
+  };
+
+  // Toggle Map Engine / Layers
+  const handleToggleLayers = () => {
+    if (mapEngine === 'kakao') {
+      if (kakaoMapType === 'ROADMAP') {
+        setKakaoMapType('HYBRID');
+      } else {
+        // Switch from Kakao SkyView to Leaflet Topo Map
+        setMapEngine('leaflet');
+      }
+    } else {
+      // Switch back from Leaflet Topo to Kakao Roadmap
+      setMapEngine('kakao');
+      setKakaoMapType('ROADMAP');
+    }
+  };
+
+  const getLayerLabel = () => {
+    if (mapEngine === 'leaflet') return '등고선';
+    if (kakaoMapType === 'HYBRID') return '스카이뷰';
+    return '카카오';
   };
 
   return (
     <div className="relative w-full h-[calc(100vh-104px)] bg-gray-100 overflow-hidden select-none">
-      {/* Map Container */}
-      <div ref={mapContainerRef} className="w-full h-full z-10" />
+      {/* 1. Kakao Map Engine */}
+      {mapEngine === 'kakao' && (
+        <>
+          {kakaoLoading ? (
+            <div className="flex flex-col items-center justify-center h-full p-6 text-center bg-emerald-50">
+              <div className="w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mb-3" />
+              <p className="text-base font-bold text-emerald-950">
+                카카오 지도를 불러오는 중입니다...
+              </p>
+            </div>
+          ) : kakaoError ? (
+            <div className="flex flex-col items-center justify-center h-full p-6 text-center bg-amber-50">
+              <p className="text-base font-bold text-amber-950 mb-2">
+                카카오 지도 연결 지연으로 등고선 지도로 자동 전환합니다.
+              </p>
+              <button
+                onClick={() => setMapEngine('leaflet')}
+                className="px-4 py-2 bg-emerald-700 text-white font-bold rounded-xl text-sm"
+              >
+                등고선 등산도 열기
+              </button>
+            </div>
+          ) : (
+            <KakaoMap
+              center={mapCenter}
+              level={kakaoLevel}
+              mapTypeId={kakaoMapType}
+              onCreate={onKakaoMapCreate}
+              onClick={(_target, mouseEvent) => {
+                const latlng = mouseEvent.latLng;
+                setModalCoords({
+                  lat: latlng.getLat(),
+                  lng: latlng.getLng()
+                });
+                setIsModalOpen(true);
+              }}
+              className="w-full h-full z-10"
+            >
+              {/* Trail Polyline */}
+              <Polyline
+                path={kakaoPath}
+                strokeWeight={6}
+                strokeColor="#059669"
+                strokeOpacity={0.95}
+                strokeStyle="solid"
+              />
+
+              {/* Start Marker */}
+              <CustomOverlayMap
+                position={section.start_point}
+                yAnchor={1.2}
+              >
+                <div className="bg-emerald-800 text-white font-extrabold text-[11px] px-2.5 py-1 rounded-xl shadow-md border-2 border-white whitespace-nowrap flex items-center gap-1">
+                  <span>🚩</span> <span>시점: {section.section_number}</span>
+                </div>
+              </CustomOverlayMap>
+
+              {/* End Marker */}
+              <CustomOverlayMap
+                position={section.end_point}
+                yAnchor={1.2}
+              >
+                <div className="bg-teal-800 text-white font-extrabold text-[11px] px-2.5 py-1 rounded-xl shadow-md border-2 border-white whitespace-nowrap flex items-center gap-1">
+                  <span>🏁</span> <span>종점</span>
+                </div>
+              </CustomOverlayMap>
+
+              {/* Facility Markers */}
+              {allFacilities.map((fac, idx) => {
+                if (!fac.lat || !fac.lng) return null;
+                const iconChar =
+                  fac.category === 'shelter' ? '⛺' :
+                  fac.category === 'toilet' ? '🚻' :
+                  fac.category === 'restaurant' ? '🍚' :
+                  fac.category === 'lodging' ? '🏡' :
+                  fac.category === 'mart' ? '🏪' :
+                  fac.category === 'transport' ? '🚕' :
+                  fac.category === 'cert_center' ? '🚩' : '📍';
+
+                return (
+                  <CustomOverlayMap
+                    key={fac.id || idx}
+                    position={{ lat: fac.lat, lng: fac.lng }}
+                    yAnchor={0.5}
+                  >
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedFacility(fac);
+                      }}
+                      className="bg-white text-gray-900 font-bold text-[11px] px-2 py-0.5 rounded-xl shadow-md border border-emerald-600 whitespace-nowrap cursor-pointer flex items-center gap-1 hover:scale-105 transition-transform"
+                    >
+                      <span>{iconChar}</span>
+                      <span>{fac.name}</span>
+                    </div>
+                  </CustomOverlayMap>
+                );
+              })}
+
+              {/* Hovered Point on Elevation Bar */}
+              {hoveredPoint && (
+                <CustomOverlayMap
+                  position={{ lat: hoveredPoint.lat, lng: hoveredPoint.lng }}
+                  yAnchor={0.5}
+                >
+                  <div className="w-5 h-5 rounded-full bg-red-500 border-2 border-white shadow-lg animate-pulse" />
+                </CustomOverlayMap>
+              )}
+
+              {/* Real-time GPS Location Dot */}
+              {userLocation && (
+                <CustomOverlayMap
+                  position={userLocation}
+                  yAnchor={0.5}
+                >
+                  <div className="w-6 h-6 rounded-full bg-blue-600 border-3 border-white shadow-xl animate-pulse" />
+                </CustomOverlayMap>
+              )}
+            </KakaoMap>
+          )}
+        </>
+      )}
+
+      {/* 2. Leaflet Topo Map Engine */}
+      {mapEngine === 'leaflet' && (
+        <div ref={leafletContainerRef} className="w-full h-full z-10" />
+      )}
 
       {/* Top Floating Status Pill */}
       <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
@@ -343,13 +473,13 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
         </button>
 
         <button
-          onClick={handleSwitchLayer}
+          onClick={handleToggleLayers}
           className="w-12 h-12 bg-white text-gray-700 rounded-2xl shadow-lg flex flex-col items-center justify-center hover:bg-gray-100 p-1"
-          title={`지도 전환 (현재: ${TILE_PROVIDERS[currentLayerType].name})`}
+          title="지도 레이어 전환 (카카오 / 스카이뷰 / 등고선)"
         >
           <Layers className="w-5 h-5 text-emerald-700" />
-          <span className="text-[9px] font-bold mt-0.5 text-gray-600">
-            {currentLayerType === 'roadmap' ? '일반' : currentLayerType === 'topo' ? '등고선' : '위성'}
+          <span className="text-[9px] font-bold mt-0.5 text-gray-700">
+            {getLayerLabel()}
           </span>
         </button>
 
