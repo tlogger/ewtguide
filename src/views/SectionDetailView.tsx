@@ -109,7 +109,7 @@ export const SectionDetailView: React.FC<SectionDetailViewProps> = ({
             className="w-full py-4 px-6 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-lg rounded-2xl shadow-lg transition-transform active:scale-99 flex items-center justify-center gap-2"
           >
             <Map className="w-6 h-6" />
-            <span>카카오 지도에서 코스 보기 (3단계)</span>
+            <span>코스 지도 전체화면 보기 (3단계)</span>
           </button>
         </div>
       </div>
