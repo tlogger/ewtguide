@@ -17,19 +17,27 @@
    - 사양서 위치: `G:\내 드라이브\all\Private\obsidian\Luke\20_Tech & Hobby\agentic\동서트레일 가이드 ewtguide 시스템 설계 사양서.md`
 2. **숲나들e 포털 32개 공식 구간 전수 크롤링 완료**:
    - 스크립트: `scripts/crawl_foresttrip.py`
-   - 수집 결과: `scripts/foresttrip_sections.json` (1~14구간, 20~22구간, 32~36구간, 46~55구간 총 32개 구간 거리, 코스 경로, 관할 지역, 공공시설 67개소)
-3. **원본 GPX 노선 정밀 분석 완료**:
-   - 원본 파일: `동서트레일 32개 구간 GPX_노선도 파일.gpx` (37,386 포인트 / 79개 세그먼트 / 해발 고도 태그 정상 보유)
-   - 분석 스크립트: `scripts/analyze_gpx_segments.py`
-   - 서쪽 샛별해변 ~ 동쪽 망양정해수욕장 간 32개 공식 구간 거리 매칭 확인 완료.
+   - 수집 결과: `scripts/foresttrip_sections.json` (32개 개통 구간 메타데이터 및 공공 시설 67개소)
+3. **원본 GPX 노선 정밀 분석 및 4개 클러스터 연결망 확인**:
+   - 원본 파일: `동서트레일 32개 구간 GPX_노선도 파일.gpx` (37,386 포인트 / 79개 세그먼트)
+   - 서쪽 샛별해변(태안) ~ 동쪽 망양정해수욕장(울진) 간 4개 클러스터 및 32개 구간 연결 검증
+4. **RDP(epsilon = 3m) 파이썬 전처리 및 DEM 오픈 고도 데이터 보정 완료**:
+   - 스크립트: `scripts/process_gpx.py`, `scripts/enrich_elevations.py`, `scripts/fix_elevation_gaps.py`
+   - 산출물: `public/data/sections/section_{1~55}.json` (32개 구간) 및 `public/data/sections_summary.json`
+   - 10,133개 최적화 좌표와 누적 거리, 상승/하강 고도 (+m / -m) 완전 추출 완료
+5. **Vite + React 18 + TypeScript + Tailwind CSS 3단계 선형 네비게이션 웹 앱 구축 완료**:
+   - `SectionListView` (구간 리스트, 완주율 프로그레스 카드, 검색, 권역 필터)
+   - `SectionDetailView` (구간 상세 정보, 예상 소요시간, 난이도, 주요 경유지 타임라인, Recharts 고도 프로필 차트, 관할 콜택시 원클릭 다이얼러, 이어걷기 중단점 관리, 편의시설 목록)
+   - `TrailMapView` (카카오맵 전체화면 트레일 오버레이, 시점/종점/편의시설 마커, 고도표 터치-지도 마커 실시간 동기화, GPS 실시간 위치 추적 및 코스 이탈 경보, 지도 터치 기반 원스톱 편의시설 등록)
+   - `CertificationModal` (완주 축하 컨페티 효과 및 LocalStorage 영구 보존)
+   - `FacilityModal` (8개 카테고리 단일 화면 일체형 등록 모달)
+6. **빌드 검증 및 Git 초기화 커밋 완료**:
+   - `npm run build` 성공 (`dist/` 생성 확인)
+   - Git 초기 커밋 완료 (`feat: complete ewtguide gpx preprocessing, elevation profile enrichment, and 3-step linear ui`)
 
 ---
 
-## 3. 바로 이어서 진행할 작업 (Next Steps)
-1. **RDP(epsilon = 3m) 파이썬 전처리 스크립트 실행 (`scripts/process_gpx.py`)**:
-   - 37,386 포인트를 3m 허용오차로 단순화하여 `public/data/sections/section_{id}.json` 생성
-2. **Vite + React 19 + TypeScript + Tailwind CSS 프로젝트 초기화**:
-   - `package.json`, `vite.config.ts`, `tailwind.config.js` 구성
-   - 카카오맵 JavaScript API 연동 (`VITE_KAKAO_MAP_API_KEY`)
-3. **3단계 선형 네비게이션 UI 구축**:
-   - [구간 리스트] ➔ [구간 상세 (고도표, 콜택시, 시설)] ➔ [전체화면 카카오 지도]
+## 3. 향후 권장 작업 (Next Steps)
+1. GitHub 원격 저장소 연결 및 GitHub Pages 자동 배포 워크플로우 (`.github/workflows/deploy.yml`) 추가
+2. 사용자 카카오맵 JavaScript API 키 발급 및 `.env` 설정 (`VITE_KAKAO_MAP_API_KEY`)
+3. PWA 서비스 워커 매니페스트 및 오프라인 캐싱 설정
