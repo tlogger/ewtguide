@@ -11,11 +11,13 @@ import {
   loadTrekProgress,
   toggleSectionCompletion,
   addCheckpoint,
-  removeCheckpoint,
-  loadUserFacilities,
-  addUserFacility,
-  removeUserFacility
+  removeCheckpoint
 } from './services/storage';
+import {
+  loadSectionFacilities,
+  saveFacilityToDb,
+  deleteFacilityFromDb
+} from './services/facilityDb';
 
 export const App: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<'title' | 'list' | 'detail' | 'map' | 'all_map'>(() => {
@@ -44,40 +46,46 @@ export const App: React.FC = () => {
   }, []);
 
   // Load detail when section selected
-  const handleSelectSection = (sectionId: number) => {
+  const handleSelectSection = async (sectionId: number) => {
     setIsLoading(true);
     setSelectedSectionId(sectionId);
-    fetch(`${import.meta.env.BASE_URL}data/sections/section_${sectionId}.json?v=20261028_v3`)
-      .then((res) => res.json())
-      .then((detail: SectionDetail) => {
-        setSelectedSectionDetail(detail);
-        setUserFacilities(loadUserFacilities(sectionId));
-        setCurrentStep('detail');
-        setIsLoading(false);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      })
-      .catch((err) => {
-        console.error('Failed to load section detail:', err);
-        setIsLoading(false);
-      });
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL}data/sections/section_${sectionId}.json?v=20261028_v5`);
+      const detail: SectionDetail = await res.json();
+      setSelectedSectionDetail(detail);
+      
+      // Supabase 중앙 DB 연동 및 병합 시설 로드
+      const facilities = await loadSectionFacilities(sectionId, detail.pois || []);
+      setUserFacilities(facilities);
+      
+      setCurrentStep('detail');
+      setIsLoading(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      console.error('Failed to load section detail:', err);
+      setIsLoading(false);
+    }
   };
 
-  const handleOpenSectionMap = (sectionId: number) => {
+  const handleOpenSectionMap = async (sectionId: number) => {
     setIsLoading(true);
     setSelectedSectionId(sectionId);
-    fetch(`${import.meta.env.BASE_URL}data/sections/section_${sectionId}.json?v=20261028_v4`)
-      .then((res) => res.json())
-      .then((detail: SectionDetail) => {
-        setSelectedSectionDetail(detail);
-        setUserFacilities(loadUserFacilities(sectionId));
-        setCurrentStep('map');
-        setIsLoading(false);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      })
-      .catch((err) => {
-        console.error('Failed to load section map:', err);
-        setIsLoading(false);
-      });
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL}data/sections/section_${sectionId}.json?v=20261028_v5`);
+      const detail: SectionDetail = await res.json();
+      setSelectedSectionDetail(detail);
+      
+      // Supabase 중앙 DB 연동 및 병합 시설 로드
+      const facilities = await loadSectionFacilities(sectionId, detail.pois || []);
+      setUserFacilities(facilities);
+      
+      setCurrentStep('map');
+      setIsLoading(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      console.error('Failed to load section map:', err);
+      setIsLoading(false);
+    }
   };
 
   const handleToggleComplete = (sectionId: number, e?: React.MouseEvent) => {
@@ -100,16 +108,24 @@ export const App: React.FC = () => {
     setProgress({ ...updated });
   };
 
-  const handleAddFacility = (fac: POI) => {
+  const handleAddFacility = async (fac: POI) => {
     if (!selectedSectionId) return;
-    const updated = addUserFacility(selectedSectionId, fac);
-    setUserFacilities(updated);
+    const saved = await saveFacilityToDb(selectedSectionId, fac);
+    setUserFacilities((prev) => {
+      const exists = prev.some((f) => f.id === saved.id);
+      return exists
+        ? prev.map((f) => (f.id === saved.id ? saved : f))
+        : [saved, ...prev];
+    });
   };
 
-  const handleRemoveFacility = (facilityId: string) => {
+  const handleRemoveFacility = async (facilityId: string) => {
     if (!selectedSectionId) return;
-    const updated = removeUserFacility(selectedSectionId, facilityId);
-    setUserFacilities(updated);
+    const target = userFacilities.find((f) => f.id === facilityId);
+    if (target) {
+      await deleteFacilityFromDb(selectedSectionId, target);
+      setUserFacilities((prev) => prev.filter((f) => f.id !== facilityId));
+    }
   };
 
   const getHeaderTitle = () => {
@@ -201,9 +217,11 @@ export const App: React.FC = () => {
         ) : currentStep === 'map' && selectedSectionDetail ? (
           <TrailMapView
             section={selectedSectionDetail}
+            allSections={sectionsSummary}
             userFacilities={userFacilities}
             onAddFacility={handleAddFacility}
             onRemoveFacility={handleRemoveFacility}
+            onNavigateSection={handleOpenSectionMap}
             onBackToDetail={() => setCurrentStep('detail')}
           />
         ) : null}

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { SectionDetail, SectionSummary, POI, Checkpoint } from '../types';
 import { ElevationChart } from '../components/ElevationChart';
 import { TaxiCallCard } from '../components/TaxiCallCard';
-import { FacilityModal } from '../components/FacilityModal';
 import {
   Map,
   Award,
@@ -43,13 +42,12 @@ export const SectionDetailView: React.FC<SectionDetailViewProps> = ({
   userFacilities,
   onOpenMap,
   onOpenCertify,
-  onAddFacility,
-  onRemoveFacility,
+  onAddFacility: _onAddFacility,
+  onRemoveFacility: _onRemoveFacility,
   onAddCheckpoint,
   onRemoveCheckpoint,
   onNavigateSection
 }) => {
-  const [isFacilityModalOpen, setIsFacilityModalOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [newCpName, setNewCpName] = useState('');
   const [showCpInput, setShowCpInput] = useState(false);
@@ -79,8 +77,8 @@ export const SectionDetailView: React.FC<SectionDetailViewProps> = ({
       ? { label: '중급 코스', color: 'text-amber-700 bg-amber-50 border-amber-200' }
       : { label: '초급 코스', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' };
 
-  // Combine official and user facilities
-  const allFacilities: POI[] = [...userFacilities, ...(section.pois || [])];
+  // Combine official and user facilities (userFacilities already holds merged list from Supabase DB)
+  const allFacilities: POI[] = userFacilities.length > 0 ? userFacilities : (section.pois || []);
   const filteredFacilities = activeCategory === 'all'
     ? allFacilities
     : allFacilities.filter(f => f.category === activeCategory);
@@ -296,15 +294,16 @@ export const SectionDetailView: React.FC<SectionDetailViewProps> = ({
               <span>편의시설 & 뷰포인트 ({allFacilities.length}개소)</span>
             </h3>
             <p className="text-xs text-gray-500 mt-0.5">
-              공식 안내소, 뷰포인트 및 동료 트레커들이 등록한 편의시설 목록입니다
+              공식 안내소, 뷰포인트 및 동료 트레커들이 등록한 편의시설 목록입니다 (지도에서 길게 눌러 등록/수정)
             </p>
           </div>
           <button
-            onClick={() => setIsFacilityModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl shadow-xs"
+            onClick={onOpenMap}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-300 transition-colors"
+            title="지도에서 시설 위치 확인 및 새 시설 등록"
           >
-            <PlusCircle className="w-4 h-4" />
-            <span>새 시설/명소 직접 등록</span>
+            <Map className="w-3.5 h-3.5" />
+            <span>지도에서 시설 보기</span>
           </button>
         </div>
 
@@ -429,19 +428,6 @@ export const SectionDetailView: React.FC<SectionDetailViewProps> = ({
           <div className="text-gray-300 px-3 py-2">종점 구간 (울진)</div>
         )}
       </div>
-
-      {/* Facility Registration Modal */}
-      <FacilityModal
-        isOpen={isFacilityModalOpen}
-        onClose={() => setIsFacilityModalOpen(false)}
-        onSubmit={onAddFacility}
-        onDelete={(fac) => {
-          if (fac.id && onRemoveFacility) onRemoveFacility(fac.id);
-        }}
-        lat={section.start_point?.lat || 36.5}
-        lng={section.start_point?.lng || 126.8}
-        defaultSectionName={section.section_number}
-      />
 
       {/* Photo Lightbox Modal */}
       {previewPhoto && (

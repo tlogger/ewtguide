@@ -6,7 +6,7 @@ import {
   MapTypeId,
   useKakaoLoader
 } from 'react-kakao-maps-sdk';
-import { SectionDetail, POI, TrailPoint } from '../types';
+import { SectionDetail, SectionSummary, POI, TrailPoint } from '../types';
 import { FacilityModal } from '../components/FacilityModal';
 import { MapScaleBar } from '../components/MapScaleBar';
 import {
@@ -44,17 +44,21 @@ interface SearchResultItem {
 
 interface TrailMapViewProps {
   section: SectionDetail;
+  allSections?: SectionSummary[];
   userFacilities: POI[];
   onAddFacility: (facility: POI) => void;
   onRemoveFacility?: (facilityId: string) => void;
+  onNavigateSection?: (sectionId: number) => void;
   onBackToDetail: () => void;
 }
 
 export const TrailMapView: React.FC<TrailMapViewProps> = ({
   section,
+  allSections = [],
   userFacilities,
   onAddFacility,
   onRemoveFacility,
+  onNavigateSection,
   onBackToDetail
 }) => {
   // Load Kakao SDK
@@ -72,7 +76,8 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
 
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
+  const [facSearchResults, setFacSearchResults] = useState<SearchResultItem[]>([]);
+  const [kakaoSearchResults, setKakaoSearchResults] = useState<SearchResultItem[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchedPlace, setSearchedPlace] = useState<{
     name: string;
@@ -115,8 +120,8 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
   const kakaoMapRef = useRef<any>(null);
   const initialFitDoneRef = useRef<boolean>(false);
 
-  // Combine official + user facilities
-  const allFacilities: POI[] = [...userFacilities, ...(section.pois || [])];
+  // Combine official + user facilities (userFacilities already holds merged list from Supabase DB)
+  const allFacilities: POI[] = userFacilities.length > 0 ? userFacilities : (section.pois || []);
 
   // Path coordinates for Kakao Polyline
   const kakaoPath = useMemo(() => {
@@ -171,14 +176,15 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
   const executeSearch = () => {
     const q = searchQuery.trim();
     if (!q) {
-      setSearchResults([]);
+      setFacSearchResults([]);
+      setKakaoSearchResults([]);
       setIsSearchOpen(false);
       return;
     }
 
     const lowerQ = q.toLowerCase();
 
-    // 1. Search facilities in this section without showing section number
+    // 1. Search facilities in this section
     const facResults: SearchResultItem[] = allFacilities
       .filter((fac) => {
         const nameMatch = fac.name.toLowerCase().includes(lowerQ);
@@ -198,40 +204,55 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
         facilityData: fac
       }));
 
-    // 2. Search Kakao Places around current map center
+    setFacSearchResults(facResults);
+
+    // 2. Search Kakao Places around current map center (with fallback to nationwide)
     if (window.kakao && window.kakao.maps && window.kakao.maps.services) {
       const places = new window.kakao.maps.services.Places();
       const currentMapCenter = kakaoMapRef.current
         ? kakaoMapRef.current.getCenter()
         : new window.kakao.maps.LatLng(center.lat, center.lng);
 
+      const processKakaoData = (data: any[]) => {
+        return (data || []).slice(0, 15).map((place) => ({
+          type: 'kakao' as const,
+          id: `kakao-${place.id}`,
+          title: place.place_name,
+          categoryText: place.category_group_name || '장소',
+          subText: place.road_address_name || place.address_name,
+          lat: parseFloat(place.y),
+          lng: parseFloat(place.x)
+        }));
+      };
+
+      // 1st attempt: within 30km of map center
       places.keywordSearch(
         q,
         (data: any[], status: any) => {
-          if (status === window.kakao.maps.services.Status.OK) {
-            const kakaoItems: SearchResultItem[] = data.slice(0, 10).map((place) => ({
-              type: 'kakao',
-              id: `kakao-${place.id}`,
-              title: place.place_name,
-              categoryText: place.category_group_name || '장소',
-              subText: place.road_address_name || place.address_name,
-              lat: parseFloat(place.y),
-              lng: parseFloat(place.x)
-            }));
-            setSearchResults([...facResults, ...kakaoItems]);
+          if (status === window.kakao.maps.services.Status.OK && data && data.length > 0) {
+            const kakaoItems = processKakaoData(data);
+            setKakaoSearchResults(kakaoItems);
             setIsSearchOpen(true);
           } else {
-            setSearchResults(facResults);
-            setIsSearchOpen(facResults.length > 0);
+            // 2nd attempt: nationwide fallback (in case user searches well-known place or district outside radius)
+            places.keywordSearch(q, (data2: any[], status2: any) => {
+              if (status2 === window.kakao.maps.services.Status.OK && data2 && data2.length > 0) {
+                const kakaoItems = processKakaoData(data2);
+                setKakaoSearchResults(kakaoItems);
+              } else {
+                setKakaoSearchResults([]);
+              }
+              setIsSearchOpen(facResults.length > 0 || (data2 && data2.length > 0));
+            });
           }
         },
         {
           location: currentMapCenter,
-          radius: 20000
+          radius: 30000
         }
       );
     } else {
-      setSearchResults(facResults);
+      setKakaoSearchResults([]);
       setIsSearchOpen(facResults.length > 0);
     }
   };
@@ -604,7 +625,8 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
                   <button
                     onClick={() => {
                       setSearchQuery('');
-                      setSearchResults([]);
+                      setFacSearchResults([]);
+                      setKakaoSearchResults([]);
                       setIsSearchOpen(false);
                       setSearchedPlace(null);
                     }}
@@ -623,37 +645,96 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
               </div>
             </div>
 
-            {/* Search Dropdown Results */}
-            {isSearchOpen && searchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 max-h-64 overflow-y-auto bg-slate-900/95 border border-slate-700/80 backdrop-blur-md rounded-xl shadow-2xl z-40 divide-y divide-slate-800">
-                {searchResults.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => handleSelectResult(item)}
-                    className="w-full text-left p-2.5 hover:bg-slate-800/80 transition-colors flex items-start gap-2.5 cursor-pointer"
-                  >
-                    <span
-                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold mt-0.5 shrink-0 ${
-                        item.type === 'facility'
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                          : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                      }`}
-                    >
-                      {item.type === 'facility' ? '구간시설' : '카카오장소'}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-bold text-white truncate">
-                        {item.title}
-                      </div>
-                      <div className="text-[11px] text-slate-400 truncate">
-                        {item.subText}
-                      </div>
+            {/* Search Dropdown Results: Grouped by Facility vs Kakao Places */}
+            {isSearchOpen && (facSearchResults.length > 0 || kakaoSearchResults.length > 0) && (
+              <div className="absolute top-full left-0 right-0 mt-1 max-h-72 overflow-y-auto bg-slate-900/95 border border-slate-700/80 backdrop-blur-md rounded-xl shadow-2xl z-40 divide-y divide-slate-800">
+                {/* 1. Section Facilities Group */}
+                {facSearchResults.length > 0 && (
+                  <div>
+                    <div className="px-3 py-1.5 bg-slate-800/90 text-emerald-400 font-bold text-[11px] flex items-center justify-between border-b border-slate-700/60 sticky top-0 z-10 backdrop-blur-md">
+                      <span>🚩 구간 내 시설 & 명소</span>
+                      <span className="text-[10px] bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-600/40 text-emerald-300">
+                        {facSearchResults.length}건
+                      </span>
                     </div>
-                  </button>
-                ))}
+                    {facSearchResults.map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => handleSelectResult(item)}
+                        className="w-full text-left p-2.5 hover:bg-slate-800/80 transition-colors flex items-start gap-2.5 cursor-pointer border-b border-slate-800/50"
+                      >
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold mt-0.5 shrink-0 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          {item.categoryText}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-bold text-white truncate">
+                            {item.title}
+                          </div>
+                          <div className="text-[11px] text-slate-400 truncate">
+                            {item.subText}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* 2. Kakao Map Places Group */}
+                {kakaoSearchResults.length > 0 && (
+                  <div>
+                    <div className="px-3 py-1.5 bg-slate-800/90 text-amber-400 font-bold text-[11px] flex items-center justify-between border-b border-slate-700/60 sticky top-0 z-10 backdrop-blur-md">
+                      <span>🔍 카카오 지도 검색 결과</span>
+                      <span className="text-[10px] bg-amber-950/80 px-1.5 py-0.2 rounded border border-amber-600/40 text-amber-300">
+                        {kakaoSearchResults.length}건
+                      </span>
+                    </div>
+                    {kakaoSearchResults.map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => handleSelectResult(item)}
+                        className="w-full text-left p-2.5 hover:bg-slate-800/80 transition-colors flex items-start gap-2.5 cursor-pointer border-b border-slate-800/50"
+                      >
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold mt-0.5 shrink-0 bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                          {item.categoryText}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-bold text-white truncate">
+                            {item.title}
+                          </div>
+                          <div className="text-[11px] text-slate-400 truncate">
+                            {item.subText}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
+
+          {/* Section Direct Navigation Combo Box */}
+          {allSections && allSections.length > 0 && onNavigateSection && (
+            <div className="relative shrink-0">
+              <select
+                value={section.section_id}
+                onChange={(e) => onNavigateSection(Number(e.target.value))}
+                className="appearance-none bg-slate-900/95 text-emerald-400 font-extrabold text-xs pl-3 pr-6 py-2 rounded-xl border border-slate-700/80 shadow-lg backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                title="구간 바로 이동"
+              >
+                {allSections
+                  .filter((s) => s.is_opened !== false)
+                  .map((s) => (
+                    <option key={s.section_id} value={s.section_id} className="bg-slate-900 text-white font-semibold">
+                      {s.section_number} ({s.region.split(' ')[0]})
+                    </option>
+                  ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-slate-400">
+                <ChevronDown className="w-3.5 h-3.5 text-slate-300" />
+              </div>
+            </div>
+          )}
 
           {/* 3-way Map Mode Switcher as Icons: Map / Layers / Mountain */}
           <div className="flex items-center bg-slate-900/95 p-1 rounded-xl border border-slate-700/80 shadow-lg backdrop-blur-md shrink-0 gap-1">
@@ -755,24 +836,6 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
           <ZoomOut className="w-5 h-5" />
         </button>
       </div>
-
-      {/* Floating Add Facility Button (Stops propagation) */}
-      <button
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => {
-          setEditingFacility(null);
-          setModalCoords({
-            lat: center.lat,
-            lng: center.lng
-          });
-          setIsModalOpen(true);
-        }}
-        className="absolute bottom-20 right-4 z-20 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white px-3.5 py-2 rounded-2xl shadow-xl flex items-center gap-1.5 font-bold text-xs transition-transform active:scale-95 cursor-pointer"
-        title="새 편의시설 등록"
-      >
-        <Plus className="w-4 h-4" />
-        <span>시설 등록</span>
-      </button>
 
       {/* Elevation Profile Drawer Toggle Button (Stops propagation) */}
       <button

@@ -28,7 +28,9 @@ export interface POI {
   memo?: string;
   photo_url?: string; // Base64 or URL
   is_official?: boolean;
+  is_deleted?: boolean;
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface SectionSummary {

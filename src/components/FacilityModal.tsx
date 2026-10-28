@@ -134,7 +134,8 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
       phone: phone.trim() || undefined,
       business_hours: hours.trim() || undefined,
       memo: memo.trim() || undefined,
-      photo_url: photoUrl || undefined
+      photo_url: photoUrl || undefined,
+      is_official: initialFacility?.is_official
     });
 
     setName('');
