@@ -75,7 +75,7 @@ export const AllSectionsMapView: React.FC<AllSectionsMapViewProps> = ({
 
   // Load single full trail track (epsilon = 4.0m)
   useEffect(() => {
-    fetch(`${import.meta.env.BASE_URL}data/full_trail_track.json`)
+    fetch(`${import.meta.env.BASE_URL}data/full_trail_track.json?v=20261028_v2`)
       .then((res) => res.json())
       .then((data: FullTrailData) => {
         setFullTrail(data);
