@@ -89,8 +89,8 @@ export const SectionDetailView: React.FC<SectionDetailViewProps> = ({
     .map(w => w.trim());
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-5 space-y-5">
-      {/* 1. Top Section Prev/Next Navigation Bar */}
+    <div className="max-w-4xl mx-auto px-4 py-5 space-y-4">
+      {/* 1. Top Section Prev/Next Navigation Bar with compact Map button */}
       <div className="flex items-center justify-between gap-2 bg-white rounded-2xl p-2.5 border border-gray-200 shadow-xs text-xs sm:text-sm font-bold">
         {prevSection ? (
           <button
@@ -98,16 +98,27 @@ export const SectionDetailView: React.FC<SectionDetailViewProps> = ({
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 transition-colors"
           >
             <ChevronLeft className="w-4 h-4 text-emerald-700" />
-            <span className="truncate max-w-[130px] sm:max-w-none">
-              이전: {prevSection.section_number} ({prevSection.region})
+            <span className="truncate max-w-[110px] sm:max-w-none">
+              이전: {prevSection.section_number}
             </span>
           </button>
         ) : (
-          <div className="text-gray-300 px-3 py-2">시작 구간 (태안)</div>
+          <div className="text-gray-300 px-3 py-2">시작 구간</div>
         )}
 
-        <div className="text-emerald-800 font-extrabold hidden sm:block">
-          {section.section_number}
+        {/* Center: Section Number & Map Button */}
+        <div className="flex items-center gap-2">
+          <span className="text-emerald-800 font-black text-sm sm:text-base">
+            {section.section_number}
+          </span>
+          <button
+            onClick={onOpenMap}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
+            title="구간 지도 보기"
+          >
+            <Map className="w-4 h-4" />
+            <span>지도</span>
+          </button>
         </div>
 
         {nextSection ? (
@@ -115,66 +126,17 @@ export const SectionDetailView: React.FC<SectionDetailViewProps> = ({
             onClick={() => onNavigateSection(nextSection.section_id)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 transition-colors"
           >
-            <span className="truncate max-w-[130px] sm:max-w-none">
-              다음: {nextSection.section_number} ({nextSection.region})
+            <span className="truncate max-w-[110px] sm:max-w-none">
+              다음: {nextSection.section_number}
             </span>
             <ChevronRight className="w-4 h-4 text-emerald-700" />
           </button>
         ) : (
-          <div className="text-gray-300 px-3 py-2">종점 구간 (울진)</div>
+          <div className="text-gray-300 px-3 py-2">종점 구간</div>
         )}
       </div>
 
-      {/* 2. Top Hero Card */}
-      <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl sm:text-3xl font-black text-gray-950">
-              {section.section_number}
-            </span>
-            <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-full">
-              {section.region}
-            </span>
-            <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${difficulty.color}`}>
-              {difficulty.label}
-            </span>
-            {!section.is_opened && (
-              <span className="text-xs bg-amber-100 text-amber-900 border border-amber-300 font-extrabold px-2.5 py-1 rounded-full animate-pulse">
-                미개통 (조성 중)
-              </span>
-            )}
-          </div>
-
-          <button
-            onClick={onOpenCertify}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-bold text-sm shadow-xs transition-transform active:scale-95 ${
-              isCompleted
-                ? 'bg-emerald-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700'
-            }`}
-          >
-            <Award className="w-4 h-4" />
-            <span>{isCompleted ? '완주 달성! 🎉' : '완주 인증하기'}</span>
-          </button>
-        </div>
-
-        <h2 className="text-xl sm:text-2xl font-black text-gray-900">
-          {section.title}
-        </h2>
-
-        {/* Primary Action Button (Open Map) */}
-        <div className="pt-2">
-          <button
-            onClick={onOpenMap}
-            className="w-full py-4 px-6 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-extrabold text-lg rounded-2xl shadow-lg transition-transform active:scale-99 flex items-center justify-center gap-2"
-          >
-            <Map className="w-5 h-5" />
-            <span>지도 보기</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 3. Core Stats Grid with Scientific Hiking Time */}
+      {/* 2. Core Stats Grid with Scientific Hiking Time */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
         <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-xs">
           <div className="text-xs text-gray-500 font-bold mb-1">총 구간 거리</div>
@@ -190,9 +152,6 @@ export const SectionDetailView: React.FC<SectionDetailViewProps> = ({
           </div>
           <div className="text-xl font-black text-orange-700">
             약 {timeDisplay}
-          </div>
-          <div className="text-[10px] text-orange-800 mt-1 font-medium">
-            오르막·내리막 복합 반영
           </div>
         </div>
 

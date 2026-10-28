@@ -61,6 +61,24 @@ export const App: React.FC = () => {
       });
   };
 
+  const handleOpenSectionMap = (sectionId: number) => {
+    setIsLoading(true);
+    setSelectedSectionId(sectionId);
+    fetch(`${import.meta.env.BASE_URL}data/sections/${sectionId}.json?v=20261028_v4`)
+      .then((res) => res.json())
+      .then((detail: SectionDetail) => {
+        setSelectedSectionDetail(detail);
+        setUserFacilities(loadUserFacilities(sectionId));
+        setCurrentStep('map');
+        setIsLoading(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      })
+      .catch((err) => {
+        console.error('Failed to load section map:', err);
+        setIsLoading(false);
+      });
+  };
+
   const handleToggleComplete = (sectionId: number, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     const updated = toggleSectionCompletion(sectionId);
@@ -132,7 +150,7 @@ export const App: React.FC = () => {
           setCurrentStep(step);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
-        title={getHeaderTitle()}
+        sectionNumber={selectedSectionDetail?.section_number}
         completedCount={progress.completedSections.length}
         totalCount={sectionsSummary.length || 55}
       />
@@ -155,6 +173,7 @@ export const App: React.FC = () => {
           <AllSectionsMapView
             onBack={() => setCurrentStep('list')}
             onSelectSection={handleSelectSection}
+            onOpenSectionMap={handleOpenSectionMap}
             summaryList={sectionsSummary}
           />
         ) : currentStep === 'detail' && selectedSectionDetail ? (

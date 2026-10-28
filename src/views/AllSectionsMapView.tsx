@@ -9,10 +9,12 @@ import {
 import { SectionSummary } from '../types';
 import { MapScaleBar } from '../components/MapScaleBar';
 import {
-  ArrowLeft,
   ZoomIn,
   ZoomOut,
-  Maximize2
+  Maximize2,
+  Map,
+  Layers,
+  Mountain
 } from 'lucide-react';
 
 const KAKAO_APP_KEY = import.meta.env.VITE_KAKAO_MAP_API_KEY || '61ebf0b7a0daf24cba357d92677c8d8a';
@@ -37,12 +39,14 @@ export interface OverviewSection {
 interface AllSectionsMapViewProps {
   onBack: () => void;
   onSelectSection: (sectionId: number) => void;
+  onOpenSectionMap?: (sectionId: number) => void;
   summaryList: SectionSummary[];
 }
 
 export const AllSectionsMapView: React.FC<AllSectionsMapViewProps> = ({
   onBack,
-  onSelectSection
+  onSelectSection,
+  onOpenSectionMap
 }) => {
   // Load Kakao Maps SDK
   const [kakaoLoading, kakaoError] = useKakaoLoader({
@@ -149,47 +153,41 @@ export const AllSectionsMapView: React.FC<AllSectionsMapViewProps> = ({
 
   return (
     <div className="relative w-full h-[calc(100vh-64px)] overflow-hidden bg-slate-900 select-none">
-      {/* Top Floating Bar */}
-      <div className="absolute top-3 left-3 right-3 z-30 flex items-center justify-between gap-2 pointer-events-none">
-        <button
-          onClick={onBack}
-          className="pointer-events-auto flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-white shadow-lg border border-slate-700/80 backdrop-blur-md text-sm font-bold transition-all active:scale-95 cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4 text-emerald-400" />
-          <span>구간 목록</span>
-        </button>
-
-        {/* 3-way Map Mode Switcher: 일반 / 위성 / 지형 */}
-        <div className="pointer-events-auto flex items-center bg-slate-900/95 p-1 rounded-xl border border-slate-700/80 shadow-lg backdrop-blur-md">
+      {/* Top Floating Controls: 3-way Map Mode Switcher as Icons */}
+      <div className="absolute top-3 left-3 z-30 flex items-center gap-2">
+        <div className="flex items-center bg-slate-900/95 p-1 rounded-xl border border-slate-700/80 shadow-lg backdrop-blur-md gap-1">
           <button
             onClick={() => setMapMode('ROADMAP')}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               mapMode === 'ROADMAP'
                 ? 'bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-300 hover:text-white'
+                : 'text-slate-400 hover:text-white'
             }`}
+            title="일반 지도"
           >
-            일반
+            <Map className="w-4 h-4" />
           </button>
           <button
             onClick={() => setMapMode('HYBRID')}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               mapMode === 'HYBRID'
                 ? 'bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-300 hover:text-white'
+                : 'text-slate-400 hover:text-white'
             }`}
+            title="위성/스카이뷰"
           >
-            위성
+            <Layers className="w-4 h-4" />
           </button>
           <button
             onClick={() => setMapMode('TERRAIN')}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               mapMode === 'TERRAIN'
                 ? 'bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-300 hover:text-white'
+                : 'text-slate-400 hover:text-white'
             }`}
+            title="지형도"
           >
-            지형
+            <Mountain className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -261,10 +259,14 @@ export const AllSectionsMapView: React.FC<AllSectionsMapViewProps> = ({
               strokeColor="#ea580c"
               strokeOpacity={0.92}
               strokeStyle="solid"
+              onClick={() => {
+                if (onOpenSectionMap) onOpenSectionMap(sec.section_id);
+                else onSelectSection(sec.section_id);
+              }}
             />
           ))}
 
-          {/* Clickable Section Badges on the Map (Text +1pt larger: text-[11px] font-black) */}
+          {/* Clickable Section Badges on the Map (Directly opens Trail Map View) */}
           {sectionBadges.map((b) => (
             <CustomOverlayMap
               key={`badge-${b.section_id}`}
@@ -274,9 +276,12 @@ export const AllSectionsMapView: React.FC<AllSectionsMapViewProps> = ({
               zIndex={25}
             >
               <button
-                onClick={() => onSelectSection(b.section_id)}
+                onClick={() => {
+                  if (onOpenSectionMap) onOpenSectionMap(b.section_id);
+                  else onSelectSection(b.section_id);
+                }}
                 className="group px-2 py-1 rounded-full bg-slate-900/95 hover:bg-emerald-600 text-white shadow-md border border-emerald-400/80 flex items-center gap-1 cursor-pointer transition-all hover:scale-115 active:scale-95"
-                title={`${b.title}: ${b.start_name || ''} ~ ${b.end_name || ''} (클릭 시 상세 이동)`}
+                title={`${b.title}: ${b.start_name || ''} ~ ${b.end_name || ''} (클릭 시 구간 지도 보기)`}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 group-hover:bg-white" />
                 <span className="text-[11px] font-black tracking-tight">{b.section_id}구간</span>

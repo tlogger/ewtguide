@@ -9,6 +9,7 @@ interface FacilityModalProps {
   lat: number;
   lng: number;
   defaultSectionName?: string;
+  initialFacility?: POI | null;
 }
 
 const CATEGORIES: { key: FacilityCategory; label: string; icon: string }[] = [
@@ -29,7 +30,8 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
   onSubmit,
   lat,
   lng,
-  defaultSectionName = ''
+  defaultSectionName = '',
+  initialFacility = null
 }) => {
   const [category, setCategory] = useState<FacilityCategory>('viewpoint');
   const [name, setName] = useState('');
@@ -39,6 +41,24 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    if (initialFacility) {
+      setCategory(initialFacility.category || 'viewpoint');
+      setName(initialFacility.name || '');
+      setPhone(initialFacility.phone || '');
+      setHours(initialFacility.business_hours || '');
+      setMemo(initialFacility.memo || '');
+      setPhotoUrl(initialFacility.photo_url || null);
+    } else {
+      setCategory('viewpoint');
+      setName('');
+      setPhone('');
+      setHours('');
+      setMemo('');
+      setPhotoUrl(null);
+    }
+  }, [initialFacility, isOpen]);
 
   if (!isOpen) return null;
 
@@ -99,10 +119,11 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
     }
 
     onSubmit({
+      id: initialFacility?.id,
       name: finalName,
       category,
-      lat,
-      lng,
+      lat: initialFacility?.lat ?? lat,
+      lng: initialFacility?.lng ?? lng,
       phone: phone.trim() || undefined,
       business_hours: hours.trim() || undefined,
       memo: memo.trim() || undefined,
@@ -126,10 +147,10 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-emerald-50">
           <div>
             <h2 className="text-xl font-bold text-emerald-950 flex items-center gap-2">
-              <span>📍</span> 새 편의시설 / 명소 등록
+              <span>📍</span> {initialFacility ? '편의시설 / 명소 수정' : '새 편의시설 / 명소 등록'}
             </h2>
             <p className="text-xs text-emerald-700 mt-0.5">
-              동료 트레커들을 위해 트레일 주변 쉼터, 화장실, 뷰포인트를 공유하세요
+              {initialFacility ? '등록된 편의시설 정보를 수정합니다' : '동료 트레커들을 위해 트레일 주변 쉼터, 화장실, 뷰포인트를 공유하세요'}
             </p>
           </div>
           <button

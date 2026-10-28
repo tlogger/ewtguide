@@ -19,7 +19,14 @@ import {
   Phone,
   Search,
   X,
-  Maximize2
+  Maximize2,
+  Map,
+  Layers,
+  Mountain,
+  ChevronUp,
+  ChevronDown,
+  Edit3,
+  Camera
 } from 'lucide-react';
 
 const KAKAO_APP_KEY = import.meta.env.VITE_KAKAO_MAP_API_KEY || '61ebf0b7a0daf24cba357d92677c8d8a';
@@ -72,6 +79,11 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     lng: number;
   } | null>(null);
 
+  // Elevation Profile Drawer State
+  const [isElevationOpen, setIsElevationOpen] = useState(false);
+  const [hoveredPoint, setHoveredPoint] = useState<TrailPoint | null>(null);
+  const [hoverCoord, setHoverCoord] = useState<{ x: number; y: number } | null>(null);
+
   // GPS Tracking
   const [gpsActive, setGpsActive] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -79,13 +91,16 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
 
   // Modals & Popups
   const [selectedFacility, setSelectedFacility] = useState<POI | null>(null);
+  const [editingFacility, setEditingFacility] = useState<POI | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalCoords, setModalCoords] = useState<{ lat: number; lng: number }>({
     lat: section.start_point?.lat || 36.5,
     lng: section.start_point?.lng || 126.8
   });
-  const [hoveredPoint, setHoveredPoint] = useState<TrailPoint | null>(null);
 
+  // Long press timer & tracker
+  const longPressTimerRef = useRef<any>(null);
+  const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
   const kakaoMapRef = useRef<any>(null);
   const initialFitDoneRef = useRef<boolean>(false);
 
@@ -97,21 +112,27 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     return (section.points || []).map((p) => ({ lat: p.lat, lng: p.lng }));
   }, [section.points]);
 
-  // Sampled points for bottom elevation mini-chart (approx 90 points)
+  // Sampled points for elevation profile SVG (up to 120 points for smooth curve)
   const elevationSamples = useMemo(() => {
     if (!section.points || section.points.length === 0) return [];
-    const step = Math.max(1, Math.floor(section.points.length / 90));
+    const step = Math.max(1, Math.floor(section.points.length / 120));
     return section.points.filter((_, i) => i % step === 0);
   }, [section.points]);
 
-  const handleElevationTrack = (clientX: number, target: HTMLDivElement) => {
-    if (elevationSamples.length === 0) return;
-    const rect = target.getBoundingClientRect();
-    const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
-    const ratio = x / rect.width;
-    const index = Math.min(elevationSamples.length - 1, Math.floor(ratio * elevationSamples.length));
-    setHoveredPoint(elevationSamples[index]);
-  };
+  // Elevation min/max
+  const { minEle, maxEle } = useMemo(() => {
+    if (elevationSamples.length === 0) return { minEle: 0, maxEle: 100 };
+    let min = Infinity;
+    let max = -Infinity;
+    elevationSamples.forEach((p) => {
+      if (p.ele < min) min = p.ele;
+      if (p.ele > max) max = p.ele;
+    });
+    return {
+      minEle: Math.max(0, Math.floor(min)),
+      maxEle: Math.max(min + 20, Math.ceil(max))
+    };
+  }, [elevationSamples]);
 
   // Fit bounds to current section
   const fitSectionBounds = useCallback(() => {
@@ -126,7 +147,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     setLevel(kakaoMapRef.current.getLevel());
   }, [section.points]);
 
-  // Fit bounds for Kakao Map on load - ONLY ONCE
+  // Initial fit bounds when map is ready
   const onKakaoMapCreate = (map: any) => {
     kakaoMapRef.current = map;
     if (!initialFitDoneRef.current) {
@@ -135,76 +156,63 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     }
   };
 
-  // Facility category label helper
-  const getCategoryLabel = (cat: string) => {
-    switch (cat) {
-      case 'toilet': return '화장실';
-      case 'restaurant': return '식당';
-      case 'viewpoint': return '관광지/뷰포인트';
-      case 'mart': return '편의점/마트';
-      case 'shelter': return '쉼터/정자';
-      case 'lodging': return '숙박';
-      case 'transport': return '교통';
-      case 'cert_center': return '인증센터';
-      default: return '편의시설';
-    }
-  };
-
-  // Search logic: Priority 1 (Current section facilities), Priority 2 (Kakao Places)
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    if (!query.trim()) {
+  // Search Executor: Triggered ONLY on Enter key or magnifying glass click
+  const executeSearch = () => {
+    const q = searchQuery.trim();
+    if (!q) {
       setSearchResults([]);
       setIsSearchOpen(false);
       return;
     }
-    const term = query.trim().toLowerCase();
 
-    // 1. Priority 1: Current section's facilities
+    const lowerQ = q.toLowerCase();
+
+    // 1. Search facilities in this section
     const facResults: SearchResultItem[] = allFacilities
-      .filter((f) => {
-        if (!f.lat || !f.lng) return false;
-        const nameMatch = f.name?.toLowerCase().includes(term);
-        const catMatch = f.category?.toLowerCase().includes(term) || getCategoryLabel(f.category).toLowerCase().includes(term);
-        const descMatch = f.description?.toLowerCase().includes(term);
-        const memoMatch = f.memo?.toLowerCase().includes(term);
+      .filter((fac) => {
+        const nameMatch = fac.name.toLowerCase().includes(lowerQ);
+        const catMatch = getCategoryLabel(fac.category).toLowerCase().includes(lowerQ);
+        const descMatch = (fac.description || '').toLowerCase().includes(lowerQ);
+        const memoMatch = (fac.memo || '').toLowerCase().includes(lowerQ);
         return nameMatch || catMatch || descMatch || memoMatch;
       })
-      .map((f, idx) => ({
-        type: 'facility' as const,
-        id: `fac-${idx}-${f.name}`,
-        title: f.name || getCategoryLabel(f.category),
-        categoryText: getCategoryLabel(f.category),
-        subText: f.description ? f.description.slice(0, 45) + '...' : '구간 내 편의시설',
-        lat: f.lat!,
-        lng: f.lng!,
-        facilityData: f
+      .map((fac, idx) => ({
+        type: 'facility',
+        id: `fac-${fac.id || idx}`,
+        title: fac.name,
+        categoryText: getCategoryLabel(fac.category),
+        subText: fac.memo || fac.description || `${section.section_number} 편의시설`,
+        lat: fac.lat || 36.5,
+        lng: fac.lng || 126.8,
+        facilityData: fac
       }));
 
-    // 2. Priority 2: Kakao Places Keyword Search
-    if (window.kakao && window.kakao.maps && window.kakao.maps.services && window.kakao.maps.services.Places) {
+    // 2. Search Kakao Places around current map center
+    if (window.kakao && window.kakao.maps && window.kakao.maps.services) {
       const places = new window.kakao.maps.services.Places();
       const currentMapCenter = kakaoMapRef.current
         ? kakaoMapRef.current.getCenter()
         : new window.kakao.maps.LatLng(center.lat, center.lng);
 
       places.keywordSearch(
-        query,
-        (data: any[], status: string) => {
-          let kakaoList: SearchResultItem[] = [];
-          if (status === window.kakao.maps.services.Status.OK && data && data.length > 0) {
-            kakaoList = data.slice(0, 8).map((p) => ({
-              type: 'kakao' as const,
-              id: p.id || `k-${p.x}-${p.y}`,
-              title: p.place_name,
-              categoryText: p.category_group_name || '장소/지명',
-              subText: p.road_address_name || p.address_name,
-              lat: parseFloat(p.y),
-              lng: parseFloat(p.x)
+        q,
+        (data: any[], status: any) => {
+          if (status === window.kakao.maps.services.Status.OK) {
+            const kakaoItems: SearchResultItem[] = data.slice(0, 10).map((place) => ({
+              type: 'kakao',
+              id: `kakao-${place.id}`,
+              title: place.place_name,
+              categoryText: place.category_group_name || '장소',
+              subText: place.road_address_name || place.address_name,
+              lat: parseFloat(place.y),
+              lng: parseFloat(place.x)
             }));
+            setSearchResults([...facResults, ...kakaoItems]);
+            setIsSearchOpen(true);
+          } else {
+            setSearchResults(facResults);
+            setIsSearchOpen(facResults.length > 0);
           }
-          setSearchResults([...facResults, ...kakaoList]);
-          setIsSearchOpen(true);
         },
         {
           location: currentMapCenter,
@@ -213,7 +221,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
       );
     } else {
       setSearchResults(facResults);
-      setIsSearchOpen(true);
+      setIsSearchOpen(facResults.length > 0);
     }
   };
 
@@ -313,8 +321,98 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     }
   };
 
+  // Long-press detection on Map / Facility
+  const handleMapPointerDown = (e: React.PointerEvent) => {
+    touchStartPosRef.current = { x: e.clientX, y: e.clientY };
+    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+
+    longPressTimerRef.current = setTimeout(() => {
+      // Long press triggered on map
+      if (kakaoMapRef.current && touchStartPosRef.current) {
+        const ok = window.confirm('해당 위치에 편의시설을 새로 등록하시겠습니까?');
+        if (ok) {
+          setEditingFacility(null);
+          setModalCoords({ lat: center.lat, lng: center.lng });
+          setIsModalOpen(true);
+        }
+      }
+    }, 550);
+  };
+
+  const handleMapPointerMove = (e: React.PointerEvent) => {
+    if (!touchStartPosRef.current) return;
+    const dx = Math.abs(e.clientX - touchStartPosRef.current.x);
+    const dy = Math.abs(e.clientY - touchStartPosRef.current.y);
+    if (dx > 10 || dy > 10) {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+    }
+  };
+
+  const handleMapPointerUp = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    touchStartPosRef.current = null;
+  };
+
+  // Facility long-press / click handlers
+  const handleFacilityClick = (fac: POI) => {
+    setSelectedFacility(fac);
+  };
+
+  const handleFacilityLongPress = (fac: POI) => {
+    const ok = window.confirm(`"${fac.name}" 시설 정보를 수정하시겠습니까?`);
+    if (ok) {
+      setEditingFacility(fac);
+      setModalCoords({ lat: fac.lat || center.lat, lng: fac.lng || center.lng });
+      setIsModalOpen(true);
+    }
+  };
+
+  // Elevation Profile SVG Path Generator
+  const chartWidth = 500;
+  const chartHeight = 80;
+
+  const { linePath, areaPath } = useMemo(() => {
+    if (elevationSamples.length < 2) return { linePath: '', areaPath: '' };
+    const eleRange = Math.max(1, maxEle - minEle);
+
+    const points = elevationSamples.map((p, idx) => {
+      const x = (idx / (elevationSamples.length - 1)) * chartWidth;
+      const normalizedY = (p.ele - minEle) / eleRange;
+      const y = chartHeight - normalizedY * (chartHeight - 16) - 8;
+      return { x, y };
+    });
+
+    const lPath = points.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`).join(' ');
+    const aPath = `${lPath} L ${chartWidth} ${chartHeight} L 0 ${chartHeight} Z`;
+
+    return { linePath: lPath, areaPath: aPath };
+  }, [elevationSamples, minEle, maxEle]);
+
+  // Elevation SVG Hover tracking
+  const handleSvgPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (elevationSamples.length === 0) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clientX = e.clientX - rect.left;
+    const clientY = e.clientY - rect.top;
+    const ratio = Math.max(0, Math.min(1, clientX / rect.width));
+    const index = Math.min(elevationSamples.length - 1, Math.floor(ratio * elevationSamples.length));
+    setHoveredPoint(elevationSamples[index]);
+    setHoverCoord({ x: ratio * chartWidth, y: clientY });
+  };
+
   return (
-    <div className="relative w-full h-[calc(100vh-64px)] bg-slate-900 overflow-hidden select-none">
+    <div
+      onPointerDown={handleMapPointerDown}
+      onPointerMove={handleMapPointerMove}
+      onPointerUp={handleMapPointerUp}
+      className="relative w-full h-[calc(100vh-56px)] bg-slate-900 overflow-hidden select-none"
+    >
       {/* 1. Kakao Map */}
       {kakaoLoading ? (
         <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-white gap-3">
@@ -339,14 +437,6 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
           }}
           onZoomChanged={(map) => {
             setLevel(map.getLevel());
-          }}
-          onClick={(_target, mouseEvent) => {
-            const latlng = mouseEvent.latLng;
-            setModalCoords({
-              lat: latlng.getLat(),
-              lng: latlng.getLng()
-            });
-            setIsModalOpen(true);
           }}
           className="w-full h-full z-10"
         >
@@ -412,7 +502,12 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
                 <div
                   onClick={(e) => {
                     e.stopPropagation();
-                    setSelectedFacility(fac);
+                    handleFacilityClick(fac);
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleFacilityLongPress(fac);
                   }}
                   className="bg-white text-gray-900 font-bold text-[11px] px-2 py-0.5 rounded-xl shadow-md border border-emerald-600 whitespace-nowrap cursor-pointer flex items-center gap-1 hover:scale-105 transition-transform"
                 >
@@ -473,41 +568,42 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
       {/* Top Floating Controls Bar */}
       <div className="absolute top-3 left-3 right-3 z-30 flex flex-col gap-2">
         <div className="flex items-center gap-2">
-          {/* Back button */}
-          <button
-            onClick={onBackToDetail}
-            className="px-3 py-2 bg-slate-900/90 hover:bg-slate-800 text-white rounded-xl shadow-lg border border-slate-700/80 backdrop-blur-md text-xs font-bold transition-all active:scale-95 cursor-pointer whitespace-nowrap flex items-center gap-1"
-          >
-            <span>← 상세</span>
-          </button>
-
-          {/* Search Box */}
+          {/* Search Box with Search Button (5.1, 7) */}
           <div className="relative flex-1">
             <div className="relative flex items-center">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                onFocus={() => {
-                  if (searchQuery.trim()) setIsSearchOpen(true);
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') executeSearch();
                 }}
-                placeholder="시설명 또는 지명 검색 (예: 화장실, 쉼터, 면사무소)"
-                className="w-full pl-9 pr-8 py-2 bg-slate-900/90 text-white placeholder-slate-400 text-xs rounded-xl shadow-lg border border-slate-700/80 backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                placeholder="시설명 또는 지명 검색 (예: 화장실, 쉼터)"
+                className="w-full pl-3 pr-16 py-2 bg-slate-900/90 text-white placeholder-slate-400 text-xs rounded-xl shadow-lg border border-slate-700/80 backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
-              {searchQuery && (
+              <div className="absolute right-1.5 flex items-center gap-1">
+                {searchQuery && (
+                  <button
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSearchResults([]);
+                      setIsSearchOpen(false);
+                      setSearchedPlace(null);
+                    }}
+                    className="text-slate-400 hover:text-white p-1 cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {/* 돋보기 버튼 (클릭 시 검색 실행) */}
                 <button
-                  onClick={() => {
-                    setSearchQuery('');
-                    setSearchResults([]);
-                    setIsSearchOpen(false);
-                    setSearchedPlace(null);
-                  }}
-                  className="absolute right-2.5 text-slate-400 hover:text-white p-1 cursor-pointer"
+                  onClick={executeSearch}
+                  className="p-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors cursor-pointer shadow-xs"
+                  title="검색 실행"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <Search className="w-3.5 h-3.5" />
                 </button>
-              )}
+              </div>
             </div>
 
             {/* Search Dropdown Results */}
@@ -542,37 +638,40 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
             )}
           </div>
 
-          {/* 3-way Map Mode Switcher: 일반 / 위성 / 지형 */}
-          <div className="flex items-center bg-slate-900/95 p-1 rounded-xl border border-slate-700/80 shadow-lg backdrop-blur-md shrink-0">
+          {/* 3-way Map Mode Switcher as Icons: 일반(Map) / 위성(Layers) / 지형(Mountain) (5.2) */}
+          <div className="flex items-center bg-slate-900/95 p-1 rounded-xl border border-slate-700/80 shadow-lg backdrop-blur-md shrink-0 gap-1">
             <button
               onClick={() => setMapMode('ROADMAP')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 mapMode === 'ROADMAP'
                   ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-300 hover:text-white'
+                  : 'text-slate-400 hover:text-white'
               }`}
+              title="일반 지도"
             >
-              일반
+              <Map className="w-4 h-4" />
             </button>
             <button
               onClick={() => setMapMode('HYBRID')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 mapMode === 'HYBRID'
                   ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-300 hover:text-white'
+                  : 'text-slate-400 hover:text-white'
               }`}
+              title="위성/스카이뷰"
             >
-              위성
+              <Layers className="w-4 h-4" />
             </button>
             <button
               onClick={() => setMapMode('TERRAIN')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 mapMode === 'TERRAIN'
                   ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-300 hover:text-white'
+                  : 'text-slate-400 hover:text-white'
               }`}
+              title="지형도"
             >
-              지형
+              <Mountain className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -587,7 +686,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
       </div>
 
       {/* Floating Map Controls (Right Side) */}
-      <div className="absolute top-20 right-3 z-30 flex flex-col gap-2">
+      <div className="absolute top-16 right-3 z-30 flex flex-col gap-2">
         {/* GPS Track Toggle */}
         <button
           onClick={() => setGpsActive(!gpsActive)}
@@ -629,83 +728,156 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
         </button>
       </div>
 
-      {/* Floating Add Facility Button (Bottom Right above elevation chart) */}
+      {/* Floating Add Facility Button (Right Side above bottom bar) */}
       <button
         onClick={() => {
+          setEditingFacility(null);
           setModalCoords({
             lat: center.lat,
             lng: center.lng
           });
           setIsModalOpen(true);
         }}
-        className="absolute bottom-28 right-4 z-20 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-1.5 font-bold text-xs transition-transform active:scale-95 cursor-pointer"
+        className="absolute bottom-20 right-4 z-20 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white px-3.5 py-2 rounded-2xl shadow-xl flex items-center gap-1.5 font-bold text-xs transition-transform active:scale-95 cursor-pointer"
+        title="새 편의시설 등록"
       >
         <Plus className="w-4 h-4" />
         <span>시설 등록</span>
       </button>
 
-      {/* Always Visible Scale Bar Overlay (Bottom Left above elevation chart) */}
-      <div className="absolute bottom-28 left-4 z-20">
+      {/* Elevation Profile Drawer Toggle Button (5.3, 5.4) */}
+      <button
+        onClick={() => setIsElevationOpen(!isElevationOpen)}
+        className="absolute bottom-20 left-4 z-20 px-3.5 py-2 rounded-2xl bg-slate-900/95 hover:bg-slate-800 text-white border border-slate-700/80 shadow-xl backdrop-blur-md text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+        title="노선 고도 프로파일 열기/닫기"
+      >
+        <span>고도 프로파일</span>
+        {isElevationOpen ? <ChevronDown className="w-4 h-4 text-emerald-400" /> : <ChevronUp className="w-4 h-4 text-emerald-400" />}
+      </button>
+
+      {/* Map Scale Bar (Safely above drawer / bottom elements) */}
+      <div className={`absolute left-4 z-20 transition-all ${isElevationOpen ? 'bottom-52' : 'bottom-10'}`}>
         <MapScaleBar level={level} />
       </div>
 
-      {/* Bottom Mini Elevation Bar with Full-Height Hit Testing */}
-      <div className="absolute bottom-4 left-4 right-4 z-20 bg-slate-900/95 backdrop-blur-md rounded-2xl p-3 shadow-2xl border border-slate-700/80 text-white">
-        <div className="flex items-center justify-between text-xs font-semibold text-slate-200 mb-1 px-1">
-          <span className="flex items-center gap-1.5">
-            <span>⛰️ 노선 고도 프로필</span>
-            <span className="text-[11px] text-slate-400 font-normal hidden sm:inline">
-              (차트 상하 전체 호버/터치로 실시간 위치 동기화)
-            </span>
-          </span>
-          <span className="text-emerald-300 font-bold bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-500/40">
-            {hoveredPoint ? `${hoveredPoint.dist}km 지점 · ${hoveredPoint.ele}m` : `최고 ${section.max_elevation_m || 0}m · 최저 ${section.min_elevation_m || 0}m`}
-          </span>
-        </div>
-        <div
-          onMouseMove={(e) => handleElevationTrack(e.clientX, e.currentTarget)}
-          onTouchMove={(e) => {
-            if (e.touches.length > 0) {
-              handleElevationTrack(e.touches[0].clientX, e.currentTarget);
-            }
-          }}
-          className="relative h-14 w-full flex items-end gap-[1px] bg-slate-950/60 rounded-xl p-1 overflow-hidden cursor-crosshair group"
-        >
-          {elevationSamples.map((p: TrailPoint, idx: number) => {
-            const maxE = Math.max(section.max_elevation_m || 100, 100);
-            const heightPercent = Math.max(12, Math.min(100, (p.ele / maxE) * 100));
-            const isHover = hoveredPoint && Math.abs(hoveredPoint.dist - p.dist) < 0.25;
-            return (
-              <div
-                key={idx}
-                className="flex-1 h-full flex items-end pointer-events-none"
+      {/* Elevation Profile Drawer (Smooth SVG Area/Line Chart with Vertical & Radial Gradient) */}
+      {isElevationOpen && (
+        <div className="absolute bottom-10 left-3 right-3 z-30 bg-slate-900/95 backdrop-blur-md rounded-2xl p-3 shadow-2xl border border-slate-700/80 text-white animate-in slide-in-from-bottom duration-200">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-200 mb-2 px-1">
+            <span className="font-bold text-white text-sm">고도 프로파일</span>
+            <div className="flex items-center gap-2">
+              <span className="text-emerald-300 font-bold bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-500/40 text-[11px]">
+                {hoveredPoint
+                  ? `${hoveredPoint.dist}km 지점 · ${hoveredPoint.ele}m`
+                  : `최고 ${section.max_elevation_m || maxEle}m · 최저 ${section.min_elevation_m || minEle}m`}
+              </span>
+              <button
+                onClick={() => setIsElevationOpen(false)}
+                className="text-slate-400 hover:text-white p-0.5 rounded cursor-pointer"
               >
-                <div
-                  className={`w-full rounded-t-xs transition-colors ${
-                    isHover
-                      ? 'bg-rose-500 ring-2 ring-rose-400'
-                      : section.is_opened !== false
-                      ? 'bg-emerald-500 group-hover:bg-emerald-400'
-                      : 'bg-amber-500 group-hover:bg-amber-400'
-                  }`}
-                  style={{ height: `${heightPercent}%` }}
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* SVG Gradient Area & Line Chart */}
+          <div className="relative w-full h-24 bg-slate-950/80 rounded-xl overflow-hidden border border-slate-800">
+            <svg
+              viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+              preserveAspectRatio="none"
+              className="w-full h-full cursor-crosshair"
+              onPointerMove={handleSvgPointerMove}
+              onPointerLeave={() => {
+                setHoveredPoint(null);
+                setHoverCoord(null);
+              }}
+            >
+              <defs>
+                {/* Vertical Elevation Gradient: Dark rich green at peak, near black at bottom */}
+                <linearGradient id="elevationGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#047857" stopOpacity="0.85" />
+                  <stop offset="60%" stopColor="#064e3b" stopOpacity="0.6" />
+                  <stop offset="100%" stopColor="#020617" stopOpacity="0.9" />
+                </linearGradient>
+
+                {/* Radial Glow Highlight around cursor */}
+                {hoverCoord && (
+                  <radialGradient
+                    id="cursorRadialGlow"
+                    cx={hoverCoord.x}
+                    cy={hoverCoord.y}
+                    r="40"
+                    gradientUnits="userSpaceOnUse"
+                  >
+                    <stop offset="0%" stopColor="#34d399" stopOpacity="0.5" />
+                    <stop offset="60%" stopColor="#059669" stopOpacity="0.2" />
+                    <stop offset="100%" stopColor="#020617" stopOpacity="0" />
+                  </radialGradient>
+                )}
+              </defs>
+
+              {/* Area fill */}
+              {areaPath && (
+                <path d={areaPath} fill="url(#elevationGrad)" />
+              )}
+
+              {/* Radial Highlight Glow Overlay under cursor */}
+              {hoverCoord && (
+                <rect
+                  x="0"
+                  y="0"
+                  width={chartWidth}
+                  height={chartHeight}
+                  fill="url(#cursorRadialGlow)"
+                  pointerEvents="none"
                 />
-              </div>
-            );
-          })}
+              )}
+
+              {/* Line path */}
+              {linePath && (
+                <path
+                  d={linePath}
+                  fill="none"
+                  stroke="#10b981"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              )}
+
+              {/* Cursor indicator vertical line */}
+              {hoverCoord && (
+                <line
+                  x1={hoverCoord.x}
+                  y1={0}
+                  x2={hoverCoord.x}
+                  y2={chartHeight}
+                  stroke="#f43f5e"
+                  strokeWidth="1.5"
+                  strokeDasharray="2,2"
+                />
+              )}
+            </svg>
+          </div>
         </div>
+      )}
+
+      {/* Bottom Center Hint: "길게 클릭=시설 등록/수정" (5.5) */}
+      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 px-3.5 py-1 bg-slate-900/85 backdrop-blur-md rounded-full border border-slate-700/80 text-[11px] font-semibold text-slate-300 shadow-xl pointer-events-none whitespace-nowrap">
+        길게 클릭 = 시설 등록/수정
       </div>
 
-      {/* Facility Selected Popup Modal */}
+      {/* Facility Selected Popup Modal with Photo Support (5.6) */}
       {selectedFacility && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-white">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl p-5 max-w-sm w-full shadow-2xl space-y-3.5 text-white animate-in zoom-in-95 duration-150">
+            {/* Header */}
             <div className="flex items-start justify-between">
               <div>
-                <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold px-2 py-0.5 rounded">
+                <span className="text-[11px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold px-2 py-0.5 rounded">
                   {getCategoryLabel(selectedFacility.category)}
                 </span>
-                <h3 className="text-lg font-bold text-white mt-1">
+                <h3 className="text-lg font-black text-white mt-1">
                   {selectedFacility.name}
                 </h3>
               </div>
@@ -717,6 +889,23 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
               </button>
             </div>
 
+            {/* Photo Preview if Available */}
+            {selectedFacility.photo_url ? (
+              <div className="w-full h-44 rounded-2xl overflow-hidden border border-slate-700 shadow-inner bg-slate-950">
+                <img
+                  src={selectedFacility.photo_url}
+                  alt={selectedFacility.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-full py-4 rounded-xl border border-dashed border-slate-800 flex items-center justify-center gap-2 text-slate-500 text-xs">
+                <Camera className="w-4 h-4" />
+                <span>등록된 사진 없음</span>
+              </div>
+            )}
+
+            {/* Description & Memo */}
             {selectedFacility.description && (
               <p className="text-xs text-slate-300 leading-relaxed">
                 {selectedFacility.description}
@@ -728,27 +917,64 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
               </p>
             )}
 
-            {selectedFacility.phone && (
-              <a
-                href={`tel:${selectedFacility.phone}`}
-                className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-colors"
+            {/* Actions: Phone & Edit */}
+            <div className="flex items-center gap-2 pt-1">
+              {selectedFacility.phone && (
+                <a
+                  href={`tel:${selectedFacility.phone}`}
+                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  <Phone className="w-3.5 h-3.5" />
+                  <span>전화걸기</span>
+                </a>
+              )}
+              <button
+                onClick={() => {
+                  const fac = selectedFacility;
+                  setSelectedFacility(null);
+                  handleFacilityLongPress(fac);
+                }}
+                className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <Phone className="w-4 h-4" />
-                <span>{selectedFacility.phone} 전화걸기</span>
-              </a>
-            )}
+                <Edit3 className="w-3.5 h-3.5 text-emerald-400" />
+                <span>수정</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Facility Registration Modal */}
+      {/* Facility Registration & Edit Modal */}
       <FacilityModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={onAddFacility}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingFacility(null);
+        }}
+        onSubmit={(fac) => {
+          onAddFacility(fac);
+          setIsModalOpen(false);
+          setEditingFacility(null);
+        }}
         lat={modalCoords.lat}
         lng={modalCoords.lng}
+        defaultSectionName={section.section_number}
+        initialFacility={editingFacility}
       />
     </div>
   );
 };
+
+function getCategoryLabel(category?: string): string {
+  switch (category) {
+    case 'shelter': return '쉼터/정자';
+    case 'toilet': return '화장실';
+    case 'restaurant': return '식당/카페';
+    case 'viewpoint': return '뷰포인트/명소';
+    case 'lodging': return '숙소/민박';
+    case 'mart': return '마트/편의점';
+    case 'transport': return '교통/택시';
+    case 'cert_center': return '인증/안내소';
+    default: return '편의시설';
+  }
+}
