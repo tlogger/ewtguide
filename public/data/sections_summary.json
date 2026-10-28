@@ -334,19 +334,19 @@
     "end_name": "대룡1리",
     "is_opened": true,
     "official_distance_km": 19.0,
-    "calculated_distance_km": 42.8,
-    "elevation_gain_m": 2713,
-    "elevation_loss_m": 2602,
-    "hiking_time_hours": 22.3,
-    "hiking_time_text": "22시간 16분",
+    "calculated_distance_km": 30.7,
+    "elevation_gain_m": 2291,
+    "elevation_loss_m": 2180,
+    "hiking_time_hours": 17.2,
+    "hiking_time_text": "17시간 13분",
     "poi_count": 1,
     "start_point": {
       "lat": 36.496811,
       "lng": 126.747491
     },
     "end_point": {
-      "lat": 36.495563,
-      "lng": 126.934066
+      "lat": 36.495531,
+      "lng": 126.933997
     }
   },
   {

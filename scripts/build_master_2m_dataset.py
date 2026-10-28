@@ -201,10 +201,26 @@ def main():
     opened_tracks[12] = pts23[3356:4185]
     opened_tracks[13] = pts23[4184:]
 
-    # 14구간: Seg 24, 26, 29, 30, 33, 41, 52, 57, 63
+    # 14구간: Seg 24 -> 26 -> 29(rev) -> 30(rev) -> 33(rev) -> 35..50(rev) -> 52(rev) -> 66(rev) -> 64(rev) -> 57(rev) -> 60
+    # Clean continuous route ending at 대룡1리 without spike/jump
     pts14 = []
-    for si in [24, 26, 29, 30, 33, 41, 52, 57, 63]:
-        pts14.extend(get_seg_pts(si))
+    pts14.extend(get_seg_pts(24))
+    pts14.extend(get_seg_pts(26))
+    pts14.extend(list(reversed(get_seg_pts(29))))
+    pts14.extend(list(reversed(get_seg_pts(30))))
+    pts14.extend(list(reversed(get_seg_pts(33))))
+    pts14.extend(list(reversed(get_seg_pts(35))))
+    pts14.extend(list(reversed(get_seg_pts(37))))
+    pts14.extend(list(reversed(get_seg_pts(39))))
+    pts14.extend(list(reversed(get_seg_pts(41))))
+    pts14.extend(list(reversed(get_seg_pts(44))))
+    pts14.extend(list(reversed(get_seg_pts(46))))
+    pts14.extend(list(reversed(get_seg_pts(50))))
+    pts14.extend(list(reversed(get_seg_pts(52))))
+    pts14.extend(list(reversed(get_seg_pts(66))))
+    pts14.extend(list(reversed(get_seg_pts(64))))
+    pts14.extend(list(reversed(get_seg_pts(57))))
+    pts14.extend(get_seg_pts(60))
     opened_tracks[14] = pts14
 
     # 20 ~ 22구간: Seg 68
