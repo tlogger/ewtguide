@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Map, List, ChevronRight } from 'lucide-react';
+import { Map, List } from 'lucide-react';
 
 interface TitleScreenViewProps {
   onStartList: () => void;
@@ -38,22 +38,21 @@ export const TitleScreenView: React.FC<TitleScreenViewProps> = ({
             className="w-full h-auto max-h-[82vh] object-contain object-top block mx-auto"
           />
 
-          {/* Embedded Bottom Action Card Overlay */}
-          <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 bg-gradient-to-t from-stone-950/95 via-stone-950/80 to-transparent flex flex-col gap-2.5 z-20">
+          {/* Embedded Bottom Action Card Overlay: '코스 보기'와 '전체 지도' 한 줄 배치 */}
+          <div className="absolute inset-x-0 bottom-0 p-3.5 sm:p-4 bg-gradient-to-t from-stone-950/95 via-stone-950/80 to-transparent flex flex-row items-center gap-2.5 z-20">
             <button
               onClick={() => handleStart('list')}
-              className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-98 text-white rounded-2xl font-black text-base shadow-xl flex items-center justify-center gap-2 border border-emerald-400/40 transition-all cursor-pointer backdrop-blur-md"
+              className="flex-1 py-3 sm:py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-98 text-white rounded-2xl font-black text-sm sm:text-base shadow-xl flex items-center justify-center gap-1.5 border border-emerald-400/40 transition-all cursor-pointer backdrop-blur-md"
             >
-              <List className="w-5 h-5 text-emerald-200" />
+              <List className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-200" />
               <span>코스 보기</span>
-              <ChevronRight className="w-5 h-5 text-emerald-200" />
             </button>
 
             <button
               onClick={() => handleStart('map')}
-              className="w-full py-3 bg-stone-900/90 hover:bg-stone-800/95 active:scale-98 text-amber-300 rounded-2xl font-extrabold text-sm shadow-lg flex items-center justify-center gap-2 border border-amber-500/40 transition-all cursor-pointer backdrop-blur-md"
+              className="flex-1 py-3 sm:py-3.5 bg-stone-900/90 hover:bg-stone-800/95 active:scale-98 text-amber-300 rounded-2xl font-black text-sm sm:text-base shadow-lg flex items-center justify-center gap-1.5 border border-amber-500/40 transition-all cursor-pointer backdrop-blur-md"
             >
-              <Map className="w-4 h-4 text-amber-400" />
+              <Map className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
               <span>전체 지도</span>
             </button>
           </div>

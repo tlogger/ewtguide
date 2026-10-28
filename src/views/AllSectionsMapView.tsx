@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   Map as KakaoMap,
   Polyline,
   CustomOverlayMap,
+  MapTypeId,
   useKakaoLoader
 } from 'react-kakao-maps-sdk';
 import { SectionSummary } from '../types';
 import { MapScaleBar } from '../components/MapScaleBar';
 import {
   ArrowLeft,
-  Layers,
   ZoomIn,
   ZoomOut,
   Maximize2
@@ -51,18 +51,19 @@ export const AllSectionsMapView: React.FC<AllSectionsMapViewProps> = ({
   });
 
   const [sections, setSections] = useState<OverviewSection[]>([]);
-  const [mapType, setMapType] = useState<'ROADMAP' | 'HYBRID'>('ROADMAP');
+  const [mapMode, setMapMode] = useState<'ROADMAP' | 'HYBRID' | 'TERRAIN'>('ROADMAP');
+  const [center, setCenter] = useState<{ lat: number; lng: number }>({ lat: 36.5, lng: 127.8 });
   const [level, setLevel] = useState<number>(11);
   const [isLoading, setIsLoading] = useState(true);
 
   const mapRef = useRef<any>(null);
+  const initialFitDoneRef = useRef<boolean>(false);
 
   // Load only 32 opened sections overview dataset
   useEffect(() => {
-    fetch(`${import.meta.env.BASE_URL}data/all_sections_overview.json?v=20261028_v3`)
+    fetch(`${import.meta.env.BASE_URL}data/all_sections_overview.json?v=20261028_v4`)
       .then((res) => res.json())
       .then((data: OverviewSection[]) => {
-        // Guarantee only opened sections are displayed
         const openedOnly = data.filter((s) => s.is_opened);
         setSections(openedOnly);
         setIsLoading(false);
@@ -73,13 +74,8 @@ export const AllSectionsMapView: React.FC<AllSectionsMapViewProps> = ({
       });
   }, []);
 
-  // Fit bounds to all opened sections on initial create
-  const onMapCreate = (map: any) => {
-    mapRef.current = map;
-    fitAllBounds();
-  };
-
-  const fitAllBounds = () => {
+  // Fit bounds to all opened sections (Korea overview)
+  const fitAllBounds = useCallback(() => {
     if (!mapRef.current || !window.kakao || !window.kakao.maps || sections.length === 0) return;
     const bounds = new window.kakao.maps.LatLngBounds();
     sections.forEach((sec) => {
@@ -91,15 +87,27 @@ export const AllSectionsMapView: React.FC<AllSectionsMapViewProps> = ({
       }
     });
     mapRef.current.setBounds(bounds);
+    const c = mapRef.current.getCenter();
+    setCenter({ lat: c.getLat(), lng: c.getLng() });
     setLevel(mapRef.current.getLevel());
-  };
+  }, [sections]);
 
-  // Re-fit when sections finish loading
+  // Initial fit bounds when sections arrive - ONLY ONCE
   useEffect(() => {
-    if (sections.length > 0 && mapRef.current) {
+    if (sections.length > 0 && mapRef.current && !initialFitDoneRef.current) {
+      initialFitDoneRef.current = true;
       fitAllBounds();
     }
-  }, [sections]);
+  }, [sections, fitAllBounds]);
+
+  // Map creation handler
+  const onMapCreate = (map: any) => {
+    mapRef.current = map;
+    if (sections.length > 0 && !initialFitDoneRef.current) {
+      initialFitDoneRef.current = true;
+      fitAllBounds();
+    }
+  };
 
   // Zoom control
   const handleZoomIn = () => {
@@ -117,18 +125,6 @@ export const AllSectionsMapView: React.FC<AllSectionsMapViewProps> = ({
       const next = Math.min(14, cur + 1);
       mapRef.current.setLevel(next);
       setLevel(next);
-    }
-  };
-
-  const toggleMapType = () => {
-    const nextType = mapType === 'ROADMAP' ? 'HYBRID' : 'ROADMAP';
-    setMapType(nextType);
-    if (mapRef.current && window.kakao && window.kakao.maps) {
-      mapRef.current.setMapTypeId(
-        nextType === 'HYBRID'
-          ? window.kakao.maps.MapTypeId.HYBRID
-          : window.kakao.maps.MapTypeId.ROADMAP
-      );
     }
   };
 
@@ -163,27 +159,43 @@ export const AllSectionsMapView: React.FC<AllSectionsMapViewProps> = ({
           <span>구간 목록</span>
         </button>
 
-        <div className="pointer-events-auto px-3.5 py-1.5 rounded-xl bg-slate-900/90 border border-slate-700/80 backdrop-blur-md shadow-lg flex items-center gap-2 text-xs font-semibold text-slate-200">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span>동서트레일 개통 32개 구간</span>
+        {/* 3-way Map Mode Switcher: 일반 / 위성 / 지형 */}
+        <div className="pointer-events-auto flex items-center bg-slate-900/95 p-1 rounded-xl border border-slate-700/80 shadow-lg backdrop-blur-md">
+          <button
+            onClick={() => setMapMode('ROADMAP')}
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              mapMode === 'ROADMAP'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-300 hover:text-white'
+            }`}
+          >
+            일반
+          </button>
+          <button
+            onClick={() => setMapMode('HYBRID')}
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              mapMode === 'HYBRID'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-300 hover:text-white'
+            }`}
+          >
+            위성
+          </button>
+          <button
+            onClick={() => setMapMode('TERRAIN')}
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              mapMode === 'TERRAIN'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-300 hover:text-white'
+            }`}
+          >
+            지형
+          </button>
         </div>
       </div>
 
       {/* Floating Map Controls (Right Side) */}
       <div className="absolute top-16 right-3 z-30 flex flex-col gap-2">
-        {/* Layer Mode Toggle (Roadmap / SkyView) */}
-        <button
-          onClick={toggleMapType}
-          className={`p-2.5 rounded-xl shadow-lg border backdrop-blur-md transition-all active:scale-95 cursor-pointer flex items-center justify-center ${
-            mapType === 'HYBRID'
-              ? 'bg-amber-500 text-slate-950 border-amber-400 font-bold'
-              : 'bg-slate-900/90 text-white border-slate-700/80 hover:bg-slate-800'
-          }`}
-          title={mapType === 'HYBRID' ? '일반 지도로 변경' : '스카이뷰(위성)로 변경'}
-        >
-          <Layers className="w-5 h-5" />
-        </button>
-
         {/* Fit All Bounds */}
         <button
           onClick={fitAllBounds}
@@ -193,20 +205,20 @@ export const AllSectionsMapView: React.FC<AllSectionsMapViewProps> = ({
           <Maximize2 className="w-5 h-5 text-emerald-400" />
         </button>
 
-        {/* Zoom In */}
+        {/* Zoom In (+) */}
         <button
           onClick={handleZoomIn}
           className="p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-white shadow-lg border border-slate-700/80 backdrop-blur-md transition-all active:scale-95 cursor-pointer flex items-center justify-center"
-          title="확대"
+          title="지도 확대 (+)"
         >
           <ZoomIn className="w-5 h-5" />
         </button>
 
-        {/* Zoom Out */}
+        {/* Zoom Out (-) */}
         <button
           onClick={handleZoomOut}
           className="p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-white shadow-lg border border-slate-700/80 backdrop-blur-md transition-all active:scale-95 cursor-pointer flex items-center justify-center"
-          title="축소"
+          title="지도 축소 (-)"
         >
           <ZoomOut className="w-5 h-5" />
         </button>
@@ -224,12 +236,22 @@ export const AllSectionsMapView: React.FC<AllSectionsMapViewProps> = ({
         </div>
       ) : (
         <KakaoMap
-          center={{ lat: 36.5, lng: 127.8 }}
+          center={center}
           level={level}
+          mapTypeId={mapMode === 'HYBRID' ? 'HYBRID' : 'ROADMAP'}
           onCreate={onMapCreate}
-          onZoomChanged={(map) => setLevel(map.getLevel())}
+          onCenterChanged={(map) => {
+            const c = map.getCenter();
+            setCenter({ lat: c.getLat(), lng: c.getLng() });
+          }}
+          onZoomChanged={(map) => {
+            setLevel(map.getLevel());
+          }}
           style={{ width: '100%', height: '100%' }}
         >
+          {/* Topographic Contour Overlay when in TERRAIN mode */}
+          {mapMode === 'TERRAIN' && <MapTypeId type="TERRAIN" />}
+
           {/* Polylines for each of the 32 opened sections */}
           {sections.map((sec) => (
             <Polyline

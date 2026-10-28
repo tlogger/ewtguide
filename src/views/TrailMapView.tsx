@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   Map as KakaoMap,
   Polyline,
   CustomOverlayMap,
+  MapTypeId,
   useKakaoLoader
 } from 'react-kakao-maps-sdk';
 import { SectionDetail, POI, TrailPoint } from '../types';
@@ -12,7 +13,6 @@ import {
   Navigation,
   Plus,
   AlertTriangle,
-  Layers,
   ZoomIn,
   ZoomOut,
   MapPin,
@@ -54,12 +54,12 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     libraries: ['services', 'clusterer']
   });
 
-  const [mapType, setMapType] = useState<'ROADMAP' | 'HYBRID'>('ROADMAP');
-  const [level, setLevel] = useState<number>(6);
-  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({
+  const [mapMode, setMapMode] = useState<'ROADMAP' | 'HYBRID' | 'TERRAIN'>('ROADMAP');
+  const [center, setCenter] = useState<{ lat: number; lng: number }>({
     lat: section.start_point?.lat || 36.5,
     lng: section.start_point?.lng || 126.8
   });
+  const [level, setLevel] = useState<number>(6);
 
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -87,6 +87,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
   const [hoveredPoint, setHoveredPoint] = useState<TrailPoint | null>(null);
 
   const kakaoMapRef = useRef<any>(null);
+  const initialFitDoneRef = useRef<boolean>(false);
 
   // Combine official + user facilities
   const allFacilities: POI[] = [...userFacilities, ...(section.pois || [])];
@@ -112,20 +113,26 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     setHoveredPoint(elevationSamples[index]);
   };
 
-  // Fit bounds for Kakao Map on load
-  const onKakaoMapCreate = (map: any) => {
-    kakaoMapRef.current = map;
-    fitSectionBounds();
-  };
-
-  const fitSectionBounds = () => {
+  // Fit bounds to current section
+  const fitSectionBounds = useCallback(() => {
     if (!kakaoMapRef.current || !window.kakao || !window.kakao.maps || !section.points || section.points.length === 0) return;
     const bounds = new window.kakao.maps.LatLngBounds();
     section.points.forEach((p) => {
       bounds.extend(new window.kakao.maps.LatLng(p.lat, p.lng));
     });
     kakaoMapRef.current.setBounds(bounds);
+    const c = kakaoMapRef.current.getCenter();
+    setCenter({ lat: c.getLat(), lng: c.getLng() });
     setLevel(kakaoMapRef.current.getLevel());
+  }, [section.points]);
+
+  // Fit bounds for Kakao Map on load - ONLY ONCE
+  const onKakaoMapCreate = (map: any) => {
+    kakaoMapRef.current = map;
+    if (!initialFitDoneRef.current) {
+      initialFitDoneRef.current = true;
+      fitSectionBounds();
+    }
   };
 
   // Facility category label helper
@@ -177,9 +184,9 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     // 2. Priority 2: Kakao Places Keyword Search
     if (window.kakao && window.kakao.maps && window.kakao.maps.services && window.kakao.maps.services.Places) {
       const places = new window.kakao.maps.services.Places();
-      const center = kakaoMapRef.current
+      const currentMapCenter = kakaoMapRef.current
         ? kakaoMapRef.current.getCenter()
-        : new window.kakao.maps.LatLng(section.start_point?.lat || 36.5, section.start_point?.lng || 126.8);
+        : new window.kakao.maps.LatLng(center.lat, center.lng);
 
       places.keywordSearch(
         query,
@@ -200,7 +207,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
           setIsSearchOpen(true);
         },
         {
-          location: center,
+          location: currentMapCenter,
           radius: 20000
         }
       );
@@ -216,6 +223,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
       const targetLatLng = new window.kakao.maps.LatLng(item.lat, item.lng);
       kakaoMapRef.current.panTo(targetLatLng);
       kakaoMapRef.current.setLevel(4);
+      setCenter({ lat: item.lat, lng: item.lng });
       setLevel(4);
     }
 
@@ -272,6 +280,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
 
         if (kakaoMapRef.current && window.kakao) {
           kakaoMapRef.current.panTo(new window.kakao.maps.LatLng(uLat, uLng));
+          setCenter({ lat: uLat, lng: uLng });
         }
       },
       (err) => {
@@ -304,19 +313,6 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     }
   };
 
-  // Toggle Map Type (Roadmap / SkyView)
-  const toggleMapType = () => {
-    const nextType = mapType === 'ROADMAP' ? 'HYBRID' : 'ROADMAP';
-    setMapType(nextType);
-    if (kakaoMapRef.current && window.kakao && window.kakao.maps) {
-      kakaoMapRef.current.setMapTypeId(
-        nextType === 'HYBRID'
-          ? window.kakao.maps.MapTypeId.HYBRID
-          : window.kakao.maps.MapTypeId.ROADMAP
-      );
-    }
-  };
-
   return (
     <div className="relative w-full h-[calc(100vh-64px)] bg-slate-900 overflow-hidden select-none">
       {/* 1. Kakao Map */}
@@ -332,11 +328,18 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
         </div>
       ) : (
         <KakaoMap
-          center={mapCenter}
+          center={center}
           style={{ width: '100%', height: '100%' }}
           level={level}
+          mapTypeId={mapMode === 'HYBRID' ? 'HYBRID' : 'ROADMAP'}
           onCreate={onKakaoMapCreate}
-          onZoomChanged={(map) => setLevel(map.getLevel())}
+          onCenterChanged={(map) => {
+            const c = map.getCenter();
+            setCenter({ lat: c.getLat(), lng: c.getLng() });
+          }}
+          onZoomChanged={(map) => {
+            setLevel(map.getLevel());
+          }}
           onClick={(_target, mouseEvent) => {
             const latlng = mouseEvent.latLng;
             setModalCoords({
@@ -347,6 +350,9 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
           }}
           className="w-full h-full z-10"
         >
+          {/* Topographic Contour Overlay when in TERRAIN mode */}
+          {mapMode === 'TERRAIN' && <MapTypeId type="TERRAIN" />}
+
           {/* High contrast dark halo casing */}
           <Polyline
             path={kakaoPath}
@@ -535,6 +541,40 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
               </div>
             )}
           </div>
+
+          {/* 3-way Map Mode Switcher: 일반 / 위성 / 지형 */}
+          <div className="flex items-center bg-slate-900/95 p-1 rounded-xl border border-slate-700/80 shadow-lg backdrop-blur-md shrink-0">
+            <button
+              onClick={() => setMapMode('ROADMAP')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                mapMode === 'ROADMAP'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              일반
+            </button>
+            <button
+              onClick={() => setMapMode('HYBRID')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                mapMode === 'HYBRID'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              위성
+            </button>
+            <button
+              onClick={() => setMapMode('TERRAIN')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                mapMode === 'TERRAIN'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              지형
+            </button>
+          </div>
         </div>
 
         {/* Off Track Warning */}
@@ -561,19 +601,6 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
           <Navigation className={`w-5 h-5 ${gpsActive ? 'fill-current' : ''}`} />
         </button>
 
-        {/* Layer Mode Toggle (Roadmap / SkyView) */}
-        <button
-          onClick={toggleMapType}
-          className={`p-2.5 rounded-xl shadow-lg border backdrop-blur-md transition-all active:scale-95 cursor-pointer flex items-center justify-center ${
-            mapType === 'HYBRID'
-              ? 'bg-amber-500 text-slate-950 border-amber-400 font-bold'
-              : 'bg-slate-900/90 text-white border-slate-700/80 hover:bg-slate-800'
-          }`}
-          title={mapType === 'HYBRID' ? '일반 지도로 변경' : '스카이뷰(위성)로 변경'}
-        >
-          <Layers className="w-5 h-5" />
-        </button>
-
         {/* Fit Section Bounds */}
         <button
           onClick={fitSectionBounds}
@@ -583,20 +610,20 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
           <Maximize2 className="w-5 h-5 text-emerald-400" />
         </button>
 
-        {/* Zoom In */}
+        {/* Zoom In (+) */}
         <button
           onClick={zoomIn}
           className="p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-white shadow-lg border border-slate-700/80 backdrop-blur-md transition-all active:scale-95 cursor-pointer flex items-center justify-center"
-          title="지도 확대"
+          title="지도 확대 (+)"
         >
           <ZoomIn className="w-5 h-5" />
         </button>
 
-        {/* Zoom Out */}
+        {/* Zoom Out (-) */}
         <button
           onClick={zoomOut}
           className="p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-white shadow-lg border border-slate-700/80 backdrop-blur-md transition-all active:scale-95 cursor-pointer flex items-center justify-center"
-          title="지도 축소"
+          title="지도 축소 (-)"
         >
           <ZoomOut className="w-5 h-5" />
         </button>
@@ -606,8 +633,8 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
       <button
         onClick={() => {
           setModalCoords({
-            lat: section.start_point?.lat || 36.5,
-            lng: section.start_point?.lng || 126.8
+            lat: center.lat,
+            lng: center.lng
           });
           setIsModalOpen(true);
         }}
