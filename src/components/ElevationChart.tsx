@@ -74,7 +74,7 @@ export const ElevationChart: React.FC<ElevationChartProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
           <span>⛰️</span>
-          <span>노선 고도 프로필</span>
+          <span>구간 고도 프로파일</span>
           {poiDots.length > 0 && (
             <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full">
               시설 {poiDots.length}개소 연동

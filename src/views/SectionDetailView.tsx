@@ -29,6 +29,7 @@ interface SectionDetailViewProps {
   onOpenMap: () => void;
   onOpenCertify: () => void;
   onAddFacility: (facility: POI) => void;
+  onRemoveFacility?: (facilityId: string) => void;
   onAddCheckpoint: (name: string) => void;
   onRemoveCheckpoint: (id: string) => void;
   onNavigateSection: (sectionId: number) => void;
@@ -43,6 +44,7 @@ export const SectionDetailView: React.FC<SectionDetailViewProps> = ({
   onOpenMap,
   onOpenCertify,
   onAddFacility,
+  onRemoveFacility,
   onAddCheckpoint,
   onRemoveCheckpoint,
   onNavigateSection
@@ -106,18 +108,14 @@ export const SectionDetailView: React.FC<SectionDetailViewProps> = ({
           <div className="text-gray-300 px-3 py-2">시작 구간</div>
         )}
 
-        {/* Center: Section Number & Map Button */}
-        <div className="flex items-center gap-2">
-          <span className="text-emerald-800 font-black text-sm sm:text-base">
-            {section.section_number}
-          </span>
+        {/* Center: Map Button (icon only, no text) */}
+        <div className="flex items-center">
           <button
             onClick={onOpenMap}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
+            className="p-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center"
             title="구간 지도 보기"
           >
             <Map className="w-4 h-4" />
-            <span>지도</span>
           </button>
         </div>
 
@@ -437,6 +435,9 @@ export const SectionDetailView: React.FC<SectionDetailViewProps> = ({
         isOpen={isFacilityModalOpen}
         onClose={() => setIsFacilityModalOpen(false)}
         onSubmit={onAddFacility}
+        onDelete={(fac) => {
+          if (fac.id && onRemoveFacility) onRemoveFacility(fac.id);
+        }}
         lat={section.start_point?.lat || 36.5}
         lng={section.start_point?.lng || 126.8}
         defaultSectionName={section.section_number}

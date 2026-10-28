@@ -6,6 +6,7 @@ interface FacilityModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (facility: POI) => void;
+  onDelete?: (facility: POI) => void;
   lat: number;
   lng: number;
   defaultSectionName?: string;
@@ -28,6 +29,7 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
+  onDelete,
   lat,
   lng,
   defaultSectionName = '',
@@ -40,9 +42,13 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
   const [memo, setMemo] = useState('');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
+    setFormError('');
+    setShowDeleteConfirm(false);
     if (initialFacility) {
       setCategory(initialFacility.category || 'viewpoint');
       setName(initialFacility.name || '');
@@ -106,14 +112,15 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError('');
     
     // For toilet, auto-default if empty
     let finalName = name.trim();
     if (!finalName) {
       if (category === 'toilet') {
-        finalName = defaultSectionName ? `${defaultSectionName} 공중화장실` : '공중화장실';
+        finalName = '공중화장실';
       } else {
-        alert('시설 또는 장소 명칭을 입력해 주세요.');
+        setFormError('시설 또는 장소 명칭을 입력해 주세요.');
         return;
       }
     }
@@ -136,6 +143,14 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
     setMemo('');
     setPhotoUrl(null);
     onClose();
+  };
+
+  const handleDelete = () => {
+    if (initialFacility && onDelete) {
+      onDelete(initialFacility);
+      setShowDeleteConfirm(false);
+      onClose();
+    }
   };
 
   const isToilet = category === 'toilet';
@@ -304,14 +319,58 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
             />
           </div>
 
-          {/* Submit Buttons */}
-          <div className="pt-2">
+          {/* Form Error Message (In-app, no browser alert) */}
+          {formError && (
+            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-xl animate-shake">
+              ⚠️ {formError}
+            </div>
+          )}
+
+          {/* Delete Confirm Prompt (In-app, no browser confirm) */}
+          {showDeleteConfirm && (
+            <div className="p-3.5 bg-rose-50 border border-rose-300 rounded-2xl space-y-2">
+              <p className="text-xs font-bold text-rose-900">
+                정말 이 편의시설을 삭제하시겠습니까?
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
+                >
+                  네, 삭제합니다
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 bg-white text-gray-700 border border-gray-300 hover:bg-gray-100 font-bold text-xs rounded-xl transition-colors"
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="pt-2 flex items-center gap-2">
+            {initialFacility && onDelete && !showDeleteConfirm && (
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="py-4 px-4 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold text-sm rounded-2xl transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
+                title="시설 삭제"
+              >
+                <Trash2 className="w-5 h-5" />
+                <span>삭제</span>
+              </button>
+            )}
+
             <button
               type="submit"
-              className="w-full py-4 px-6 bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white font-bold text-lg rounded-2xl shadow-lg transition-transform active:scale-98 flex items-center justify-center gap-2"
+              className="flex-1 py-4 px-6 bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white font-bold text-base sm:text-lg rounded-2xl shadow-lg transition-transform active:scale-98 flex items-center justify-center gap-2"
             >
               <CheckCircle2 className="w-6 h-6" />
-              <span>등록 완료하기</span>
+              <span>{initialFacility ? '수정 저장하기' : '등록 완료하기'}</span>
             </button>
           </div>
         </form>

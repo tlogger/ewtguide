@@ -13,7 +13,8 @@ import {
   addCheckpoint,
   removeCheckpoint,
   loadUserFacilities,
-  addUserFacility
+  addUserFacility,
+  removeUserFacility
 } from './services/storage';
 
 export const App: React.FC = () => {
@@ -64,7 +65,7 @@ export const App: React.FC = () => {
   const handleOpenSectionMap = (sectionId: number) => {
     setIsLoading(true);
     setSelectedSectionId(sectionId);
-    fetch(`${import.meta.env.BASE_URL}data/sections/${sectionId}.json?v=20261028_v4`)
+    fetch(`${import.meta.env.BASE_URL}data/sections/section_${sectionId}.json?v=20261028_v4`)
       .then((res) => res.json())
       .then((detail: SectionDetail) => {
         setSelectedSectionDetail(detail);
@@ -102,6 +103,12 @@ export const App: React.FC = () => {
   const handleAddFacility = (fac: POI) => {
     if (!selectedSectionId) return;
     const updated = addUserFacility(selectedSectionId, fac);
+    setUserFacilities(updated);
+  };
+
+  const handleRemoveFacility = (facilityId: string) => {
+    if (!selectedSectionId) return;
+    const updated = removeUserFacility(selectedSectionId, facilityId);
     setUserFacilities(updated);
   };
 
@@ -186,6 +193,7 @@ export const App: React.FC = () => {
             onOpenMap={() => setCurrentStep('map')}
             onOpenCertify={() => setIsCertModalOpen(true)}
             onAddFacility={handleAddFacility}
+            onRemoveFacility={handleRemoveFacility}
             onAddCheckpoint={handleAddCheckpoint}
             onRemoveCheckpoint={handleRemoveCheckpoint}
             onNavigateSection={handleSelectSection}
@@ -195,6 +203,7 @@ export const App: React.FC = () => {
             section={selectedSectionDetail}
             userFacilities={userFacilities}
             onAddFacility={handleAddFacility}
+            onRemoveFacility={handleRemoveFacility}
             onBackToDetail={() => setCurrentStep('detail')}
           />
         ) : null}

@@ -37,7 +37,7 @@ export const Header: React.FC<HeaderProps> = ({
           {(currentStep === 'detail' || currentStep === 'map') && (
             <div className="flex items-center gap-2">
               <h1 className="text-lg sm:text-xl font-black tracking-tight text-white">
-                {sectionNumber ? `${sectionNumber}구간` : '동서트레일'}
+                {sectionNumber || '동서트레일'}
               </h1>
             </div>
           )}

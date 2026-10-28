@@ -88,17 +88,37 @@ export const loadUserFacilities = (sectionId: number): POI[] => {
 
 export const addUserFacility = (sectionId: number, facility: POI): POI[] => {
   const current = loadUserFacilities(sectionId);
-  const newFacility: POI = {
-    ...facility,
-    id: `user_fac_${Date.now()}`,
-    is_official: false,
-    created_at: new Date().toISOString()
-  };
-  const updated = [newFacility, ...current];
+  let updated: POI[];
+
+  if (facility.id && current.some((f) => f.id === facility.id)) {
+    // Update existing user facility
+    updated = current.map((f) => (f.id === facility.id ? { ...f, ...facility } : f));
+  } else {
+    // Add new facility
+    const newFacility: POI = {
+      ...facility,
+      id: facility.id || `user_fac_${Date.now()}`,
+      is_official: false,
+      created_at: facility.created_at || new Date().toISOString()
+    };
+    updated = [newFacility, ...current];
+  }
+
   try {
     localStorage.setItem(`${USER_FACILITIES_KEY}_${sectionId}`, JSON.stringify(updated));
   } catch (e) {
     console.error('Failed to save user facility:', e);
+  }
+  return updated;
+};
+
+export const removeUserFacility = (sectionId: number, facilityId: string): POI[] => {
+  const current = loadUserFacilities(sectionId);
+  const updated = current.filter((f) => f.id !== facilityId);
+  try {
+    localStorage.setItem(`${USER_FACILITIES_KEY}_${sectionId}`, JSON.stringify(updated));
+  } catch (e) {
+    console.error('Failed to remove user facility:', e);
   }
   return updated;
 };

@@ -46,6 +46,7 @@ interface TrailMapViewProps {
   section: SectionDetail;
   userFacilities: POI[];
   onAddFacility: (facility: POI) => void;
+  onRemoveFacility?: (facilityId: string) => void;
   onBackToDetail: () => void;
 }
 
@@ -53,6 +54,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
   section,
   userFacilities,
   onAddFacility,
+  onRemoveFacility,
   onBackToDetail
 }) => {
   // Load Kakao SDK
@@ -84,10 +86,11 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
   const [hoveredPoint, setHoveredPoint] = useState<TrailPoint | null>(null);
   const [hoverCoord, setHoverCoord] = useState<{ x: number; y: number } | null>(null);
 
-  // GPS Tracking
+  // GPS Tracking & In-App Toast
   const [gpsActive, setGpsActive] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [offTrackDist, setOffTrackDist] = useState<number | null>(null);
+  const [gpsErrorMessage, setGpsErrorMessage] = useState<string | null>(null);
 
   // Modals & Popups
   const [selectedFacility, setSelectedFacility] = useState<POI | null>(null);
@@ -98,7 +101,15 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     lng: section.start_point?.lng || 126.8
   });
 
-  // Long press timer & tracker
+  // In-app confirm dialog for map long-press (no browser confirm)
+  const [confirmRegisterOpen, setConfirmRegisterOpen] = useState(false);
+  const [pendingCoords, setPendingCoords] = useState<{ lat: number; lng: number }>({
+    lat: section.start_point?.lat || 36.5,
+    lng: section.start_point?.lng || 126.8
+  });
+
+  // Long press timer & tracker specifically for the map canvas
+  const mapContainerRef = useRef<HTMLDivElement>(null);
   const longPressTimerRef = useRef<any>(null);
   const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
   const kakaoMapRef = useRef<any>(null);
@@ -112,7 +123,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     return (section.points || []).map((p) => ({ lat: p.lat, lng: p.lng }));
   }, [section.points]);
 
-  // Sampled points for elevation profile SVG (up to 120 points for smooth curve)
+  // Sampled points for elevation profile SVG
   const elevationSamples = useMemo(() => {
     if (!section.points || section.points.length === 0) return [];
     const step = Math.max(1, Math.floor(section.points.length / 120));
@@ -167,7 +178,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
 
     const lowerQ = q.toLowerCase();
 
-    // 1. Search facilities in this section
+    // 1. Search facilities in this section without showing section number
     const facResults: SearchResultItem[] = allFacilities
       .filter((fac) => {
         const nameMatch = fac.name.toLowerCase().includes(lowerQ);
@@ -181,7 +192,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
         id: `fac-${fac.id || idx}`,
         title: fac.name,
         categoryText: getCategoryLabel(fac.category),
-        subText: fac.memo || fac.description || `${section.section_number} 편의시설`,
+        subText: fac.memo || fac.description || getCategoryLabel(fac.category),
         lat: fac.lat || 36.5,
         lng: fac.lng || 126.8,
         facilityData: fac
@@ -254,11 +265,12 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     if (!gpsActive) {
       setUserLocation(null);
       setOffTrackDist(null);
+      setGpsErrorMessage(null);
       return;
     }
 
     if (!navigator.geolocation) {
-      alert('현재 기기나 브라우저에서 GPS 위치 서비스를 지원하지 않습니다.');
+      setGpsErrorMessage('현재 기기나 브라우저에서 GPS 위치 서비스를 지원하지 않습니다.');
       return;
     }
 
@@ -267,6 +279,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
         const uLat = pos.coords.latitude;
         const uLng = pos.coords.longitude;
         setUserLocation({ lat: uLat, lng: uLng });
+        setGpsErrorMessage(null);
 
         // Calculate minimum distance to trail points
         let minDist = 999999;
@@ -293,6 +306,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
       },
       (err) => {
         console.warn('GPS location error:', err);
+        setGpsErrorMessage('GPS 신호를 수신할 수 없습니다.');
       },
       { enableHighAccuracy: true, maximumAge: 5000 }
     );
@@ -321,29 +335,33 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     }
   };
 
-  // Long-press detection on Map / Facility
-  const handleMapPointerDown = (e: React.PointerEvent) => {
+  // Map-only Long-press Detection (Accurate coordinates via projection coordsFromContainerPoint)
+  const handleMapPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     touchStartPosRef.current = { x: e.clientX, y: e.clientY };
     if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
 
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+
     longPressTimerRef.current = setTimeout(() => {
-      // Long press triggered on map
-      if (kakaoMapRef.current && touchStartPosRef.current) {
-        const ok = window.confirm('해당 위치에 편의시설을 새로 등록하시겠습니까?');
-        if (ok) {
-          setEditingFacility(null);
-          setModalCoords({ lat: center.lat, lng: center.lng });
-          setIsModalOpen(true);
+      if (kakaoMapRef.current && mapContainerRef.current && window.kakao?.maps) {
+        const rect = mapContainerRef.current.getBoundingClientRect();
+        const point = new window.kakao.maps.Point(clientX - rect.left, clientY - rect.top);
+        const projection = kakaoMapRef.current.getProjection();
+        if (projection) {
+          const latlng = projection.coordsFromContainerPoint(point);
+          setPendingCoords({ lat: latlng.getLat(), lng: latlng.getLng() });
+          setConfirmRegisterOpen(true);
         }
       }
-    }, 550);
+    }, 500);
   };
 
-  const handleMapPointerMove = (e: React.PointerEvent) => {
+  const handleMapPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!touchStartPosRef.current) return;
     const dx = Math.abs(e.clientX - touchStartPosRef.current.x);
     const dy = Math.abs(e.clientY - touchStartPosRef.current.y);
-    if (dx > 10 || dy > 10) {
+    if (dx > 8 || dy > 8) {
       if (longPressTimerRef.current) {
         clearTimeout(longPressTimerRef.current);
         longPressTimerRef.current = null;
@@ -359,23 +377,17 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     touchStartPosRef.current = null;
   };
 
-  // Facility long-press / click handlers
-  const handleFacilityClick = (fac: POI) => {
-    setSelectedFacility(fac);
-  };
-
-  const handleFacilityLongPress = (fac: POI) => {
-    const ok = window.confirm(`"${fac.name}" 시설 정보를 수정하시겠습니까?`);
-    if (ok) {
-      setEditingFacility(fac);
-      setModalCoords({ lat: fac.lat || center.lat, lng: fac.lng || center.lng });
-      setIsModalOpen(true);
-    }
+  // Facility Edit (Direct open without confirm prompt)
+  const handleOpenEditFacility = (fac: POI) => {
+    setSelectedFacility(null);
+    setEditingFacility(fac);
+    setModalCoords({ lat: fac.lat || center.lat, lng: fac.lng || center.lng });
+    setIsModalOpen(true);
   };
 
   // Elevation Profile SVG Path Generator
   const chartWidth = 500;
-  const chartHeight = 80;
+  const chartHeight = 72;
 
   const { linePath, areaPath } = useMemo(() => {
     if (elevationSamples.length < 2) return { linePath: '', areaPath: '' };
@@ -384,7 +396,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     const points = elevationSamples.map((p, idx) => {
       const x = (idx / (elevationSamples.length - 1)) * chartWidth;
       const normalizedY = (p.ele - minEle) / eleRange;
-      const y = chartHeight - normalizedY * (chartHeight - 16) - 8;
+      const y = chartHeight - normalizedY * (chartHeight - 14) - 6;
       return { x, y };
     });
 
@@ -407,168 +419,174 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
   };
 
   return (
-    <div
-      onPointerDown={handleMapPointerDown}
-      onPointerMove={handleMapPointerMove}
-      onPointerUp={handleMapPointerUp}
-      className="relative w-full h-[calc(100vh-56px)] bg-slate-900 overflow-hidden select-none"
-    >
-      {/* 1. Kakao Map */}
-      {kakaoLoading ? (
-        <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-white gap-3">
-          <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-          <p className="font-bold text-sm text-emerald-300">카카오 지도 로딩 중...</p>
-        </div>
-      ) : kakaoError ? (
-        <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-white gap-3 p-6 text-center">
-          <AlertTriangle className="w-12 h-12 text-amber-400" />
-          <p className="text-amber-400 font-bold">카카오 지도 로드 실패 (Key 또는 도메인 확인 필요)</p>
-        </div>
-      ) : (
-        <KakaoMap
-          center={center}
-          style={{ width: '100%', height: '100%' }}
-          level={level}
-          mapTypeId={mapMode === 'HYBRID' ? 'HYBRID' : 'ROADMAP'}
-          onCreate={onKakaoMapCreate}
-          onCenterChanged={(map) => {
-            const c = map.getCenter();
-            setCenter({ lat: c.getLat(), lng: c.getLng() });
-          }}
-          onZoomChanged={(map) => {
-            setLevel(map.getLevel());
-          }}
-          className="w-full h-full z-10"
-        >
-          {/* Topographic Contour Overlay when in TERRAIN mode */}
-          {mapMode === 'TERRAIN' && <MapTypeId type="TERRAIN" />}
+    <div className="relative w-full h-[calc(100vh-56px)] bg-slate-900 overflow-hidden select-none">
+      {/* 1. Kakao Map Container with direct pointer tracking for accurate coordinates */}
+      <div
+        ref={mapContainerRef}
+        onPointerDown={handleMapPointerDown}
+        onPointerMove={handleMapPointerMove}
+        onPointerUp={handleMapPointerUp}
+        className="w-full h-full"
+      >
+        {kakaoLoading ? (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-white gap-3">
+            <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            <p className="font-bold text-sm text-emerald-300">카카오 지도 로딩 중...</p>
+          </div>
+        ) : kakaoError ? (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-white gap-3 p-6 text-center">
+            <AlertTriangle className="w-12 h-12 text-amber-400" />
+            <p className="text-amber-400 font-bold">카카오 지도 로드 실패 (Key 또는 도메인 확인 필요)</p>
+          </div>
+        ) : (
+          <KakaoMap
+            center={center}
+            style={{ width: '100%', height: '100%' }}
+            level={level}
+            mapTypeId={mapMode === 'HYBRID' ? 'HYBRID' : 'ROADMAP'}
+            onCreate={onKakaoMapCreate}
+            onCenterChanged={(map) => {
+              const c = map.getCenter();
+              setCenter({ lat: c.getLat(), lng: c.getLng() });
+            }}
+            onZoomChanged={(map) => {
+              setLevel(map.getLevel());
+            }}
+            onRightClick={(_target, mouseEvent) => {
+              const latlng = mouseEvent.latLng;
+              setPendingCoords({ lat: latlng.getLat(), lng: latlng.getLng() });
+              setConfirmRegisterOpen(true);
+            }}
+            className="w-full h-full z-10"
+          >
+            {/* Topographic Contour Overlay when in TERRAIN mode */}
+            {mapMode === 'TERRAIN' && <MapTypeId type="TERRAIN" />}
 
-          {/* High contrast dark halo casing */}
-          <Polyline
-            path={kakaoPath}
-            strokeWeight={8}
-            strokeColor="#0f172a"
-            strokeOpacity={0.65}
-            strokeStyle="solid"
-          />
-          {/* Core track line in Vivid Terracotta Orange */}
-          <Polyline
-            path={kakaoPath}
-            strokeWeight={5}
-            strokeColor={section.is_opened !== false ? '#ea580c' : '#f59e0b'}
-            strokeOpacity={0.95}
-            strokeStyle={section.is_opened !== false ? 'solid' : 'shortdash'}
-          />
+            {/* High contrast dark halo casing */}
+            <Polyline
+              path={kakaoPath}
+              strokeWeight={8}
+              strokeColor="#0f172a"
+              strokeOpacity={0.65}
+              strokeStyle="solid"
+            />
+            {/* Core track line in Vivid Terracotta Orange */}
+            <Polyline
+              path={kakaoPath}
+              strokeWeight={5}
+              strokeColor={section.is_opened !== false ? '#ea580c' : '#f59e0b'}
+              strokeOpacity={0.95}
+              strokeStyle={section.is_opened !== false ? 'solid' : 'shortdash'}
+            />
 
-          {/* Start Point Badge with Name */}
-          {section.start_point && (
-            <CustomOverlayMap position={section.start_point} yAnchor={1.2}>
-              <div className="bg-slate-900/95 text-white font-extrabold text-[11px] px-2.5 py-1 rounded-xl shadow-lg border-2 border-emerald-400 whitespace-nowrap flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>시점: {section.start_name || `${section.section_number} 시점`}</span>
-              </div>
-            </CustomOverlayMap>
-          )}
-
-          {/* End Point Badge with Name */}
-          {section.end_point && (
-            <CustomOverlayMap position={section.end_point} yAnchor={1.2}>
-              <div className="bg-slate-900/95 text-white font-extrabold text-[11px] px-2.5 py-1 rounded-xl shadow-lg border-2 border-orange-400 whitespace-nowrap flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-orange-400" />
-                <span>종점: {section.end_name || `${section.section_number} 종점`}</span>
-              </div>
-            </CustomOverlayMap>
-          )}
-
-          {/* Facility Markers */}
-          {allFacilities.map((fac, idx) => {
-            if (!fac.lat || !fac.lng) return null;
-            const iconChar =
-              fac.category === 'shelter' ? '⛺' :
-              fac.category === 'toilet' ? '🚻' :
-              fac.category === 'restaurant' ? '🍚' :
-              fac.category === 'viewpoint' ? '📸' :
-              fac.category === 'lodging' ? '🏡' :
-              fac.category === 'mart' ? '🏪' :
-              fac.category === 'transport' ? '🚕' :
-              fac.category === 'cert_center' ? '🚩' : '📍';
-
-            return (
-              <CustomOverlayMap
-                key={fac.id || idx}
-                position={{ lat: fac.lat, lng: fac.lng }}
-                yAnchor={0.5}
-              >
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleFacilityClick(fac);
-                  }}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleFacilityLongPress(fac);
-                  }}
-                  className="bg-white text-gray-900 font-bold text-[11px] px-2 py-0.5 rounded-xl shadow-md border border-emerald-600 whitespace-nowrap cursor-pointer flex items-center gap-1 hover:scale-105 transition-transform"
-                >
-                  <span>{iconChar}</span>
-                  <span>{fac.name}</span>
+            {/* Start Point Badge with Name */}
+            {section.start_point && (
+              <CustomOverlayMap position={section.start_point} yAnchor={1.2}>
+                <div className="bg-slate-900/95 text-white font-extrabold text-[11px] px-2.5 py-1 rounded-xl shadow-lg border-2 border-emerald-400 whitespace-nowrap flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>시점: {section.start_name || `${section.section_number} 시점`}</span>
                 </div>
               </CustomOverlayMap>
-            );
-          })}
+            )}
 
-          {/* Elevation Profile Hover Marker */}
-          {hoveredPoint && (
-            <CustomOverlayMap
-              position={{ lat: hoveredPoint.lat, lng: hoveredPoint.lng }}
-              yAnchor={0.5}
-              zIndex={50}
-            >
-              <div className="relative flex flex-col items-center">
-                <div className="w-4 h-4 rounded-full bg-red-600 border-2 border-white shadow-lg animate-ping absolute" />
-                <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow-lg" />
-                <div className="mt-1 px-2 py-0.5 bg-slate-900/90 text-white font-extrabold text-[10px] rounded shadow-md whitespace-nowrap border border-red-400">
-                  {hoveredPoint.dist}km · {hoveredPoint.ele}m
+            {/* End Point Badge with Name */}
+            {section.end_point && (
+              <CustomOverlayMap position={section.end_point} yAnchor={1.2}>
+                <div className="bg-slate-900/95 text-white font-extrabold text-[11px] px-2.5 py-1 rounded-xl shadow-lg border-2 border-orange-400 whitespace-nowrap flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-orange-400" />
+                  <span>종점: {section.end_name || `${section.section_number} 종점`}</span>
                 </div>
-              </div>
-            </CustomOverlayMap>
-          )}
+              </CustomOverlayMap>
+            )}
 
-          {/* Searched Kakao Place Pin */}
-          {searchedPlace && (
-            <CustomOverlayMap
-              position={{ lat: searchedPlace.lat, lng: searchedPlace.lng }}
-              yAnchor={1.2}
-              zIndex={45}
-            >
-              <div className="bg-amber-500 text-slate-950 font-black text-xs px-2.5 py-1 rounded-xl shadow-xl border-2 border-white flex items-center gap-1 whitespace-nowrap">
-                <MapPin className="w-3.5 h-3.5 fill-current" />
-                <span>{searchedPlace.name}</span>
-              </div>
-            </CustomOverlayMap>
-          )}
+            {/* Facility Markers */}
+            {allFacilities.map((fac, idx) => {
+              if (!fac.lat || !fac.lng) return null;
+              const iconChar =
+                fac.category === 'shelter' ? '⛺' :
+                fac.category === 'toilet' ? '🚻' :
+                fac.category === 'restaurant' ? '🍚' :
+                fac.category === 'viewpoint' ? '📸' :
+                fac.category === 'lodging' ? '🏡' :
+                fac.category === 'mart' ? '🏪' :
+                fac.category === 'transport' ? '🚕' :
+                fac.category === 'cert_center' ? '🚩' : '📍';
 
-          {/* User Live GPS Location Pin */}
-          {userLocation && (
-            <CustomOverlayMap
-              position={userLocation}
-              yAnchor={0.5}
-              zIndex={40}
-            >
-              <div className="relative flex items-center justify-center">
-                <div className="w-6 h-6 rounded-full bg-blue-500/40 animate-ping absolute" />
-                <div className="w-4 h-4 rounded-full bg-blue-600 border-2 border-white shadow-lg" />
-              </div>
-            </CustomOverlayMap>
-          )}
-        </KakaoMap>
-      )}
+              return (
+                <CustomOverlayMap
+                  key={fac.id || idx}
+                  position={{ lat: fac.lat, lng: fac.lng }}
+                  yAnchor={0.5}
+                >
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedFacility(fac);
+                    }}
+                    className="bg-white text-gray-900 font-bold text-[11px] px-2 py-0.5 rounded-xl shadow-md border border-emerald-600 whitespace-nowrap cursor-pointer flex items-center gap-1 hover:scale-105 transition-transform"
+                  >
+                    <span>{iconChar}</span>
+                    <span>{fac.name}</span>
+                  </div>
+                </CustomOverlayMap>
+              );
+            })}
 
-      {/* Top Floating Controls Bar */}
-      <div className="absolute top-3 left-3 right-3 z-30 flex flex-col gap-2">
+            {/* Elevation Profile Hover Marker */}
+            {hoveredPoint && (
+              <CustomOverlayMap
+                position={{ lat: hoveredPoint.lat, lng: hoveredPoint.lng }}
+                yAnchor={0.5}
+                zIndex={50}
+              >
+                <div className="relative flex flex-col items-center">
+                  <div className="w-4 h-4 rounded-full bg-red-600 border-2 border-white shadow-lg animate-ping absolute" />
+                  <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow-lg" />
+                  <div className="mt-1 px-2 py-0.5 bg-slate-900/90 text-white font-extrabold text-[10px] rounded shadow-md whitespace-nowrap border border-red-400">
+                    {hoveredPoint.dist}km · {hoveredPoint.ele}m
+                  </div>
+                </div>
+              </CustomOverlayMap>
+            )}
+
+            {/* Searched Kakao Place Pin */}
+            {searchedPlace && (
+              <CustomOverlayMap
+                position={{ lat: searchedPlace.lat, lng: searchedPlace.lng }}
+                yAnchor={1.2}
+                zIndex={45}
+              >
+                <div className="bg-amber-500 text-slate-950 font-black text-xs px-2.5 py-1 rounded-xl shadow-xl border-2 border-white flex items-center gap-1 whitespace-nowrap">
+                  <MapPin className="w-3.5 h-3.5 fill-current" />
+                  <span>{searchedPlace.name}</span>
+                </div>
+              </CustomOverlayMap>
+            )}
+
+            {/* User Live GPS Location Pin */}
+            {userLocation && (
+              <CustomOverlayMap
+                position={userLocation}
+                yAnchor={0.5}
+                zIndex={40}
+              >
+                <div className="relative flex items-center justify-center">
+                  <div className="w-6 h-6 rounded-full bg-blue-500/40 animate-ping absolute" />
+                  <div className="w-4 h-4 rounded-full bg-blue-600 border-2 border-white shadow-lg" />
+                </div>
+              </CustomOverlayMap>
+            )}
+          </KakaoMap>
+        )}
+      </div>
+
+      {/* Top Floating Controls Bar (Stops propagation to prevent map long-press) */}
+      <div
+        onPointerDown={(e) => e.stopPropagation()}
+        className="absolute top-3 left-3 right-3 z-30 flex flex-col gap-2"
+      >
         <div className="flex items-center gap-2">
-          {/* Search Box with Search Button (5.1, 7) */}
+          {/* Search Box with Search Button */}
           <div className="relative flex-1">
             <div className="relative flex items-center">
               <input
@@ -595,7 +613,6 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
                     <X className="w-3.5 h-3.5" />
                   </button>
                 )}
-                {/* 돋보기 버튼 (클릭 시 검색 실행) */}
                 <button
                   onClick={executeSearch}
                   className="p-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors cursor-pointer shadow-xs"
@@ -638,7 +655,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
             )}
           </div>
 
-          {/* 3-way Map Mode Switcher as Icons: 일반(Map) / 위성(Layers) / 지형(Mountain) (5.2) */}
+          {/* 3-way Map Mode Switcher as Icons: Map / Layers / Mountain */}
           <div className="flex items-center bg-slate-900/95 p-1 rounded-xl border border-slate-700/80 shadow-lg backdrop-blur-md shrink-0 gap-1">
             <button
               onClick={() => setMapMode('ROADMAP')}
@@ -683,10 +700,21 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
             <span>경로 이탈 주의: 코스에서 {offTrackDist}m 벗어났습니다!</span>
           </div>
         )}
+
+        {/* GPS Error Toast */}
+        {gpsErrorMessage && (
+          <div className="self-center bg-amber-600/90 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg border border-amber-400 backdrop-blur-md flex items-center gap-1.5">
+            <AlertTriangle className="w-4 h-4" />
+            <span>{gpsErrorMessage}</span>
+          </div>
+        )}
       </div>
 
-      {/* Floating Map Controls (Right Side) */}
-      <div className="absolute top-16 right-3 z-30 flex flex-col gap-2">
+      {/* Floating Map Controls (Right Side, Stops propagation) */}
+      <div
+        onPointerDown={(e) => e.stopPropagation()}
+        className="absolute top-16 right-3 z-30 flex flex-col gap-2"
+      >
         {/* GPS Track Toggle */}
         <button
           onClick={() => setGpsActive(!gpsActive)}
@@ -728,8 +756,9 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
         </button>
       </div>
 
-      {/* Floating Add Facility Button (Right Side above bottom bar) */}
+      {/* Floating Add Facility Button (Stops propagation) */}
       <button
+        onPointerDown={(e) => e.stopPropagation()}
         onClick={() => {
           setEditingFacility(null);
           setModalCoords({
@@ -745,43 +774,52 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
         <span>시설 등록</span>
       </button>
 
-      {/* Elevation Profile Drawer Toggle Button (5.3, 5.4) */}
+      {/* Elevation Profile Drawer Toggle Button (Stops propagation) */}
       <button
+        onPointerDown={(e) => e.stopPropagation()}
         onClick={() => setIsElevationOpen(!isElevationOpen)}
         className="absolute bottom-20 left-4 z-20 px-3.5 py-2 rounded-2xl bg-slate-900/95 hover:bg-slate-800 text-white border border-slate-700/80 shadow-xl backdrop-blur-md text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
-        title="노선 고도 프로파일 열기/닫기"
+        title="고도 프로파일 열기/닫기"
       >
         <span>고도 프로파일</span>
         {isElevationOpen ? <ChevronDown className="w-4 h-4 text-emerald-400" /> : <ChevronUp className="w-4 h-4 text-emerald-400" />}
       </button>
 
-      {/* Map Scale Bar (Safely above drawer / bottom elements) */}
-      <div className={`absolute left-4 z-20 transition-all ${isElevationOpen ? 'bottom-52' : 'bottom-10'}`}>
+      {/* Map Scale Bar */}
+      <div className={`absolute left-4 z-20 transition-all ${isElevationOpen ? 'bottom-36' : 'bottom-10'}`}>
         <MapScaleBar level={level} />
       </div>
 
-      {/* Elevation Profile Drawer (Smooth SVG Area/Line Chart with Vertical & Radial Gradient) */}
+      {/* Elevation Profile Drawer (3.1: Compact integrated chart, 3.2: strokeWidth 1.2, 3.3: balanced column gradient) */}
       {isElevationOpen && (
-        <div className="absolute bottom-10 left-3 right-3 z-30 bg-slate-900/95 backdrop-blur-md rounded-2xl p-3 shadow-2xl border border-slate-700/80 text-white animate-in slide-in-from-bottom duration-200">
-          <div className="flex items-center justify-between text-xs font-semibold text-slate-200 mb-2 px-1">
-            <span className="font-bold text-white text-sm">고도 프로파일</span>
-            <div className="flex items-center gap-2">
-              <span className="text-emerald-300 font-bold bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-500/40 text-[11px]">
+        <div
+          onPointerDown={(e) => e.stopPropagation()}
+          className="absolute bottom-10 left-3 right-3 z-30 bg-slate-900/95 backdrop-blur-md rounded-2xl p-2.5 shadow-2xl border border-slate-700/80 text-white animate-in slide-in-from-bottom duration-200"
+        >
+          {/* SVG Gradient Area & Line Chart Container */}
+          <div className="relative w-full h-24 bg-slate-950/80 rounded-xl overflow-hidden border border-slate-800">
+            {/* Integrated Header inside Chart (3.1) */}
+            <div className="absolute top-1.5 left-2.5 z-10 flex items-center gap-2 pointer-events-none">
+              <span className="font-extrabold text-white text-xs tracking-tight bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-700/60 shadow-xs">
+                고도 프로파일
+              </span>
+              <span className="text-emerald-300 font-bold bg-slate-900/80 px-2 py-0.5 rounded-md border border-emerald-500/30 text-[10px] shadow-xs">
                 {hoveredPoint
                   ? `${hoveredPoint.dist}km 지점 · ${hoveredPoint.ele}m`
                   : `최고 ${section.max_elevation_m || maxEle}m · 최저 ${section.min_elevation_m || minEle}m`}
               </span>
-              <button
-                onClick={() => setIsElevationOpen(false)}
-                className="text-slate-400 hover:text-white p-0.5 rounded cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
             </div>
-          </div>
 
-          {/* SVG Gradient Area & Line Chart */}
-          <div className="relative w-full h-24 bg-slate-950/80 rounded-xl overflow-hidden border border-slate-800">
+            {/* Close Button inside Chart (3.1) */}
+            <button
+              onClick={() => setIsElevationOpen(false)}
+              className="absolute top-1.5 right-1.5 z-10 text-slate-400 hover:text-white p-1 rounded-md bg-slate-900/80 hover:bg-slate-800 border border-slate-700/60 shadow-xs cursor-pointer transition-colors"
+              title="닫기"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+
+            {/* SVG Chart */}
             <svg
               viewBox={`0 0 ${chartWidth} ${chartHeight}`}
               preserveAspectRatio="none"
@@ -793,27 +831,19 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
               }}
             >
               <defs>
-                {/* Vertical Elevation Gradient: Dark rich green at peak, near black at bottom */}
+                {/* Vertical Elevation Gradient */}
                 <linearGradient id="elevationGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#047857" stopOpacity="0.85" />
-                  <stop offset="60%" stopColor="#064e3b" stopOpacity="0.6" />
-                  <stop offset="100%" stopColor="#020617" stopOpacity="0.9" />
+                  <stop offset="0%" stopColor="#047857" stopOpacity="0.80" />
+                  <stop offset="60%" stopColor="#064e3b" stopOpacity="0.50" />
+                  <stop offset="100%" stopColor="#020617" stopOpacity="0.90" />
                 </linearGradient>
 
-                {/* Radial Glow Highlight around cursor */}
-                {hoverCoord && (
-                  <radialGradient
-                    id="cursorRadialGlow"
-                    cx={hoverCoord.x}
-                    cy={hoverCoord.y}
-                    r="40"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop offset="0%" stopColor="#34d399" stopOpacity="0.5" />
-                    <stop offset="60%" stopColor="#059669" stopOpacity="0.2" />
-                    <stop offset="100%" stopColor="#020617" stopOpacity="0" />
-                  </radialGradient>
-                )}
+                {/* Vertical Column Gradient: centered at red dashed line, subtle and uniform from top to bottom (3.3) */}
+                <linearGradient id="cursorColumnGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#10b981" stopOpacity="0" />
+                  <stop offset="50%" stopColor="#34d399" stopOpacity="0.22" />
+                  <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+                </linearGradient>
               </defs>
 
               {/* Area fill */}
@@ -821,31 +851,31 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
                 <path d={areaPath} fill="url(#elevationGrad)" />
               )}
 
-              {/* Radial Highlight Glow Overlay under cursor */}
+              {/* Symmetric vertical gradient band around dashed line (3.3) */}
               {hoverCoord && (
                 <rect
-                  x="0"
-                  y="0"
-                  width={chartWidth}
+                  x={Math.max(0, hoverCoord.x - 20)}
+                  y={0}
+                  width={40}
                   height={chartHeight}
-                  fill="url(#cursorRadialGlow)"
+                  fill="url(#cursorColumnGlow)"
                   pointerEvents="none"
                 />
               )}
 
-              {/* Line path */}
+              {/* Thin line path (3.2: strokeWidth="1.2") */}
               {linePath && (
                 <path
                   d={linePath}
                   fill="none"
                   stroke="#10b981"
-                  strokeWidth="2.5"
+                  strokeWidth="1.2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
               )}
 
-              {/* Cursor indicator vertical line */}
+              {/* Red dashed vertical line centered at cursor */}
               {hoverCoord && (
                 <line
                   x1={hoverCoord.x}
@@ -853,8 +883,9 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
                   x2={hoverCoord.x}
                   y2={chartHeight}
                   stroke="#f43f5e"
-                  strokeWidth="1.5"
-                  strokeDasharray="2,2"
+                  strokeWidth="1.2"
+                  strokeDasharray="3,3"
+                  opacity="0.9"
                 />
               )}
             </svg>
@@ -862,14 +893,17 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
         </div>
       )}
 
-      {/* Bottom Center Hint: "길게 클릭=시설 등록/수정" (5.5) */}
+      {/* Bottom Center Hint: "길게 클릭=시설 등록/수정" */}
       <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 px-3.5 py-1 bg-slate-900/85 backdrop-blur-md rounded-full border border-slate-700/80 text-[11px] font-semibold text-slate-300 shadow-xl pointer-events-none whitespace-nowrap">
         길게 클릭 = 시설 등록/수정
       </div>
 
-      {/* Facility Selected Popup Modal with Photo Support (5.6) */}
+      {/* Facility Selected Popup Modal with Photo Support */}
       {selectedFacility && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+        <div
+          onPointerDown={(e) => e.stopPropagation()}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+        >
           <div className="bg-slate-900 border border-slate-700 rounded-3xl p-5 max-w-sm w-full shadow-2xl space-y-3.5 text-white animate-in zoom-in-95 duration-150">
             {/* Header */}
             <div className="flex items-start justify-between">
@@ -917,7 +951,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
               </p>
             )}
 
-            {/* Actions: Phone & Edit */}
+            {/* Actions: Phone & Edit (NO confirm prompt on edit!) */}
             <div className="flex items-center gap-2 pt-1">
               {selectedFacility.phone && (
                 <a
@@ -929,15 +963,47 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
                 </a>
               )}
               <button
-                onClick={() => {
-                  const fac = selectedFacility;
-                  setSelectedFacility(null);
-                  handleFacilityLongPress(fac);
-                }}
-                className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+                onClick={() => handleOpenEditFacility(selectedFacility)}
+                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Edit3 className="w-3.5 h-3.5 text-emerald-400" />
                 <span>수정</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* In-app Confirm Dialog for Map Long-Press (No browser confirm, No origin text) */}
+      {confirmRegisterOpen && (
+        <div
+          onPointerDown={(e) => e.stopPropagation()}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+        >
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl p-5 max-w-xs w-full shadow-2xl space-y-4 text-white animate-in zoom-in-95">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <span>📍</span> 새 편의시설 등록
+            </h3>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              선택하신 위치에 새로운 편의시설 또는 명소를 등록하시겠습니까?
+            </p>
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                onClick={() => {
+                  setConfirmRegisterOpen(false);
+                  setEditingFacility(null);
+                  setModalCoords(pendingCoords);
+                  setIsModalOpen(true);
+                }}
+                className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+              >
+                등록하기
+              </button>
+              <button
+                onClick={() => setConfirmRegisterOpen(false)}
+                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition-colors cursor-pointer"
+              >
+                취소
               </button>
             </div>
           </div>
@@ -953,6 +1019,13 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
         }}
         onSubmit={(fac) => {
           onAddFacility(fac);
+          setIsModalOpen(false);
+          setEditingFacility(null);
+        }}
+        onDelete={(fac) => {
+          if (fac.id && onRemoveFacility) {
+            onRemoveFacility(fac.id);
+          }
           setIsModalOpen(false);
           setEditingFacility(null);
         }}
