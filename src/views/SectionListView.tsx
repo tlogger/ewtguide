@@ -126,16 +126,12 @@ export const SectionListView: React.FC<SectionListViewProps> = ({
           </div>
 
           {/* Quick Action: Open All Sections Map */}
-          <div className="mt-5 pt-4 border-t border-emerald-700/40 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-xs text-emerald-200 text-center sm:text-left">
-              서해 안면도 꽃지해변부터 동해 울진 망양정까지 55개 전 구간을 지도에서 확인하세요.
-            </p>
+          <div className="mt-4 pt-3 border-t border-emerald-700/40 flex items-center justify-end">
             <button
               onClick={onOpenAllMap}
-              className="w-full sm:w-auto px-5 py-3 bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-slate-900 font-extrabold rounded-2xl shadow-lg flex items-center justify-center gap-2 text-sm transition-transform active:scale-95 shrink-0"
+              className="w-full sm:w-auto px-5 py-2.5 bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-slate-900 font-extrabold rounded-2xl shadow-lg flex items-center justify-center text-sm transition-transform active:scale-95 shrink-0 cursor-pointer"
             >
-              <Map className="w-4 h-4 text-slate-900" />
-              <span>🗺️ 55개 전 구간 전국 대지도 보기</span>
+              <span>전 구간 지도</span>
             </button>
           </div>
         </div>

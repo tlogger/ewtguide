@@ -62,10 +62,10 @@ export const Header: React.FC<HeaderProps> = ({
                 ? 'bg-amber-400 text-slate-900 border-amber-300 shadow-md ring-2 ring-amber-300/50'
                 : 'bg-emerald-700/80 hover:bg-emerald-600 border-emerald-600 text-white shadow-xs'
             }`}
-            title="서해(태안)~동해(울진) 55개 전 구간 전국 대지도"
+            title="서해(태안)~동해(울진) 55개 전 구간 전체 지도"
           >
             <Map className="w-4 h-4 text-amber-300" />
-            <span className="font-extrabold">전국 대지도</span>
+            <span className="font-extrabold">전체 지도</span>
           </button>
 
           <div className="hidden xs:flex bg-emerald-700/80 border border-emerald-600 px-3 py-1.5 rounded-full items-center gap-1.5 text-xs sm:text-sm font-bold">
@@ -80,14 +80,13 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="max-w-4xl mx-auto flex items-center justify-between text-xs sm:text-sm font-semibold">
           <button
             onClick={() => onNavigate('list')}
-            className={`flex items-center gap-1.5 py-1 px-3 rounded-full transition-all ${
+            className={`flex items-center gap-1 py-1 px-3 rounded-full transition-all ${
               currentStep === 'list'
                 ? 'bg-emerald-500 text-white font-bold shadow-xs'
                 : 'text-emerald-300 hover:text-white'
             }`}
           >
-            <span>1</span>
-            <span>구간 목록 (55)</span>
+            <span>구간</span>
           </button>
 
           <span className="text-emerald-500">➔</span>
@@ -97,7 +96,7 @@ export const Header: React.FC<HeaderProps> = ({
               if (currentStep !== 'list' && currentStep !== 'all_map') onNavigate('detail');
             }}
             disabled={currentStep === 'list' || currentStep === 'all_map'}
-            className={`flex items-center gap-1.5 py-1 px-3 rounded-full transition-all ${
+            className={`flex items-center gap-1 py-1 px-3 rounded-full transition-all ${
               currentStep === 'detail'
                 ? 'bg-emerald-500 text-white font-bold shadow-xs'
                 : currentStep === 'map'
@@ -105,8 +104,7 @@ export const Header: React.FC<HeaderProps> = ({
                 : 'text-emerald-600 cursor-not-allowed opacity-60'
             }`}
           >
-            <span>2</span>
-            <span>구간 상세</span>
+            <span>상세</span>
           </button>
 
           <span className="text-emerald-500">➔</span>
@@ -116,7 +114,7 @@ export const Header: React.FC<HeaderProps> = ({
               if (currentStep === 'detail' || currentStep === 'map') onNavigate('map');
             }}
             disabled={currentStep === 'list' || currentStep === 'all_map'}
-            className={`flex items-center gap-1.5 py-1 px-3 rounded-full transition-all ${
+            className={`flex items-center gap-1 py-1 px-3 rounded-full transition-all ${
               currentStep === 'map'
                 ? 'bg-emerald-500 text-white font-bold shadow-xs'
                 : currentStep === 'detail'
@@ -124,21 +122,20 @@ export const Header: React.FC<HeaderProps> = ({
                 : 'text-emerald-600 cursor-not-allowed opacity-60'
             }`}
           >
-            <span>3</span>
-            <span>구간 지도</span>
+            <span>지도</span>
           </button>
 
           <span className="text-emerald-500 hidden sm:inline">|</span>
 
           <button
             onClick={() => onNavigate('all_map')}
-            className={`hidden sm:flex items-center gap-1.5 py-1 px-3 rounded-full transition-all ${
+            className={`hidden sm:flex items-center gap-1 py-1 px-3 rounded-full transition-all ${
               currentStep === 'all_map'
                 ? 'bg-amber-400 text-slate-900 font-extrabold shadow-xs'
                 : 'text-amber-300 hover:text-white'
             }`}
           >
-            <span>🗺️ 전국 코스</span>
+            <span>전체</span>
           </button>
         </div>
       </div>
