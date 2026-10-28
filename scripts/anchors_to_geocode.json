@@ -1,0 +1,282 @@
+[
+  {
+    "id": 1,
+    "name": "안면도 자연휴양림",
+    "search_target": "충청남도 태안군 안면읍 승언리 339-644"
+  },
+  {
+    "id": 2,
+    "name": "백사장항",
+    "search_target": "충청남도 태안군 안면읍 창기리 1269-88"
+  },
+  {
+    "id": 3,
+    "name": "몽산포해수욕장",
+    "search_target": "충남 태안군 남면 몽산리 685-40"
+  },
+  {
+    "id": 4,
+    "name": "태안읍행정복지센터",
+    "search_target": "충청남도 태안군 태안읍 남문리 301-6"
+  },
+  {
+    "id": 5,
+    "name": "상담교",
+    "search_target": "충청남도 서산시 팔봉면 어송리 348-5"
+  },
+  {
+    "id": 6,
+    "name": "율목리마을",
+    "search_target": "충청남도 서산시 음암면 율목리 555-5"
+  },
+  {
+    "id": 7,
+    "name": "삼웅2리마을회관",
+    "search_target": "충청남도 당진시 면천면 삼웅2로 198"
+  },
+  {
+    "id": 8,
+    "name": "용현리",
+    "search_target": "충청남도 서산시 운산면 용현리 6-2"
+  },
+  {
+    "id": 9,
+    "name": "충의사",
+    "search_target": "충청남도 예산군 덕산면 덕산온천로 183-5"
+  },
+  {
+    "id": 10,
+    "name": "이응노생가기념관",
+    "search_target": "충청남도 홍성군 홍북읍 이응노로 61-7"
+  },
+  {
+    "id": 11,
+    "name": "내포문화숲길홍성센터",
+    "search_target": "충청남도 홍성군 홍성읍 남장리 438-9"
+  },
+  {
+    "id": 12,
+    "name": "오서산상담마을",
+    "search_target": "충청남도 홍성군 광천읍 담산리 924"
+  },
+  {
+    "id": 13,
+    "name": "대현1리마을회관",
+    "search_target": "충청남도 홍성군 장곡면 대현리 450-5"
+  },
+  {
+    "id": 14,
+    "name": "위라1리마을회관",
+    "search_target": "위라1리회관"
+  },
+  {
+    "id": 15,
+    "name": "대룡1리",
+    "search_target": "충남 공주시 신풍면 대룡리 397-4"
+  },
+  {
+    "id": 16,
+    "name": "마곡사 입구",
+    "search_target": "마곡사 입구"
+  },
+  {
+    "id": 17,
+    "name": "장군면",
+    "search_target": "장군면"
+  },
+  {
+    "id": 18,
+    "name": "국립세종수목원",
+    "search_target": "국립세종수목원"
+  },
+  {
+    "id": 19,
+    "name": "현도교",
+    "search_target": "현도교"
+  },
+  {
+    "id": 20,
+    "name": "봉산동버스기점",
+    "search_target": "봉산동버스기점"
+  },
+  {
+    "id": 21,
+    "name": "삼정생태공원",
+    "search_target": "삼정생태공원"
+  },
+  {
+    "id": 22,
+    "name": "대청호자연생태관",
+    "search_target": "대청호자연생태관"
+  },
+  {
+    "id": 23,
+    "name": "와정삼거리",
+    "search_target": "방아실입구 정류장"
+  },
+  {
+    "id": 24,
+    "name": "장계관광지",
+    "search_target": "장계관광지"
+  },
+  {
+    "id": 25,
+    "name": "보은읍",
+    "search_target": "보은읍"
+  },
+  {
+    "id": 26,
+    "name": "속리산 정이품송",
+    "search_target": "속리산 정이품송"
+  },
+  {
+    "id": 27,
+    "name": "화북면 문장대",
+    "search_target": "화북면 문장대"
+  },
+  {
+    "id": 28,
+    "name": "화서면",
+    "search_target": "화서면"
+  },
+  {
+    "id": 29,
+    "name": "청천면 관평리",
+    "search_target": "청천면 관평리"
+  },
+  {
+    "id": 30,
+    "name": "칠성면",
+    "search_target": "칠성면"
+  },
+  {
+    "id": 31,
+    "name": "괴산호",
+    "search_target": "괴산호"
+  },
+  {
+    "id": 32,
+    "name": "태성리",
+    "search_target": "외쌍유원지"
+  },
+  {
+    "id": 33,
+    "name": "삼풍리",
+    "search_target": "연풍초등학교"
+  },
+  {
+    "id": 34,
+    "name": "하내리",
+    "search_target": "경북 문경시 마성면 하내리 1146"
+  },
+  {
+    "id": 35,
+    "name": "수예리마을회관",
+    "search_target": "수예마을회관"
+  },
+  {
+    "id": 36,
+    "name": "모정동",
+    "search_target": "문경제일병원 문경제일노인요양병원"
+  },
+  {
+    "id": 37,
+    "name": "이목리",
+    "search_target": "이목리"
+  },
+  {
+    "id": 38,
+    "name": "회룡포 전망대",
+    "search_target": "회룡포 전망대"
+  },
+  {
+    "id": 39,
+    "name": "예천읍",
+    "search_target": "예천읍"
+  },
+  {
+    "id": 40,
+    "name": "경북도청신도시",
+    "search_target": "경북도청신도시"
+  },
+  {
+    "id": 41,
+    "name": "병산서원",
+    "search_target": "병산서원"
+  },
+  {
+    "id": 42,
+    "name": "월영교",
+    "search_target": "월영교"
+  },
+  {
+    "id": 43,
+    "name": "영주호 용혈폭포",
+    "search_target": "영주호 용혈폭포"
+  },
+  {
+    "id": 44,
+    "name": "영주시내",
+    "search_target": "영주시내"
+  },
+  {
+    "id": 45,
+    "name": "부석사",
+    "search_target": "부석사"
+  },
+  {
+    "id": 46,
+    "name": "의풍1리마을회관",
+    "search_target": "의풍1리마을회관"
+  },
+  {
+    "id": 47,
+    "name": "오전약수관광지주차장",
+    "search_target": "오전약수터 공영주차장"
+  },
+  {
+    "id": 48,
+    "name": "애당교",
+    "search_target": "애당리-수진 버스정류장"
+  },
+  {
+    "id": 49,
+    "name": "춘양면사무소",
+    "search_target": "춘양면사무소"
+  },
+  {
+    "id": 50,
+    "name": "현동삼거리",
+    "search_target": "경북 봉화군 소천면 현동리 690-4"
+  },
+  {
+    "id": 51,
+    "name": "분천역",
+    "search_target": "분천역"
+  },
+  {
+    "id": 52,
+    "name": "원곡교",
+    "search_target": "경북 봉화군 소천면 분천리 178-8"
+  },
+  {
+    "id": 53,
+    "name": "소광리",
+    "search_target": "소광2리마을회관"
+  },
+  {
+    "id": 54,
+    "name": "두천1리",
+    "search_target": "경북 울진군 북면 두천리 206-1"
+  },
+  {
+    "id": 55,
+    "name": "중섬교",
+    "search_target": "경북 울진군 금강송면 하원리 130-44"
+  },
+  {
+    "id": 56,
+    "name": "망양정해수욕장",
+    "search_target": "경북 울진군 근남면 산포리 745-2"
+  }
+]

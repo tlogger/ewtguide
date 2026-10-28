@@ -37,19 +37,23 @@ export interface SectionSummary {
   title: string;
   region: string;
   course: string;
+  start_name?: string;
+  end_name?: string;
   is_opened: boolean; // 개통 여부 (true: 개통 32개, false: 미개통 23개)
   official_distance_km: number;
-  actual_distance_km: number;
+  actual_distance_km?: number;
+  calculated_distance_km?: number;
   elevation_gain_m: number;
   elevation_loss_m: number;
-  min_elevation_m: number;
-  max_elevation_m: number;
+  min_elevation_m?: number;
+  max_elevation_m?: number;
   hiking_time_hours?: number;
   hiking_time_text?: string;
-  start_point: { lat: number; lng: number };
-  end_point: { lat: number; lng: number };
-  pois_count: number;
-  points_count: number;
+  start_point?: { lat: number; lng: number };
+  end_point?: { lat: number; lng: number };
+  pois_count?: number;
+  poi_count?: number;
+  points_count?: number;
 }
 
 export interface SectionDetail extends SectionSummary {

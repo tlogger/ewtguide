@@ -53,10 +53,13 @@ export const SectionDetailView: React.FC<SectionDetailViewProps> = ({
   const [showCpInput, setShowCpInput] = useState(false);
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
 
-  // Previous & Next Section Calculation
-  const currentIndex = allSections.findIndex(s => s.section_id === section.section_id);
-  const prevSection = currentIndex > 0 ? allSections[currentIndex - 1] : null;
-  const nextSection = currentIndex < allSections.length - 1 ? allSections[currentIndex + 1] : null;
+  // Previous & Next Section Calculation (Only opened sections, automatically skipping unopened sections)
+  const openedSections = allSections.filter((s) => s.is_opened !== false);
+  const currentOpenedIndex = openedSections.findIndex((s) => s.section_id === section.section_id);
+  const prevSection = currentOpenedIndex > 0 ? openedSections[currentOpenedIndex - 1] : null;
+  const nextSection = currentOpenedIndex !== -1 && currentOpenedIndex < openedSections.length - 1
+    ? openedSections[currentOpenedIndex + 1]
+    : null;
 
   // Scientific hiking time (Munter / Tobler formula)
   // Distance/3.5 + Gain/400 + Loss/800
@@ -165,8 +168,8 @@ export const SectionDetailView: React.FC<SectionDetailViewProps> = ({
             onClick={onOpenMap}
             className="w-full py-4 px-6 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-extrabold text-lg rounded-2xl shadow-lg transition-transform active:scale-99 flex items-center justify-center gap-2"
           >
-            <Map className="w-6 h-6" />
-            <span>코스 지도 전체화면 보기 (3단계)</span>
+            <Map className="w-5 h-5" />
+            <span>지도 보기</span>
           </button>
         </div>
       </div>
@@ -248,8 +251,8 @@ export const SectionDetailView: React.FC<SectionDetailViewProps> = ({
         pois={allFacilities}
         gain={section.elevation_gain_m}
         loss={section.elevation_loss_m}
-        minEle={section.min_elevation_m}
-        maxEle={section.max_elevation_m}
+        minEle={section.min_elevation_m || 0}
+        maxEle={section.max_elevation_m || 100}
       />
 
       {/* 6. Call Taxi / Emergency Escape Card */}
@@ -475,8 +478,8 @@ export const SectionDetailView: React.FC<SectionDetailViewProps> = ({
         isOpen={isFacilityModalOpen}
         onClose={() => setIsFacilityModalOpen(false)}
         onSubmit={onAddFacility}
-        lat={section.start_point.lat}
-        lng={section.start_point.lng}
+        lat={section.start_point?.lat || 36.5}
+        lng={section.start_point?.lng || 126.8}
         defaultSectionName={section.section_number}
       />
 

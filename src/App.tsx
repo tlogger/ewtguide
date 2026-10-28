@@ -30,7 +30,7 @@ export const App: React.FC = () => {
 
   // Load summary on mount
   useEffect(() => {
-    fetch(`${import.meta.env.BASE_URL}data/sections_summary.json?v=20261028_v2`)
+    fetch(`${import.meta.env.BASE_URL}data/sections_summary.json?v=20261028_v3`)
       .then((res) => res.json())
       .then((data: SectionSummary[]) => {
         setSectionsSummary(data);
@@ -46,7 +46,7 @@ export const App: React.FC = () => {
   const handleSelectSection = (sectionId: number) => {
     setIsLoading(true);
     setSelectedSectionId(sectionId);
-    fetch(`${import.meta.env.BASE_URL}data/sections/section_${sectionId}.json?v=20261028_v2`)
+    fetch(`${import.meta.env.BASE_URL}data/sections/section_${sectionId}.json?v=20261028_v3`)
       .then((res) => res.json())
       .then((detail: SectionDetail) => {
         setSelectedSectionDetail(detail);
@@ -69,8 +69,8 @@ export const App: React.FC = () => {
 
   const handleAddCheckpoint = (name: string) => {
     if (!selectedSectionId || !selectedSectionDetail) return;
-    const lat = selectedSectionDetail.start_point.lat;
-    const lng = selectedSectionDetail.start_point.lng;
+    const lat = selectedSectionDetail.start_point?.lat || 36.5;
+    const lng = selectedSectionDetail.start_point?.lng || 126.8;
     const updated = addCheckpoint(selectedSectionId, { lat, lng, name });
     setProgress({ ...updated });
   };
@@ -89,13 +89,13 @@ export const App: React.FC = () => {
 
   const getHeaderTitle = () => {
     if (currentStep === 'all_map') {
-      return '전국 55개 코스 대지도';
+      return '전체 지도';
     }
     if (currentStep === 'map' && selectedSectionDetail) {
-      return `${selectedSectionDetail.section_number} 지도 보기`;
+      return `${selectedSectionDetail.section_number} 지도`;
     }
     if (currentStep === 'detail' && selectedSectionDetail) {
-      return `${selectedSectionDetail.section_number} 상세 안내`;
+      return `${selectedSectionDetail.section_number} 상세`;
     }
     return '동서트레일 가이드';
   };

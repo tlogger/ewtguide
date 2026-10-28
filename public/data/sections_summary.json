@@ -5,14 +5,24 @@
     "title": "1구간 (태안군)",
     "region": "태안군",
     "course": "1구간 : 안면도 자연휴양림 ~ 안면도수목원 ~ 방포해수욕장 ~ 백사장항",
+    "start_name": "안면도 자연휴양림",
+    "end_name": "백사장항",
     "is_opened": true,
     "official_distance_km": 15.9,
-    "elevation_gain_m": 441,
-    "min_elevation_m": 0,
-    "max_elevation_m": 70,
-    "hiking_time_hours": 6.2,
-    "hiking_time_text": "6시간 14분",
-    "pois_count": 2
+    "calculated_distance_km": 12.0,
+    "elevation_gain_m": 350,
+    "elevation_loss_m": 348,
+    "hiking_time_hours": 4.7,
+    "hiking_time_text": "4시간 44분",
+    "poi_count": 2,
+    "start_point": {
+      "lat": 36.495975,
+      "lng": 126.33637
+    },
+    "end_point": {
+      "lat": 36.585737,
+      "lng": 126.314567
+    }
   },
   {
     "section_id": 2,
@@ -20,14 +30,24 @@
     "title": "2구간 (태안군)",
     "region": "태안군",
     "course": "2구간 : 백사장항 ~ 청포대해수욕장 ~ 몽산포해수욕장",
+    "start_name": "백사장항",
+    "end_name": "몽산포해수욕장",
     "is_opened": true,
     "official_distance_km": 14.6,
-    "elevation_gain_m": 188,
-    "min_elevation_m": 0,
-    "max_elevation_m": 21,
-    "hiking_time_hours": 4.9,
-    "hiking_time_text": "4시간 52분",
-    "pois_count": 3
+    "calculated_distance_km": 11.5,
+    "elevation_gain_m": 189,
+    "elevation_loss_m": 177,
+    "hiking_time_hours": 4.0,
+    "hiking_time_text": "3시간 59분",
+    "poi_count": 3,
+    "start_point": {
+      "lat": 36.586376,
+      "lng": 126.315198
+    },
+    "end_point": {
+      "lat": 36.66696,
+      "lng": 126.289846
+    }
   },
   {
     "section_id": 3,
@@ -35,14 +55,24 @@
     "title": "3구간 (태안군)",
     "region": "태안군",
     "course": "3구간 : 몽산포해수욕장 ~ 진산리해변 ~ 태안읍행정복지센터",
+    "start_name": "몽산포해수욕장",
+    "end_name": "태안읍행정복지센터",
     "is_opened": true,
     "official_distance_km": 13.7,
-    "elevation_gain_m": 327,
-    "min_elevation_m": 0,
-    "max_elevation_m": 48,
-    "hiking_time_hours": 5.1,
-    "hiking_time_text": "5시간 6분",
-    "pois_count": 1
+    "calculated_distance_km": 13.8,
+    "elevation_gain_m": 299,
+    "elevation_loss_m": 264,
+    "hiking_time_hours": 5.0,
+    "hiking_time_text": "5시간 1분",
+    "poi_count": 1,
+    "start_point": {
+      "lat": 36.673197,
+      "lng": 126.272662
+    },
+    "end_point": {
+      "lat": 36.758143,
+      "lng": 126.296638
+    }
   },
   {
     "section_id": 4,
@@ -50,14 +80,24 @@
     "title": "4구간 (태안군, 서산시)",
     "region": "태안군, 서산시",
     "course": "4구간 : 태안읍행정복지센터 ~ 흥주사 ~ 오석산 ~ 팔봉산주차장",
+    "start_name": "태안읍행정복지센터",
+    "end_name": "상담교",
     "is_opened": true,
     "official_distance_km": 14.7,
-    "elevation_gain_m": 899,
-    "min_elevation_m": 3,
-    "max_elevation_m": 267,
-    "hiking_time_hours": 7.3,
-    "hiking_time_text": "7시간 19분",
-    "pois_count": 2
+    "calculated_distance_km": 12.1,
+    "elevation_gain_m": 646,
+    "elevation_loss_m": 656,
+    "hiking_time_hours": 5.9,
+    "hiking_time_text": "5시간 54분",
+    "poi_count": 2,
+    "start_point": {
+      "lat": 36.758143,
+      "lng": 126.296638
+    },
+    "end_point": {
+      "lat": 36.793154,
+      "lng": 126.3684
+    }
   },
   {
     "section_id": 5,
@@ -65,14 +105,24 @@
     "title": "5구간 (서산시)",
     "region": "서산시",
     "course": "5구간 : 팔봉산주차장 ~ 금강산 ~ 풍전저수지 ~ 율목리마을",
+    "start_name": "상담교",
+    "end_name": "율목리마을",
     "is_opened": true,
     "official_distance_km": 20.4,
-    "elevation_gain_m": 1233,
-    "min_elevation_m": 21,
-    "max_elevation_m": 300,
-    "hiking_time_hours": 10.7,
-    "hiking_time_text": "10시간 41분",
-    "pois_count": 3
+    "calculated_distance_km": 21.7,
+    "elevation_gain_m": 1532,
+    "elevation_loss_m": 1516,
+    "hiking_time_hours": 11.9,
+    "hiking_time_text": "11시간 56분",
+    "poi_count": 3,
+    "start_point": {
+      "lat": 36.793154,
+      "lng": 126.3684
+    },
+    "end_point": {
+      "lat": 36.82156,
+      "lng": 126.495888
+    }
   },
   {
     "section_id": 6,
@@ -80,14 +130,24 @@
     "title": "6구간 (서산시, 당진시)",
     "region": "서산시, 당진시",
     "course": "6구간 : 율목리마을 ~ 간대산 ~ 안국사지 ~ 성당초등학교 ~ 삼웅2리마을회관",
+    "start_name": "율목리마을",
+    "end_name": "삼웅2리마을회관",
     "is_opened": true,
     "official_distance_km": 14.0,
-    "elevation_gain_m": 890,
-    "min_elevation_m": 17,
-    "max_elevation_m": 253,
-    "hiking_time_hours": 7.3,
-    "hiking_time_text": "7시간 19분",
-    "pois_count": 2
+    "calculated_distance_km": 18.4,
+    "elevation_gain_m": 958,
+    "elevation_loss_m": 941,
+    "hiking_time_hours": 8.8,
+    "hiking_time_text": "8시간 50분",
+    "poi_count": 2,
+    "start_point": {
+      "lat": 36.819361,
+      "lng": 126.501729
+    },
+    "end_point": {
+      "lat": 36.822117,
+      "lng": 126.637968
+    }
   },
   {
     "section_id": 7,
@@ -95,14 +155,24 @@
     "title": "7구간 (당진시, 서산시)",
     "region": "당진시, 서산시",
     "course": "7구간 : 삼웅2리마을회관 ~ 팔중리마을회관 ~ 보원사지 ~ 용현리",
+    "start_name": "삼웅2리마을회관",
+    "end_name": "용현리",
     "is_opened": true,
     "official_distance_km": 16.6,
-    "elevation_gain_m": 679,
-    "min_elevation_m": 59,
-    "max_elevation_m": 249,
-    "hiking_time_hours": 7.2,
-    "hiking_time_text": "7시간 13분",
-    "pois_count": 2
+    "calculated_distance_km": 11.7,
+    "elevation_gain_m": 591,
+    "elevation_loss_m": 553,
+    "hiking_time_hours": 5.5,
+    "hiking_time_text": "5시간 31분",
+    "poi_count": 2,
+    "start_point": {
+      "lat": 36.821712,
+      "lng": 126.638385
+    },
+    "end_point": {
+      "lat": 36.7739,
+      "lng": 126.604225
+    }
   },
   {
     "section_id": 8,
@@ -110,14 +180,24 @@
     "title": "8구간 (서산시, 예산군)",
     "region": "서산시, 예산군",
     "course": "8구간 : 용현리 ~ 내포문화숲길예산센터 ~ 옥계리 ~ 대치리 ~ 충의사",
+    "start_name": "용현리",
+    "end_name": "충의사",
     "is_opened": true,
     "official_distance_km": 20.6,
-    "elevation_gain_m": 1047,
-    "min_elevation_m": 43,
-    "max_elevation_m": 528,
-    "hiking_time_hours": 9.9,
-    "hiking_time_text": "9시간 55분",
-    "pois_count": 2
+    "calculated_distance_km": 18.1,
+    "elevation_gain_m": 1151,
+    "elevation_loss_m": 1218,
+    "hiking_time_hours": 9.6,
+    "hiking_time_text": "9시간 34분",
+    "poi_count": 2,
+    "start_point": {
+      "lat": 36.7739,
+      "lng": 126.604225
+    },
+    "end_point": {
+      "lat": 36.685713,
+      "lng": 126.651385
+    }
   },
   {
     "section_id": 9,
@@ -125,14 +205,24 @@
     "title": "9구간 (예산군, 홍성군)",
     "region": "예산군, 홍성군",
     "course": "9구간 : 충의사 ~ 뫼넘이고개 ~ 용봉산입구 ~ 이응노생가기념관",
+    "start_name": "충의사",
+    "end_name": "이응노생가기념관",
     "is_opened": true,
     "official_distance_km": 11.5,
-    "elevation_gain_m": 490,
-    "min_elevation_m": 37,
-    "max_elevation_m": 289,
-    "hiking_time_hours": 5.1,
-    "hiking_time_text": "5시간 6분",
-    "pois_count": 3
+    "calculated_distance_km": 11.2,
+    "elevation_gain_m": 496,
+    "elevation_loss_m": 477,
+    "hiking_time_hours": 5.0,
+    "hiking_time_text": "5시간 2분",
+    "poi_count": 3,
+    "start_point": {
+      "lat": 36.685713,
+      "lng": 126.651385
+    },
+    "end_point": {
+      "lat": 36.622145,
+      "lng": 126.63239
+    }
   },
   {
     "section_id": 10,
@@ -140,14 +230,24 @@
     "title": "10구간 (홍성군)",
     "region": "홍성군",
     "course": "10구간 : 이응노생가기념관 ~ 홍천문화마을 ~ 살포쟁이고개 ~ 맞고개 ~ 내포문화숲길홍성센터",
+    "start_name": "이응노생가기념관",
+    "end_name": "내포문화숲길홍성센터",
     "is_opened": true,
     "official_distance_km": 11.7,
-    "elevation_gain_m": 705,
-    "min_elevation_m": 52,
-    "max_elevation_m": 372,
-    "hiking_time_hours": 5.9,
-    "hiking_time_text": "5시간 57분",
-    "pois_count": 2
+    "calculated_distance_km": 9.4,
+    "elevation_gain_m": 719,
+    "elevation_loss_m": 685,
+    "hiking_time_hours": 5.3,
+    "hiking_time_text": "5시간 20분",
+    "poi_count": 2,
+    "start_point": {
+      "lat": 36.622145,
+      "lng": 126.63239
+    },
+    "end_point": {
+      "lat": 36.575533,
+      "lng": 126.654237
+    }
   },
   {
     "section_id": 11,
@@ -155,14 +255,24 @@
     "title": "11구간 (홍성군)",
     "region": "홍성군",
     "course": "11구간 : 내포문화숲길홍성센터 ~ 척괴마을 ~ 광천읍 ~ 오서산상담마을",
+    "start_name": "내포문화숲길홍성센터",
+    "end_name": "오서산상담마을",
     "is_opened": true,
     "official_distance_km": 15.4,
-    "elevation_gain_m": 481,
-    "min_elevation_m": 7,
-    "max_elevation_m": 155,
+    "calculated_distance_km": 15.3,
+    "elevation_gain_m": 498,
+    "elevation_loss_m": 541,
     "hiking_time_hours": 6.3,
-    "hiking_time_text": "6시간 15분",
-    "pois_count": 2
+    "hiking_time_text": "6시간 18분",
+    "poi_count": 2,
+    "start_point": {
+      "lat": 36.575533,
+      "lng": 126.654237
+    },
+    "end_point": {
+      "lat": 36.482309,
+      "lng": 126.639078
+    }
   },
   {
     "section_id": 12,
@@ -170,14 +280,24 @@
     "title": "12구간 (홍성군)",
     "region": "홍성군",
     "course": "12구간 : 오서산상담마을 ~ 내원사 ~ 기러기재 ~ 대현1리마을회관",
+    "start_name": "오서산상담마을",
+    "end_name": "대현1리마을회관",
     "is_opened": true,
     "official_distance_km": 15.8,
-    "elevation_gain_m": 1857,
-    "min_elevation_m": 53,
-    "max_elevation_m": 555,
-    "hiking_time_hours": 11.4,
-    "hiking_time_text": "11시간 27분",
-    "pois_count": 2
+    "calculated_distance_km": 16.5,
+    "elevation_gain_m": 1918,
+    "elevation_loss_m": 1893,
+    "hiking_time_hours": 11.9,
+    "hiking_time_text": "11시간 53분",
+    "poi_count": 2,
+    "start_point": {
+      "lat": 36.482309,
+      "lng": 126.639078
+    },
+    "end_point": {
+      "lat": 36.496357,
+      "lng": 126.727031
+    }
   },
   {
     "section_id": 13,
@@ -185,14 +305,24 @@
     "title": "13구간 (홍성군, 청양군)",
     "region": "홍성군, 청양군",
     "course": "13구간 : 대현1리마을회관 ~ 산성리 ~ 위라1리마을회관",
+    "start_name": "대현1리마을회관",
+    "end_name": "위라1리마을회관",
     "is_opened": true,
     "official_distance_km": 17.6,
-    "elevation_gain_m": 198,
-    "min_elevation_m": 39,
-    "max_elevation_m": 176,
-    "hiking_time_hours": 5.8,
-    "hiking_time_text": "5시간 49분",
-    "pois_count": 1
+    "calculated_distance_km": 3.2,
+    "elevation_gain_m": 205,
+    "elevation_loss_m": 244,
+    "hiking_time_hours": 1.7,
+    "hiking_time_text": "1시간 44분",
+    "poi_count": 1,
+    "start_point": {
+      "lat": 36.496357,
+      "lng": 126.727031
+    },
+    "end_point": {
+      "lat": 36.496811,
+      "lng": 126.747491
+    }
   },
   {
     "section_id": 14,
@@ -200,14 +330,24 @@
     "title": "14구간 (청양군, 공주시)",
     "region": "청양군, 공주시",
     "course": "14구간 : 위라1리마을회관 ~ 금자봉 ~ 국사봉 ~ 대룡1리",
+    "start_name": "위라1리마을회관",
+    "end_name": "대룡1리",
     "is_opened": true,
     "official_distance_km": 19.0,
-    "elevation_gain_m": 2547,
-    "min_elevation_m": 30,
-    "max_elevation_m": 467,
-    "hiking_time_hours": 14.8,
-    "hiking_time_text": "14시간 50분",
-    "pois_count": 1
+    "calculated_distance_km": 42.8,
+    "elevation_gain_m": 2713,
+    "elevation_loss_m": 2602,
+    "hiking_time_hours": 22.3,
+    "hiking_time_text": "22시간 16분",
+    "poi_count": 1,
+    "start_point": {
+      "lat": 36.496811,
+      "lng": 126.747491
+    },
+    "end_point": {
+      "lat": 36.495563,
+      "lng": 126.934066
+    }
   },
   {
     "section_id": 15,
@@ -215,14 +355,18 @@
     "title": "15구간 (공주시)",
     "region": "공주시",
     "course": "15구간 : 대룡1리 ~ 유구마을 ~ 문금리 ~ 마곡사 입구",
+    "start_name": "15구간 : 대룡1리",
+    "end_name": "마곡사 입구",
     "is_opened": false,
     "official_distance_km": 15.2,
-    "elevation_gain_m": 790,
-    "min_elevation_m": 44,
-    "max_elevation_m": 308,
-    "hiking_time_hours": 7.2,
-    "hiking_time_text": "7시간 15분",
-    "pois_count": 0
+    "calculated_distance_km": 0.0,
+    "elevation_gain_m": 0,
+    "elevation_loss_m": 0,
+    "hiking_time_hours": 4.3,
+    "hiking_time_text": "4시간 21분",
+    "poi_count": 0,
+    "start_point": null,
+    "end_point": null
   },
   {
     "section_id": 16,
@@ -230,14 +374,18 @@
     "title": "16구간 (공주시)",
     "region": "공주시",
     "course": "16구간 : 마곡사 입구 ~ 정안천생태공원 ~ 정안면사무소 ~ 밤소리길",
+    "start_name": "16구간 : 마곡사 입구",
+    "end_name": "밤소리길",
     "is_opened": false,
     "official_distance_km": 16.5,
-    "elevation_gain_m": 973,
-    "min_elevation_m": 25,
-    "max_elevation_m": 560,
-    "hiking_time_hours": 8.3,
-    "hiking_time_text": "8시간 20분",
-    "pois_count": 0
+    "calculated_distance_km": 0.0,
+    "elevation_gain_m": 0,
+    "elevation_loss_m": 0,
+    "hiking_time_hours": 4.7,
+    "hiking_time_text": "4시간 43분",
+    "poi_count": 0,
+    "start_point": null,
+    "end_point": null
   },
   {
     "section_id": 17,
@@ -245,14 +393,18 @@
     "title": "17구간 (세종시)",
     "region": "세종시",
     "course": "17구간 : 장군면 ~ 정부세종청사 ~ 세종호수공원 ~ 국립세종수목원",
+    "start_name": "17구간 : 장군면",
+    "end_name": "국립세종수목원",
     "is_opened": false,
     "official_distance_km": 14.8,
-    "elevation_gain_m": 582,
-    "min_elevation_m": 20,
-    "max_elevation_m": 173,
-    "hiking_time_hours": 6.6,
-    "hiking_time_text": "6시간 34분",
-    "pois_count": 0
+    "calculated_distance_km": 0.0,
+    "elevation_gain_m": 0,
+    "elevation_loss_m": 0,
+    "hiking_time_hours": 4.2,
+    "hiking_time_text": "4시간 14분",
+    "poi_count": 0,
+    "start_point": null,
+    "end_point": null
   },
   {
     "section_id": 18,
@@ -260,14 +412,18 @@
     "title": "18구간 (세종시, 대전시)",
     "region": "세종시, 대전시",
     "course": "18구간 : 국립세종수목원 ~ 금강보행교 ~ 부강면 ~ 현도교",
+    "start_name": "18구간 : 국립세종수목원",
+    "end_name": "현도교",
     "is_opened": false,
     "official_distance_km": 15.6,
-    "elevation_gain_m": 301,
-    "min_elevation_m": 12,
-    "max_elevation_m": 114,
-    "hiking_time_hours": 5.5,
-    "hiking_time_text": "5시간 31분",
-    "pois_count": 0
+    "calculated_distance_km": 0.0,
+    "elevation_gain_m": 0,
+    "elevation_loss_m": 0,
+    "hiking_time_hours": 4.5,
+    "hiking_time_text": "4시간 27분",
+    "poi_count": 0,
+    "start_point": null,
+    "end_point": null
   },
   {
     "section_id": 19,
@@ -275,14 +431,18 @@
     "title": "19구간 (대전시 대덕구)",
     "region": "대전시 대덕구",
     "course": "19구간 : 현도교 ~ 대청댐 잔도길 ~ 용호동 ~ 봉산동버스기점",
+    "start_name": "19구간 : 현도교",
+    "end_name": "봉산동버스기점",
     "is_opened": false,
     "official_distance_km": 13.9,
-    "elevation_gain_m": 331,
-    "min_elevation_m": 37,
-    "max_elevation_m": 211,
-    "hiking_time_hours": 5.3,
-    "hiking_time_text": "5시간 15분",
-    "pois_count": 0
+    "calculated_distance_km": 0.0,
+    "elevation_gain_m": 0,
+    "elevation_loss_m": 0,
+    "hiking_time_hours": 4.0,
+    "hiking_time_text": "3시간 58분",
+    "poi_count": 0,
+    "start_point": null,
+    "end_point": null
   },
   {
     "section_id": 20,
@@ -290,14 +450,24 @@
     "title": "20구간 (대전시)",
     "region": "대전시",
     "course": "20구간 : 봉산동버스기점 ~ 문평동 ~ 신탄진동 ~ 삼정생태공원",
+    "start_name": "봉산동버스기점",
+    "end_name": "삼정생태공원",
     "is_opened": true,
     "official_distance_km": 14.7,
-    "elevation_gain_m": 501,
-    "min_elevation_m": 21,
-    "max_elevation_m": 137,
-    "hiking_time_hours": 6.0,
-    "hiking_time_text": "6시간 2분",
-    "pois_count": 2
+    "calculated_distance_km": 12.0,
+    "elevation_gain_m": 455,
+    "elevation_loss_m": 384,
+    "hiking_time_hours": 5.0,
+    "hiking_time_text": "5시간 3분",
+    "poi_count": 2,
+    "start_point": {
+      "lat": 36.456122,
+      "lng": 127.428176
+    },
+    "end_point": {
+      "lat": 36.449267,
+      "lng": 127.46659
+    }
   },
   {
     "section_id": 21,
@@ -305,14 +475,24 @@
     "title": "21구간 (대전시)",
     "region": "대전시",
     "course": "21구간 : 삼정생태공원 ~ 계족산성 ~ 절고개 ~ 대청호자연생태관",
+    "start_name": "삼정생태공원",
+    "end_name": "대청호자연생태관",
     "is_opened": true,
     "official_distance_km": 20.6,
-    "elevation_gain_m": 1339,
-    "min_elevation_m": 70,
-    "max_elevation_m": 345,
-    "hiking_time_hours": 10.9,
-    "hiking_time_text": "10시간 54분",
-    "pois_count": 1
+    "calculated_distance_km": 20.7,
+    "elevation_gain_m": 1356,
+    "elevation_loss_m": 1356,
+    "hiking_time_hours": 11.0,
+    "hiking_time_text": "11시간",
+    "poi_count": 1,
+    "start_point": {
+      "lat": 36.449267,
+      "lng": 127.46659
+    },
+    "end_point": {
+      "lat": 36.373745,
+      "lng": 127.470542
+    }
   },
   {
     "section_id": 22,
@@ -320,14 +500,24 @@
     "title": "22구간 (대전시)",
     "region": "대전시",
     "course": "22구간 : 대청호자연생태관 ~ 주산동 ~ 신상동 ~ 신촌동 ~ 와정삼거리",
+    "start_name": "대청호자연생태관",
+    "end_name": "와정삼거리",
     "is_opened": true,
     "official_distance_km": 19.4,
-    "elevation_gain_m": 641,
-    "min_elevation_m": 70,
-    "max_elevation_m": 138,
+    "calculated_distance_km": 18.8,
+    "elevation_gain_m": 676,
+    "elevation_loss_m": 650,
     "hiking_time_hours": 7.9,
-    "hiking_time_text": "7시간 55분",
-    "pois_count": 1
+    "hiking_time_text": "7시간 52분",
+    "poi_count": 1,
+    "start_point": {
+      "lat": 36.373745,
+      "lng": 127.470542
+    },
+    "end_point": {
+      "lat": 36.390471,
+      "lng": 127.532151
+    }
   },
   {
     "section_id": 23,
@@ -335,14 +525,18 @@
     "title": "23구간 (충북 옥천군)",
     "region": "충북 옥천군",
     "course": "23구간 : 와정삼거리 ~ 대청호반길 ~ 군북면사무소 ~ 장계관광지",
+    "start_name": "23구간 : 와정삼거리",
+    "end_name": "장계관광지",
     "is_opened": false,
     "official_distance_km": 16.2,
-    "elevation_gain_m": 930,
-    "min_elevation_m": 70,
-    "max_elevation_m": 382,
-    "hiking_time_hours": 8.1,
-    "hiking_time_text": "8시간 7분",
-    "pois_count": 0
+    "calculated_distance_km": 0.0,
+    "elevation_gain_m": 0,
+    "elevation_loss_m": 0,
+    "hiking_time_hours": 4.6,
+    "hiking_time_text": "4시간 38분",
+    "poi_count": 0,
+    "start_point": null,
+    "end_point": null
   },
   {
     "section_id": 24,
@@ -350,14 +544,18 @@
     "title": "24구간 (충북 옥천군, 보은군)",
     "region": "충북 옥천군, 보은군",
     "course": "24구간 : 장계관광지 ~ 안내면 ~ 삼승면 ~ 보은읍 서원계곡",
+    "start_name": "24구간 : 장계관광지",
+    "end_name": "보은읍 서원계곡",
     "is_opened": false,
     "official_distance_km": 15.8,
-    "elevation_gain_m": 843,
-    "min_elevation_m": 70,
-    "max_elevation_m": 548,
-    "hiking_time_hours": 7.5,
-    "hiking_time_text": "7시간 31분",
-    "pois_count": 0
+    "calculated_distance_km": 0.0,
+    "elevation_gain_m": 0,
+    "elevation_loss_m": 0,
+    "hiking_time_hours": 4.5,
+    "hiking_time_text": "4시간 31분",
+    "poi_count": 0,
+    "start_point": null,
+    "end_point": null
   },
   {
     "section_id": 25,
@@ -365,14 +563,18 @@
     "title": "25구간 (충북 보은군)",
     "region": "충북 보은군",
     "course": "25구간 : 보은읍 ~ 삼가저수지 ~ 만수계곡 ~ 속리산 법주사 입구",
+    "start_name": "25구간 : 보은읍",
+    "end_name": "속리산 법주사 입구",
     "is_opened": false,
     "official_distance_km": 14.5,
-    "elevation_gain_m": 1154,
-    "min_elevation_m": 146,
-    "max_elevation_m": 545,
-    "hiking_time_hours": 8.2,
-    "hiking_time_text": "8시간 12분",
-    "pois_count": 0
+    "calculated_distance_km": 0.0,
+    "elevation_gain_m": 0,
+    "elevation_loss_m": 0,
+    "hiking_time_hours": 4.1,
+    "hiking_time_text": "4시간 9분",
+    "poi_count": 0,
+    "start_point": null,
+    "end_point": null
   },
   {
     "section_id": 26,
@@ -380,14 +582,18 @@
     "title": "26구간 (보은군, 상주시)",
     "region": "보은군, 상주시",
     "course": "26구간 : 속리산 정이품송 ~ 말티재 ~ 화북면 ~ 문장대 야영장",
+    "start_name": "26구간 : 속리산 정이품송",
+    "end_name": "문장대 야영장",
     "is_opened": false,
     "official_distance_km": 16.0,
-    "elevation_gain_m": 1260,
-    "min_elevation_m": 346,
-    "max_elevation_m": 995,
-    "hiking_time_hours": 9.2,
-    "hiking_time_text": "9시간 13분",
-    "pois_count": 0
+    "calculated_distance_km": 0.0,
+    "elevation_gain_m": 0,
+    "elevation_loss_m": 0,
+    "hiking_time_hours": 4.6,
+    "hiking_time_text": "4시간 34분",
+    "poi_count": 0,
+    "start_point": null,
+    "end_point": null
   },
   {
     "section_id": 27,
@@ -395,14 +601,18 @@
     "title": "27구간 (경북 상주시)",
     "region": "경북 상주시",
     "course": "27구간 : 화북면 문장대 ~ 용유계곡 ~ 화서면 반송리",
+    "start_name": "27구간 : 화북면 문장대",
+    "end_name": "화서면 반송리",
     "is_opened": false,
     "official_distance_km": 15.3,
-    "elevation_gain_m": 1041,
-    "min_elevation_m": 291,
-    "max_elevation_m": 683,
-    "hiking_time_hours": 8.4,
-    "hiking_time_text": "8시간 22분",
-    "pois_count": 0
+    "calculated_distance_km": 0.0,
+    "elevation_gain_m": 0,
+    "elevation_loss_m": 0,
+    "hiking_time_hours": 4.4,
+    "hiking_time_text": "4시간 22분",
+    "poi_count": 0,
+    "start_point": null,
+    "end_point": null
   },
   {
     "section_id": 28,
@@ -410,14 +620,18 @@
     "title": "28구간 (상주시, 괴산군)",
     "region": "상주시, 괴산군",
     "course": "28구간 : 화서면 ~ 화북면 상송리 ~ 괴산 청천면 관평리",
+    "start_name": "28구간 : 화서면",
+    "end_name": "괴산 청천면 관평리",
     "is_opened": false,
     "official_distance_km": 14.7,
-    "elevation_gain_m": 1500,
-    "min_elevation_m": 281,
-    "max_elevation_m": 743,
-    "hiking_time_hours": 10.1,
-    "hiking_time_text": "10시간 3분",
-    "pois_count": 0
+    "calculated_distance_km": 0.0,
+    "elevation_gain_m": 0,
+    "elevation_loss_m": 0,
+    "hiking_time_hours": 4.2,
+    "hiking_time_text": "4시간 12분",
+    "poi_count": 0,
+    "start_point": null,
+    "end_point": null
   },
   {
     "section_id": 29,
@@ -425,14 +639,18 @@
     "title": "29구간 (충북 괴산군)",
     "region": "충북 괴산군",
     "course": "29구간 : 청천면 관평리 ~ 화양구곡 ~ 선유동계곡 ~ 송면리",
+    "start_name": "29구간 : 청천면 관평리",
+    "end_name": "송면리",
     "is_opened": false,
     "official_distance_km": 15.5,
-    "elevation_gain_m": 537,
-    "min_elevation_m": 234,
-    "max_elevation_m": 499,
-    "hiking_time_hours": 6.2,
-    "hiking_time_text": "6시간 14분",
-    "pois_count": 0
+    "calculated_distance_km": 0.0,
+    "elevation_gain_m": 0,
+    "elevation_loss_m": 0,
+    "hiking_time_hours": 4.4,
+    "hiking_time_text": "4시간 26분",
+    "poi_count": 0,
+    "start_point": null,
+    "end_point": null
   },
   {
     "section_id": 30,
@@ -440,14 +658,18 @@
     "title": "30구간 (충북 괴산군)",
     "region": "충북 괴산군",
     "course": "30구간 : 칠성면 ~ 산막이옛길 ~ 갈은구곡 ~ 괴산호반길",
+    "start_name": "30구간 : 칠성면",
+    "end_name": "괴산호반길",
     "is_opened": false,
     "official_distance_km": 14.9,
-    "elevation_gain_m": 558,
-    "min_elevation_m": 138,
-    "max_elevation_m": 605,
-    "hiking_time_hours": 6.7,
-    "hiking_time_text": "6시간 44분",
-    "pois_count": 0
+    "calculated_distance_km": 0.0,
+    "elevation_gain_m": 0,
+    "elevation_loss_m": 0,
+    "hiking_time_hours": 4.3,
+    "hiking_time_text": "4시간 15분",
+    "poi_count": 0,
+    "start_point": null,
+    "end_point": null
   },
   {
     "section_id": 31,
@@ -455,14 +677,18 @@
     "title": "31구간 (충북 괴산군)",
     "region": "충북 괴산군",
     "course": "31구간 : 괴산호 ~ 쌍곡계곡 입구 ~ 칠성면사무소 ~ 연풍면 태성리",
+    "start_name": "31구간 : 괴산호",
+    "end_name": "연풍면 태성리",
     "is_opened": false,
     "official_distance_km": 15.4,
-    "elevation_gain_m": 498,
-    "min_elevation_m": 136,
-    "max_elevation_m": 364,
-    "hiking_time_hours": 6.3,
-    "hiking_time_text": "6시간 17분",
-    "pois_count": 0
+    "calculated_distance_km": 0.0,
+    "elevation_gain_m": 0,
+    "elevation_loss_m": 0,
+    "hiking_time_hours": 4.4,
+    "hiking_time_text": "4시간 24분",
+    "poi_count": 0,
+    "start_point": null,
+    "end_point": null
   },
   {
     "section_id": 32,
@@ -470,14 +696,24 @@
     "title": "32구간 (괴산군)",
     "region": "괴산군",
     "course": "32구간 : 태성리 ~ 유하리 ~ 행촌리 ~ 삼풍리",
+    "start_name": "태성리",
+    "end_name": "삼풍리",
     "is_opened": true,
     "official_distance_km": 16.2,
-    "elevation_gain_m": 626,
-    "min_elevation_m": 131,
-    "max_elevation_m": 252,
-    "hiking_time_hours": 6.9,
-    "hiking_time_text": "6시간 52분",
-    "pois_count": 2
+    "calculated_distance_km": 16.3,
+    "elevation_gain_m": 684,
+    "elevation_loss_m": 597,
+    "hiking_time_hours": 7.1,
+    "hiking_time_text": "7시간 7분",
+    "poi_count": 2,
+    "start_point": {
+      "lat": 36.776178,
+      "lng": 127.888181
+    },
+    "end_point": {
+      "lat": 36.762456,
+      "lng": 127.99642
+    }
   },
   {
     "section_id": 33,
@@ -485,14 +721,24 @@
     "title": "33구간 (괴산군, 문경시)",
     "region": "괴산군, 문경시",
     "course": "33구간 : 삼풍리 ~ 분지제 ~ 분지리 ~ 평전치 ~ 하내리",
+    "start_name": "삼풍리",
+    "end_name": "하내리",
     "is_opened": true,
     "official_distance_km": 19.0,
-    "elevation_gain_m": 1261,
-    "min_elevation_m": 151,
-    "max_elevation_m": 960,
-    "hiking_time_hours": 10.3,
-    "hiking_time_text": "10시간 15분",
-    "pois_count": 2
+    "calculated_distance_km": 17.5,
+    "elevation_gain_m": 1272,
+    "elevation_loss_m": 1347,
+    "hiking_time_hours": 9.9,
+    "hiking_time_text": "9시간 52분",
+    "poi_count": 2,
+    "start_point": {
+      "lat": 36.762456,
+      "lng": 127.99642
+    },
+    "end_point": {
+      "lat": 36.664048,
+      "lng": 128.080933
+    }
   },
   {
     "section_id": 34,
@@ -500,14 +746,24 @@
     "title": "34구간 (문경시)",
     "region": "문경시",
     "course": "34구간 : 하내리 ~ 가은읍 ~ 갈전리 ~ 수예리마을회관",
+    "start_name": "하내리",
+    "end_name": "수예리마을회관",
     "is_opened": true,
     "official_distance_km": 12.1,
-    "elevation_gain_m": 894,
-    "min_elevation_m": 138,
-    "max_elevation_m": 547,
-    "hiking_time_hours": 6.5,
-    "hiking_time_text": "6시간 28분",
-    "pois_count": 2
+    "calculated_distance_km": 13.1,
+    "elevation_gain_m": 913,
+    "elevation_loss_m": 642,
+    "hiking_time_hours": 6.8,
+    "hiking_time_text": "6시간 50분",
+    "poi_count": 2,
+    "start_point": {
+      "lat": 36.664047,
+      "lng": 128.080922
+    },
+    "end_point": {
+      "lat": 36.594737,
+      "lng": 128.0687
+    }
   },
   {
     "section_id": 35,
@@ -515,14 +771,24 @@
     "title": "35구간 (문경시, 상주시)",
     "region": "문경시, 상주시",
     "course": "35구간 : 수예리마을회관 ~ 안용2리 ~ 양범리 ~ 대조못 ~ 모전동",
+    "start_name": "수예리마을회관",
+    "end_name": "모정동",
     "is_opened": true,
     "official_distance_km": 19.6,
-    "elevation_gain_m": 1184,
-    "min_elevation_m": 72,
-    "max_elevation_m": 747,
-    "hiking_time_hours": 10.5,
-    "hiking_time_text": "10시간 28분",
-    "pois_count": 2
+    "calculated_distance_km": 19.4,
+    "elevation_gain_m": 1191,
+    "elevation_loss_m": 1535,
+    "hiking_time_hours": 10.4,
+    "hiking_time_text": "10시간 26분",
+    "poi_count": 2,
+    "start_point": {
+      "lat": 36.594737,
+      "lng": 128.0687
+    },
+    "end_point": {
+      "lat": 36.583701,
+      "lng": 128.191943
+    }
   },
   {
     "section_id": 36,
@@ -530,14 +796,24 @@
     "title": "36구간 (문경시)",
     "region": "문경시",
     "course": "36구간 : 모정동 ~ 점촌2동 ~ 의곡리 ~ 율곡2리 ~ 이목리",
+    "start_name": "모정동",
+    "end_name": "이목리",
     "is_opened": true,
     "official_distance_km": 17.4,
-    "elevation_gain_m": 463,
-    "min_elevation_m": 53,
-    "max_elevation_m": 175,
-    "hiking_time_hours": 6.7,
-    "hiking_time_text": "6시간 44분",
-    "pois_count": 2
+    "calculated_distance_km": 18.3,
+    "elevation_gain_m": 473,
+    "elevation_loss_m": 493,
+    "hiking_time_hours": 7.0,
+    "hiking_time_text": "7시간 2분",
+    "poi_count": 2,
+    "start_point": {
+      "lat": 36.583701,
+      "lng": 128.191943
+    },
+    "end_point": {
+      "lat": 36.553111,
+      "lng": 128.265551
+    }
   },
   {
     "section_id": 37,
@@ -545,14 +821,18 @@
     "title": "37구간 (문경시, 예천군)",
     "region": "문경시, 예천군",
     "course": "37구간 : 이목리 ~ 산양면 ~ 금천강변길 ~ 예천군 용궁면 회룡포",
+    "start_name": "37구간 : 이목리",
+    "end_name": "예천군 용궁면 회룡포",
     "is_opened": false,
     "official_distance_km": 16.4,
-    "elevation_gain_m": 559,
-    "min_elevation_m": 55,
-    "max_elevation_m": 190,
-    "hiking_time_hours": 6.8,
-    "hiking_time_text": "6시간 46분",
-    "pois_count": 0
+    "calculated_distance_km": 0.0,
+    "elevation_gain_m": 0,
+    "elevation_loss_m": 0,
+    "hiking_time_hours": 4.7,
+    "hiking_time_text": "4시간 41분",
+    "poi_count": 0,
+    "start_point": null,
+    "end_point": null
   },
   {
     "section_id": 38,
@@ -560,14 +840,18 @@
     "title": "38구간 (경북 예천군)",
     "region": "경북 예천군",
     "course": "38구간 : 회룡포 전망대 ~ 삼강주막 ~ 개포면 ~ 예천읍 남산공원",
+    "start_name": "38구간 : 회룡포 전망대",
+    "end_name": "예천읍 남산공원",
     "is_opened": false,
     "official_distance_km": 15.2,
-    "elevation_gain_m": 413,
-    "min_elevation_m": 65,
-    "max_elevation_m": 234,
-    "hiking_time_hours": 5.9,
-    "hiking_time_text": "5시간 51분",
-    "pois_count": 0
+    "calculated_distance_km": 0.0,
+    "elevation_gain_m": 0,
+    "elevation_loss_m": 0,
+    "hiking_time_hours": 4.3,
+    "hiking_time_text": "4시간 21분",
+    "poi_count": 0,
+    "start_point": null,
+    "end_point": null
   },
   {
     "section_id": 39,
@@ -575,14 +859,18 @@
     "title": "39구간 (경북 예천군)",
     "region": "경북 예천군",
     "course": "39구간 : 예천읍 ~ 한천체육공원 ~ 호명면 ~ 경북도청신도시 천년숲",
+    "start_name": "39구간 : 예천읍",
+    "end_name": "경북도청신도시 천년숲",
     "is_opened": false,
     "official_distance_km": 16.0,
-    "elevation_gain_m": 534,
-    "min_elevation_m": 74,
-    "max_elevation_m": 272,
-    "hiking_time_hours": 6.4,
-    "hiking_time_text": "6시간 27분",
-    "pois_count": 0
+    "calculated_distance_km": 0.0,
+    "elevation_gain_m": 0,
+    "elevation_loss_m": 0,
+    "hiking_time_hours": 4.6,
+    "hiking_time_text": "4시간 34분",
+    "poi_count": 0,
+    "start_point": null,
+    "end_point": null
   },
   {
     "section_id": 40,
@@ -590,14 +878,18 @@
     "title": "40구간 (예천군, 안동시)",
     "region": "예천군, 안동시",
     "course": "40구간 : 경북도청신도시 ~ 풍천면 ~ 안동 하회마을 ~ 병산서원",
+    "start_name": "40구간 : 경북도청신도시",
+    "end_name": "병산서원",
     "is_opened": false,
     "official_distance_km": 15.5,
-    "elevation_gain_m": 725,
-    "min_elevation_m": 73,
-    "max_elevation_m": 289,
-    "hiking_time_hours": 7.1,
-    "hiking_time_text": "7시간 9분",
-    "pois_count": 0
+    "calculated_distance_km": 0.0,
+    "elevation_gain_m": 0,
+    "elevation_loss_m": 0,
+    "hiking_time_hours": 4.4,
+    "hiking_time_text": "4시간 26분",
+    "poi_count": 0,
+    "start_point": null,
+    "end_point": null
   },
   {
     "section_id": 41,
@@ -605,14 +897,18 @@
     "title": "41구간 (경북 안동시)",
     "region": "경북 안동시",
     "course": "41구간 : 병산서원 ~ 낙동강변 자전거길 ~ 풍산읍 ~ 안동댐 월영교",
+    "start_name": "41구간 : 병산서원",
+    "end_name": "안동댐 월영교",
     "is_opened": false,
     "official_distance_km": 17.2,
-    "elevation_gain_m": 1052,
-    "min_elevation_m": 80,
-    "max_elevation_m": 270,
-    "hiking_time_hours": 8.8,
-    "hiking_time_text": "8시간 50분",
-    "pois_count": 0
+    "calculated_distance_km": 0.0,
+    "elevation_gain_m": 0,
+    "elevation_loss_m": 0,
+    "hiking_time_hours": 4.9,
+    "hiking_time_text": "4시간 55분",
+    "poi_count": 0,
+    "start_point": null,
+    "end_point": null
   },
   {
     "section_id": 42,
@@ -620,14 +916,18 @@
     "title": "42구간 (안동시, 영주시)",
     "region": "안동시, 영주시",
     "course": "42구간 : 월영교 ~ 와룡면 ~ 도산서원 입구 ~ 영주시 평은면 영주호",
+    "start_name": "42구간 : 월영교",
+    "end_name": "영주시 평은면 영주호",
     "is_opened": false,
     "official_distance_km": 16.8,
-    "elevation_gain_m": 815,
-    "min_elevation_m": 144,
-    "max_elevation_m": 456,
-    "hiking_time_hours": 7.8,
-    "hiking_time_text": "7시간 51분",
-    "pois_count": 0
+    "calculated_distance_km": 0.0,
+    "elevation_gain_m": 0,
+    "elevation_loss_m": 0,
+    "hiking_time_hours": 4.8,
+    "hiking_time_text": "4시간 48분",
+    "poi_count": 0,
+    "start_point": null,
+    "end_point": null
   },
   {
     "section_id": 43,
@@ -635,14 +935,18 @@
     "title": "43구간 (경북 영주시)",
     "region": "경북 영주시",
     "course": "43구간 : 영주호 용혈폭포 ~ 문수면 무섬마을(외나무다리) ~ 서천수변공원",
+    "start_name": "43구간 : 영주호 용혈폭포",
+    "end_name": "서천수변공원",
     "is_opened": false,
     "official_distance_km": 15.0,
-    "elevation_gain_m": 547,
-    "min_elevation_m": 130,
-    "max_elevation_m": 284,
-    "hiking_time_hours": 6.5,
-    "hiking_time_text": "6시간 27분",
-    "pois_count": 0
+    "calculated_distance_km": 0.0,
+    "elevation_gain_m": 0,
+    "elevation_loss_m": 0,
+    "hiking_time_hours": 4.3,
+    "hiking_time_text": "4시간 17분",
+    "poi_count": 0,
+    "start_point": null,
+    "end_point": null
   },
   {
     "section_id": 44,
@@ -650,14 +954,18 @@
     "title": "44구간 (경북 영주시)",
     "region": "경북 영주시",
     "course": "44구간 : 영주시내 ~ 순흥면 소수서원 ~ 선비촌 ~ 부석사 입구",
+    "start_name": "44구간 : 영주시내",
+    "end_name": "부석사 입구",
     "is_opened": false,
     "official_distance_km": 16.2,
-    "elevation_gain_m": 850,
-    "min_elevation_m": 141,
-    "max_elevation_m": 355,
-    "hiking_time_hours": 7.6,
-    "hiking_time_text": "7시간 35분",
-    "pois_count": 0
+    "calculated_distance_km": 0.0,
+    "elevation_gain_m": 0,
+    "elevation_loss_m": 0,
+    "hiking_time_hours": 4.6,
+    "hiking_time_text": "4시간 38분",
+    "poi_count": 0,
+    "start_point": null,
+    "end_point": null
   },
   {
     "section_id": 45,
@@ -665,14 +973,18 @@
     "title": "45구간 (영주시, 단양군)",
     "region": "영주시, 단양군",
     "course": "45구간 : 부석사 ~ 백두대간 마구령(해발 820m) ~ 단양군 의풍1리",
+    "start_name": "45구간 : 부석사",
+    "end_name": "단양군 의풍1리",
     "is_opened": false,
     "official_distance_km": 15.6,
-    "elevation_gain_m": 1079,
-    "min_elevation_m": 328,
-    "max_elevation_m": 886,
-    "hiking_time_hours": 8.4,
-    "hiking_time_text": "8시간 26분",
-    "pois_count": 0
+    "calculated_distance_km": 0.0,
+    "elevation_gain_m": 0,
+    "elevation_loss_m": 0,
+    "hiking_time_hours": 4.5,
+    "hiking_time_text": "4시간 27분",
+    "poi_count": 0,
+    "start_point": null,
+    "end_point": null
   },
   {
     "section_id": 46,
@@ -680,14 +992,24 @@
     "title": "46구간 (단양군, 영주시, 봉화군)",
     "region": "단양군, 영주시, 봉화군",
     "course": "46구간 : 의풍1리마을회관 ~ 강변방면 ~ 남대교 ~ 오전리 ~ 오전약수관광지주차장",
+    "start_name": "의풍1리마을회관",
+    "end_name": "오전약수관광지주차장",
     "is_opened": true,
     "official_distance_km": 16.8,
-    "elevation_gain_m": 684,
-    "min_elevation_m": 383,
-    "max_elevation_m": 775,
-    "hiking_time_hours": 6.9,
-    "hiking_time_text": "6시간 52분",
-    "pois_count": 2
+    "calculated_distance_km": 10.8,
+    "elevation_gain_m": 734,
+    "elevation_loss_m": 342,
+    "hiking_time_hours": 5.3,
+    "hiking_time_text": "5시간 21분",
+    "poi_count": 2,
+    "start_point": {
+      "lat": 37.068866,
+      "lng": 128.609171
+    },
+    "end_point": {
+      "lat": 37.026467,
+      "lng": 128.700359
+    }
   },
   {
     "section_id": 47,
@@ -695,14 +1017,24 @@
     "title": "47구간 (봉화군)",
     "region": "봉화군",
     "course": "47구간 : 오전약수관광지주차장 ~ 박달령 ~ 주실령 ~ 도심3리마을회관 ~ 애당교",
+    "start_name": "오전약수관광지주차장",
+    "end_name": "애당교",
     "is_opened": true,
     "official_distance_km": 18.2,
-    "elevation_gain_m": 1770,
-    "min_elevation_m": 379,
-    "max_elevation_m": 991,
-    "hiking_time_hours": 12.3,
-    "hiking_time_text": "12시간 18분",
-    "pois_count": 2
+    "calculated_distance_km": 17.1,
+    "elevation_gain_m": 1524,
+    "elevation_loss_m": 1610,
+    "hiking_time_hours": 10.7,
+    "hiking_time_text": "10시간 42분",
+    "poi_count": 2,
+    "start_point": {
+      "lat": 37.012545,
+      "lng": 128.746558
+    },
+    "end_point": {
+      "lat": 36.987296,
+      "lng": 128.866318
+    }
   },
   {
     "section_id": 48,
@@ -710,14 +1042,24 @@
     "title": "48구간 (봉화군)",
     "region": "봉화군",
     "course": "48구간 : 애당교 ~ 거포재 ~ 한국산림과학고 ~ 춘양면사무소",
+    "start_name": "애당교",
+    "end_name": "춘양면사무소",
     "is_opened": true,
     "official_distance_km": 10.9,
-    "elevation_gain_m": 390,
-    "min_elevation_m": 321,
-    "max_elevation_m": 542,
-    "hiking_time_hours": 4.7,
-    "hiking_time_text": "4시간 41분",
-    "pois_count": 3
+    "calculated_distance_km": 11.3,
+    "elevation_gain_m": 423,
+    "elevation_loss_m": 507,
+    "hiking_time_hours": 4.9,
+    "hiking_time_text": "4시간 55분",
+    "poi_count": 3,
+    "start_point": {
+      "lat": 36.987296,
+      "lng": 128.866318
+    },
+    "end_point": {
+      "lat": 36.935293,
+      "lng": 128.914973
+    }
   },
   {
     "section_id": 49,
@@ -725,14 +1067,24 @@
     "title": "49구간 (봉화군)",
     "region": "봉화군",
     "course": "49구간 : 춘양면사무소 ~ 구영재골 ~ 새장골 ~ 아홉사리봉 ~ 현동삼거리",
+    "start_name": "춘양면사무소",
+    "end_name": "현동삼거리",
     "is_opened": true,
     "official_distance_km": 10.2,
-    "elevation_gain_m": 744,
-    "min_elevation_m": 315,
-    "max_elevation_m": 671,
-    "hiking_time_hours": 5.3,
-    "hiking_time_text": "5시간 18분",
-    "pois_count": 1
+    "calculated_distance_km": 6.8,
+    "elevation_gain_m": 748,
+    "elevation_loss_m": 431,
+    "hiking_time_hours": 4.4,
+    "hiking_time_text": "4시간 21분",
+    "poi_count": 1,
+    "start_point": {
+      "lat": 36.935293,
+      "lng": 128.914973
+    },
+    "end_point": {
+      "lat": 36.944103,
+      "lng": 128.963539
+    }
   },
   {
     "section_id": 50,
@@ -740,14 +1092,24 @@
     "title": "50구간 (봉화군)",
     "region": "봉화군",
     "course": "50구간 : 현동삼거리 ~ 현동3리마을회관 ~ 분천1리 마을회관 ~ 길이박골 ~ 풍애교 ~ 분천역",
+    "start_name": "현동삼거리",
+    "end_name": "분천역",
     "is_opened": true,
     "official_distance_km": 15.4,
-    "elevation_gain_m": 1271,
-    "min_elevation_m": 295,
-    "max_elevation_m": 667,
-    "hiking_time_hours": 9.5,
-    "hiking_time_text": "9시간 33분",
-    "pois_count": 3
+    "calculated_distance_km": 15.3,
+    "elevation_gain_m": 1031,
+    "elevation_loss_m": 1014,
+    "hiking_time_hours": 8.2,
+    "hiking_time_text": "8시간 13분",
+    "poi_count": 3,
+    "start_point": {
+      "lat": 36.940508,
+      "lng": 129.00098
+    },
+    "end_point": {
+      "lat": 36.932317,
+      "lng": 129.058731
+    }
   },
   {
     "section_id": 51,
@@ -755,14 +1117,24 @@
     "title": "51구간 (봉화군, 울진군)",
     "region": "봉화군, 울진군",
     "course": "51구간 : 분천역 ~ 척구마을 ~ 승부역 ~ 원곡교",
+    "start_name": "분천역",
+    "end_name": "원곡교",
     "is_opened": true,
     "official_distance_km": 16.5,
-    "elevation_gain_m": 1863,
-    "min_elevation_m": 329,
-    "max_elevation_m": 817,
-    "hiking_time_hours": 11.1,
-    "hiking_time_text": "11시간 7분",
-    "pois_count": 2
+    "calculated_distance_km": 14.8,
+    "elevation_gain_m": 1244,
+    "elevation_loss_m": 1203,
+    "hiking_time_hours": 8.8,
+    "hiking_time_text": "8시간 51분",
+    "poi_count": 2,
+    "start_point": {
+      "lat": 36.932317,
+      "lng": 129.058731
+    },
+    "end_point": {
+      "lat": 36.962159,
+      "lng": 129.090551
+    }
   },
   {
     "section_id": 52,
@@ -770,14 +1142,24 @@
     "title": "52구간 (울진군)",
     "region": "울진군",
     "course": "52구간 : 원곡교 ~ 쌍전리 ~ 큰넓재 ~ 한나무재 ~ 소광리",
+    "start_name": "원곡교",
+    "end_name": "소광리",
     "is_opened": true,
     "official_distance_km": 12.2,
-    "elevation_gain_m": 883,
-    "min_elevation_m": 453,
-    "max_elevation_m": 795,
-    "hiking_time_hours": 7.1,
-    "hiking_time_text": "7시간 4분",
-    "pois_count": 3
+    "calculated_distance_km": 12.5,
+    "elevation_gain_m": 1102,
+    "elevation_loss_m": 1004,
+    "hiking_time_hours": 7.6,
+    "hiking_time_text": "7시간 35분",
+    "poi_count": 3,
+    "start_point": {
+      "lat": 36.962159,
+      "lng": 129.090551
+    },
+    "end_point": {
+      "lat": 36.978636,
+      "lng": 129.187327
+    }
   },
   {
     "section_id": 53,
@@ -785,14 +1167,24 @@
     "title": "53구간 (울진군)",
     "region": "울진군",
     "course": "53구간 : 소광리 ~ 너삼밭재 ~ 찬물내기 ~ 바릿재 ~ 두천리",
+    "start_name": "소광리",
+    "end_name": "두천1리",
     "is_opened": true,
     "official_distance_km": 13.2,
-    "elevation_gain_m": 291,
-    "min_elevation_m": 242,
-    "max_elevation_m": 599,
-    "hiking_time_hours": 5.2,
-    "hiking_time_text": "5시간 12분",
-    "pois_count": 2
+    "calculated_distance_km": 12.9,
+    "elevation_gain_m": 905,
+    "elevation_loss_m": 1249,
+    "hiking_time_hours": 7.5,
+    "hiking_time_text": "7시간 31분",
+    "poi_count": 2,
+    "start_point": {
+      "lat": 36.978636,
+      "lng": 129.187327
+    },
+    "end_point": {
+      "lat": 37.034493,
+      "lng": 129.289191
+    }
   },
   {
     "section_id": 54,
@@ -800,14 +1192,24 @@
     "title": "54구간 (울진군)",
     "region": "울진군",
     "course": "54구간 : 두천1리 ~ 흥륜사 ~ 보부천상부계곡 ~ 중섬교",
+    "start_name": "두천1리",
+    "end_name": "중섬교",
     "is_opened": true,
     "official_distance_km": 15.0,
-    "elevation_gain_m": 2129,
-    "min_elevation_m": 22,
-    "max_elevation_m": 462,
-    "hiking_time_hours": 12.6,
-    "hiking_time_text": "12시간 37분",
-    "pois_count": 2
+    "calculated_distance_km": 15.3,
+    "elevation_gain_m": 1536,
+    "elevation_loss_m": 1491,
+    "hiking_time_hours": 10.1,
+    "hiking_time_text": "10시간 5분",
+    "poi_count": 2,
+    "start_point": {
+      "lat": 37.034493,
+      "lng": 129.289191
+    },
+    "end_point": {
+      "lat": 36.946388,
+      "lng": 129.275633
+    }
   },
   {
     "section_id": 55,
@@ -815,13 +1217,23 @@
     "title": "55구간 (울진군)",
     "region": "울진군",
     "course": "55구간 : 중섬교 ~ 찬물내기 ~ 막금마을 ~ 수곡대교 ~ 망양정해수욕장",
+    "start_name": "중섬교",
+    "end_name": "망양정해수욕장",
     "is_opened": true,
     "official_distance_km": 20.0,
-    "elevation_gain_m": 347,
-    "min_elevation_m": 0,
-    "max_elevation_m": 116,
-    "hiking_time_hours": 7.1,
-    "hiking_time_text": "7시간 3분",
-    "pois_count": 3
+    "calculated_distance_km": 20.5,
+    "elevation_gain_m": 1146,
+    "elevation_loss_m": 1313,
+    "hiking_time_hours": 10.4,
+    "hiking_time_text": "10시간 22분",
+    "poi_count": 3,
+    "start_point": {
+      "lat": 36.946388,
+      "lng": 129.275633
+    },
+    "end_point": {
+      "lat": 36.96806,
+      "lng": 129.412604
+    }
   }
 ]
