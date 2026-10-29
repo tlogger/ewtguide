@@ -1,10 +1,12 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { POI } from '../types';
+import { generateDeterministicPoiId } from '../utils/poiId';
 
 export const DEFAULT_SUPABASE_URL = 'https://johtqemdlprtbpohdkgu.supabase.co';
 export const DEFAULT_SUPABASE_KEY = 'sb_publishable_Aj8gNxqXefjkBg6H6zsCxw_icac_-2G';
 
 const CACHE_PREFIX = 'ewtguide_fac_cache';
+const TOMBSTONE_PREFIX = 'ewtguide_tombstones';
 const LEGACY_USER_KEY = 'ewtguide_user_facilities';
 
 let supabaseClient: SupabaseClient | null = null;
@@ -20,6 +22,42 @@ export const getSupabase = (): SupabaseClient => {
   });
   return supabaseClient;
 };
+
+/** 영구 삭제 묘지(Tombstones) 목록 로드 */
+export function getLocalTombstones(sectionId: number): Set<string> {
+  try {
+    const raw = localStorage.getItem(`${TOMBSTONE_PREFIX}_${sectionId}`);
+    if (raw) {
+      const arr = JSON.parse(raw);
+      return new Set(Array.isArray(arr) ? arr : []);
+    }
+  } catch {
+    // fallback
+  }
+  return new Set();
+}
+
+/** 영구 삭제 묘지에 ID 추가 */
+export function addLocalTombstone(sectionId: number, id: string): void {
+  const stones = getLocalTombstones(sectionId);
+  stones.add(id);
+  try {
+    localStorage.setItem(`${TOMBSTONE_PREFIX}_${sectionId}`, JSON.stringify([...stones]));
+  } catch (e) {
+    console.warn('Failed to save tombstone:', e);
+  }
+}
+
+/** 영구 삭제 묘지에서 ID 제거 (재등록 시) */
+export function removeLocalTombstone(sectionId: number, id: string): void {
+  const stones = getLocalTombstones(sectionId);
+  stones.delete(id);
+  try {
+    localStorage.setItem(`${TOMBSTONE_PREFIX}_${sectionId}`, JSON.stringify([...stones]));
+  } catch (e) {
+    console.warn('Failed to remove tombstone:', e);
+  }
+}
 
 /** 로컬 캐시에서 시설 목록 로드 */
 function getLocalCachedFacilities(sectionId: number): POI[] {
@@ -40,20 +78,32 @@ function setLocalCachedFacilities(sectionId: number, facilities: POI[]): void {
   try {
     localStorage.setItem(`${CACHE_PREFIX}_${sectionId}`, JSON.stringify(facilities));
   } catch (e) {
-    console.warn('Local cache write failed (possibly quota exceeded):', e);
+    console.warn('Local cache write failed:', e);
   }
 }
 
 /**
  * 특정 구간의 시설 및 명소 목록 로드
- * - Supabase 중앙 DB의 변경/신규/삭제 내역을 실시간 반영
- * - 공식 시설(officialPois)과 중앙 DB의 사용자 시설 및 수정본을 스마트하게 병합
+ * - 크롤링 재실행으로 새 데이터가 유입되더라도 삭제된 시설(Tombstone)은 100% 차단
+ * - Supabase 중앙 DB의 변경/신규/삭제 내역과 공식 시설을 스마트하게 머지
  */
 export async function loadSectionFacilities(
   sectionId: number,
   officialPois: POI[] = []
 ): Promise<POI[]> {
   const client = getSupabase();
+  const tombstones = getLocalTombstones(sectionId);
+
+  // 1. 공식 시설에 결정론적 고유 ID 런타임 보장
+  const normalizedOfficials: POI[] = officialPois.map((poi) => {
+    const id = poi.id || generateDeterministicPoiId(poi.name, poi.lat, poi.lng);
+    return {
+      ...poi,
+      id,
+      is_official: true
+    };
+  });
+
   let dbRecords: POI[] = [];
   let isDbSuccess = false;
 
@@ -66,72 +116,80 @@ export async function loadSectionFacilities(
     if (!error && data) {
       dbRecords = data as POI[];
       isDbSuccess = true;
-    } else if (error) {
-      console.warn('Supabase ewt_facilities fetch notice:', error.message);
     }
   } catch (err) {
-    console.warn('Supabase network error, fallback to local cache:', err);
+    console.warn('Supabase fetch notice (fallback to local):', err);
   }
 
-  // DB 조회가 성공한 경우: DB 기반으로 공식 시설과 머지
   if (isDbSuccess) {
     const dbMap = new Map<string, POI>();
     dbRecords.forEach((item) => {
-      if (item.id) dbMap.set(item.id, item);
+      if (item.id) {
+        dbMap.set(item.id, item);
+        // Supabase에 삭제 기록이 있으면 로컬 묘지에도 자동 동기화
+        if (item.is_deleted) {
+          tombstones.add(item.id);
+          addLocalTombstone(sectionId, item.id);
+        }
+      }
     });
 
-    // 1. 공식 시설 처리 (수정본 덮어쓰기 또는 삭제된 것 제외)
+    // 2. 공식 시설 머지: 삭제 묘지(Tombstone)에 있는 것은 원천 차단
     const mergedOfficials: POI[] = [];
-    officialPois.forEach((official) => {
-      if (!official.id) {
-        mergedOfficials.push(official);
-        return;
+    normalizedOfficials.forEach((official) => {
+      const id = official.id!;
+      if (tombstones.has(id)) {
+        return; // 삭제된 시설은 무조건 제외 (영구 부활 방지)
       }
-      const override = dbMap.get(official.id);
+
+      const override = dbMap.get(id);
       if (override) {
         if (!override.is_deleted) {
           mergedOfficials.push({ ...official, ...override, is_official: true });
         }
-        dbMap.delete(official.id);
+        dbMap.delete(id);
       } else {
         mergedOfficials.push(official);
       }
     });
 
-    // 2. 신규 사용자 등록 시설 처리 (삭제되지 않은 것들)
+    // 3. 사용자 등록 신규 시설 머지
     const userAdded: POI[] = [];
     dbMap.forEach((userFac) => {
-      if (!userFac.is_deleted) {
+      if (!userFac.is_deleted && userFac.id && !tombstones.has(userFac.id)) {
         userAdded.push(userFac);
       }
     });
 
-    // 최신 등록된 사용자 시설을 상단에, 그 뒤에 공식 시설 배치
     const finalResult = [...userAdded, ...mergedOfficials];
     setLocalCachedFacilities(sectionId, finalResult);
     return finalResult;
   }
 
-  // DB 실패 시(테이블 준비 중 또는 오프라인): 로컬 캐시와 병합하여 매끄럽게 동작 보장
+  // DB 미생성/오프라인 상태: 로컬 묘지(Tombstone) 및 로컬 캐시로 동작 보장
   const cached = getLocalCachedFacilities(sectionId);
   if (cached.length > 0) {
-    return cached;
+    // 캐시 내에서도 묘지에 등록된 시설 필터링
+    return cached.filter((f) => f.id && !tombstones.has(f.id));
   }
 
-  return officialPois;
+  // 캐시가 없으면 공식 시설 중 묘지에 없는 것만 반환
+  return normalizedOfficials.filter((f) => f.id && !tombstones.has(f.id));
 }
 
 /**
- * 시설 등록 또는 수정 내용을 Supabase 중앙 DB에 저장
- * 모든 사용자가 즉시 확인할 수 있도록 실시간 반영
+ * 시설 등록 또는 수정 내용을 Supabase 중앙 DB 및 로컬에 저장
  */
 export async function saveFacilityToDb(
   sectionId: number,
   facility: POI
 ): Promise<POI> {
   const client = getSupabase();
-  const facilityId = facility.id || `fac_${Date.now()}`;
+  const facilityId = facility.id || generateDeterministicPoiId(facility.name, facility.lat, facility.lng);
   const now = new Date().toISOString();
+
+  // 재등록 또는 수정 시 묘지에서 해제
+  removeLocalTombstone(sectionId, facilityId);
 
   const record = {
     id: facilityId,
@@ -157,18 +215,14 @@ export async function saveFacilityToDb(
   };
 
   try {
-    const { error } = await client
+    await client
       .from('ewt_facilities')
       .upsert(record);
-
-    if (error) {
-      console.error('Failed to upsert facility to Supabase:', error);
-    }
   } catch (err) {
-    console.error('Network error during saveFacilityToDb:', err);
+    console.warn('Supabase upsert notice:', err);
   }
 
-  // 로컬 캐시도 즉시 갱신
+  // 로컬 캐시 즉시 갱신
   const cached = getLocalCachedFacilities(sectionId);
   const exists = cached.some((f) => f.id === facilityId);
   const updatedCache = exists
@@ -180,45 +234,43 @@ export async function saveFacilityToDb(
 }
 
 /**
- * 시설 삭제 내용을 Supabase 중앙 DB에 반영
+ * 시설 삭제 내용을 영구 묘지(Tombstone) 및 Supabase 중앙 DB에 즉시 반영
+ * - 공식 시설/사용자 시설 불문하고 즉시 영구 삭제되며, 크롤링 재실행 시에도 절대 부활하지 않음
  */
 export async function deleteFacilityFromDb(
   sectionId: number,
   facility: POI
 ): Promise<void> {
-  if (!facility.id) return;
+  const targetId = facility.id || generateDeterministicPoiId(facility.name, facility.lat, facility.lng);
+  if (!targetId) return;
+
   const client = getSupabase();
   const now = new Date().toISOString();
 
-  try {
-    if (facility.is_official) {
-      // 공식 시설은 완전히 지우지 않고 is_deleted 플래그로 비표시 처리
-      await client
-        .from('ewt_facilities')
-        .upsert({
-          id: facility.id,
-          section_id: sectionId,
-          name: facility.name,
-          category: facility.category,
-          lat: facility.lat,
-          lng: facility.lng,
-          is_official: true,
-          is_deleted: true,
-          updated_at: now
-        });
-    } else {
-      // 사용자가 등록한 시설은 delete 또는 is_deleted 처리
-      await client
-        .from('ewt_facilities')
-        .delete()
-        .eq('id', facility.id);
-    }
-  } catch (err) {
-    console.error('Failed to delete facility from Supabase:', err);
-  }
+  // 1. [핵심] 로컬 영구 묘지(Tombstone)에 즉시 등록
+  addLocalTombstone(sectionId, targetId);
 
-  // 로컬 캐시에서도 제거
+  // 2. 로컬 캐시에서 즉시 제거
   const cached = getLocalCachedFacilities(sectionId);
-  const updatedCache = cached.filter((f) => f.id !== facility.id);
+  const updatedCache = cached.filter((f) => f.id !== targetId);
   setLocalCachedFacilities(sectionId, updatedCache);
+
+  // 3. Supabase 중앙 DB에 영구 삭제 묘지 레코드 동기화
+  try {
+    await client
+      .from('ewt_facilities')
+      .upsert({
+        id: targetId,
+        section_id: sectionId,
+        name: facility.name,
+        category: facility.category,
+        lat: facility.lat,
+        lng: facility.lng,
+        is_official: facility.is_official ?? false,
+        is_deleted: true,
+        updated_at: now
+      });
+  } catch (err) {
+    console.warn('Supabase tombstone sync notice:', err);
+  }
 }

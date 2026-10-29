@@ -26,7 +26,8 @@ import {
   ChevronUp,
   ChevronDown,
   Edit3,
-  Camera
+  Camera,
+  Trash2
 } from 'lucide-react';
 
 const KAKAO_APP_KEY = import.meta.env.VITE_KAKAO_MAP_API_KEY || '61ebf0b7a0daf24cba357d92677c8d8a';
@@ -47,7 +48,7 @@ interface TrailMapViewProps {
   allSections?: SectionSummary[];
   userFacilities: POI[];
   onAddFacility: (facility: POI) => void;
-  onRemoveFacility?: (facilityId: string) => void;
+  onRemoveFacility?: (facility: POI | string) => void;
   onNavigateSection?: (sectionId: number) => void;
   onBackToDetail: () => void;
 }
@@ -99,6 +100,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
 
   // Modals & Popups
   const [selectedFacility, setSelectedFacility] = useState<POI | null>(null);
+  const [facilityToDelete, setFacilityToDelete] = useState<POI | null>(null);
   const [editingFacility, setEditingFacility] = useState<POI | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalCoords, setModalCoords] = useState<{ lat: number; lng: number }>({
@@ -1014,7 +1016,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
               </p>
             )}
 
-            {/* Actions: Phone & Edit (NO confirm prompt on edit!) */}
+            {/* Actions: Phone & Edit & Delete */}
             <div className="flex items-center gap-2 pt-1">
               {selectedFacility.phone && (
                 <a
@@ -1027,10 +1029,60 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
               )}
               <button
                 onClick={() => handleOpenEditFacility(selectedFacility)}
-                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Edit3 className="w-3.5 h-3.5 text-emerald-400" />
                 <span>수정</span>
+              </button>
+              <button
+                onClick={() => setFacilityToDelete(selectedFacility)}
+                className="px-3.5 py-2.5 bg-rose-950/70 hover:bg-rose-900 border border-rose-800/80 text-rose-300 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                title="시설 삭제"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>삭제</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* In-app Confirm Dialog for Facility Deletion */}
+      {facilityToDelete && (
+        <div
+          onPointerDown={(e) => e.stopPropagation()}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+        >
+          <div className="bg-slate-900 border border-rose-700/60 rounded-3xl p-5 max-w-xs w-full shadow-2xl space-y-4 text-white animate-in zoom-in-95">
+            <h3 className="text-base font-bold text-rose-400 flex items-center gap-2">
+              <Trash2 className="w-4 h-4 text-rose-400" />
+              <span>시설 삭제 확인</span>
+            </h3>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              <span className="font-bold text-white">[{facilityToDelete.name}]</span> 포인트를 삭제하시겠습니까?
+              <br />
+              <span className="text-[11px] text-slate-400 mt-1 block">
+                삭제된 포인트는 향후 데이터 갱신 시에도 다시 나타나지 않습니다.
+              </span>
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  if (onRemoveFacility && facilityToDelete) {
+                    onRemoveFacility(facilityToDelete);
+                  }
+                  setFacilityToDelete(null);
+                  setSelectedFacility(null);
+                }}
+                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer text-white"
+              >
+                예, 삭제합니다
+              </button>
+              <button
+                onClick={() => setFacilityToDelete(null)}
+                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition-colors cursor-pointer"
+              >
+                취소
               </button>
             </div>
           </div>
@@ -1086,11 +1138,12 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
           setEditingFacility(null);
         }}
         onDelete={(fac) => {
-          if (fac.id && onRemoveFacility) {
-            onRemoveFacility(fac.id);
+          if (onRemoveFacility) {
+            onRemoveFacility(fac);
           }
           setIsModalOpen(false);
           setEditingFacility(null);
+          setSelectedFacility(null);
         }}
         lat={modalCoords.lat}
         lng={modalCoords.lng}

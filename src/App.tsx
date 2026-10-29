@@ -119,12 +119,21 @@ export const App: React.FC = () => {
     });
   };
 
-  const handleRemoveFacility = async (facilityId: string) => {
+  const handleRemoveFacility = async (facilityOrId: string | POI) => {
     if (!selectedSectionId) return;
-    const target = userFacilities.find((f) => f.id === facilityId);
-    if (target) {
-      await deleteFacilityFromDb(selectedSectionId, target);
-      setUserFacilities((prev) => prev.filter((f) => f.id !== facilityId));
+    const targetId = typeof facilityOrId === 'string' ? facilityOrId : facilityOrId.id;
+    const targetObj = typeof facilityOrId === 'object'
+      ? facilityOrId
+      : userFacilities.find((f) => f.id === targetId);
+
+    if (targetObj) {
+      await deleteFacilityFromDb(selectedSectionId, targetObj);
+    } else if (targetId) {
+      await deleteFacilityFromDb(selectedSectionId, { id: targetId, name: '', category: 'other' });
+    }
+
+    if (targetId) {
+      setUserFacilities((prev) => prev.filter((f) => f.id !== targetId));
     }
   };
 
