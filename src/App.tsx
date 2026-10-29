@@ -20,6 +20,10 @@ import {
   deleteFacilityFromDb,
   getCurrentUser
 } from './services/facilityDb';
+import {
+  parseOAuthCallback,
+  processOAuthCallbackResult
+} from './services/oauthService';
 
 export const App: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<'title' | 'list' | 'detail' | 'map' | 'all_map'>(() => {
@@ -42,6 +46,20 @@ export const App: React.FC = () => {
     };
     window.addEventListener('ewtguide_auth_changed', handleAuthChange);
     return () => window.removeEventListener('ewtguide_auth_changed', handleAuthChange);
+  }, []);
+
+  // Handle incoming OAuth callback from Naver, Kakao, or Google
+  useEffect(() => {
+    const callbackData = parseOAuthCallback();
+    if (callbackData) {
+      processOAuthCallbackResult(callbackData).then((res) => {
+        if (res.user) {
+          setCurrentUser(res.user);
+        }
+        // Clean URL query and hash
+        window.history.replaceState({}, document.title, window.location.pathname);
+      });
+    }
   }, []);
 
   // Load summary on mount

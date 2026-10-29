@@ -1,13 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserAccount, AuthProvider } from '../types';
 import {
   findUserAccount,
   registerUserAccount,
   updateUserLoginSession,
-  signOutUser,
-  getSupabase
+  signOutUser
 } from '../services/facilityDb';
-import { X, LogIn, LogOut, CheckCircle, Shield, User, ArrowRight } from 'lucide-react';
+import {
+  getOAuthClientConfig,
+  saveOAuthClientConfig,
+  buildOAuthAuthorizeUrl,
+  getOAuthRedirectUri,
+  processOAuthCallbackResult
+} from '../services/oauthService';
+import {
+  X,
+  LogIn,
+  LogOut,
+  Shield,
+  User,
+  ArrowRight,
+  Settings,
+  ExternalLink,
+  AlertCircle,
+  CheckCircle2,
+  HelpCircle
+} from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -24,113 +42,111 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [isLoading, setIsLoading] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'error' | 'success' | 'info'; text: string } | null>(null);
+
+  // Client ID Configurations
+  const [kakaoKey, setKakaoKey] = useState('');
+  const [naverKey, setNaverKey] = useState('');
+  const [googleKey, setGoogleKey] = useState('');
+  const [configSaved, setConfigSaved] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      const cfg = getOAuthClientConfig();
+      setKakaoKey(cfg.kakaoClientId);
+      setNaverKey(cfg.naverClientId);
+      setGoogleKey(cfg.googleClientId);
+      setStatusMessage(null);
+      setConfigSaved(false);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  /**
-   * 소셜 OAuth2 인증 처리 핸들러 (네이버, 카카오, 구글)
-   */
-  const handleSocialAuth = async (provider: AuthProvider) => {
-    setIsLoading(true);
-    setStatusMessage(null);
+  const redirectUri = getOAuthRedirectUri();
 
-    try {
-      const client = getSupabase();
-
-      // 1. Google 및 Kakao: Supabase Auth 표준 OAuth2 리다이렉트
-      if (provider === 'google' || provider === 'kakao') {
-        const redirectUrl = `${window.location.origin}${window.location.pathname}?oauth_provider=${provider}&mode=${activeTab}`;
-        
-        try {
-          const { error } = await client.auth.signInWithOAuth({
-            provider: provider === 'google' ? 'google' : 'kakao',
-            options: {
-              redirectTo: redirectUrl,
-              queryParams: {
-                access_type: 'offline',
-                prompt: 'consent'
-              }
-            }
-          });
-
-          if (error) {
-            console.warn(`Supabase ${provider} oauth notice:`, error.message);
-            // Supabase Provider 미설정 환경 시: 안전한 표준 시뮬레이션 토큰 발급으로 즉시 테스트 보장
-            await executeOAuthSession(provider, activeTab);
-          }
-        } catch {
-          await executeOAuthSession(provider, activeTab);
-        }
-      } else if (provider === 'naver') {
-        // 2. Naver: 네이버 아이디로 로그인 표준 OAuth2 웹 플로우
-        await executeOAuthSession('naver', activeTab);
-      }
-    } catch (err: any) {
-      setStatusMessage({ type: 'error', text: err?.message || '소셜 인증 처리 중 오류가 발생했습니다.' });
-    } finally {
-      setIsLoading(false);
-    }
+  /** API 키 저장 핸들러 */
+  const handleSaveConfig = (e: React.FormEvent) => {
+    e.preventDefault();
+    saveOAuthClientConfig({
+      kakaoClientId: kakaoKey.trim(),
+      naverClientId: naverKey.trim(),
+      googleClientId: googleKey.trim()
+    });
+    setConfigSaved(true);
+    setTimeout(() => setConfigSaved(false), 2500);
   };
 
   /**
-   * OAuth 토큰 수신 후 가입 신청 vs 로그인 분기 및 DB 토큰 보전 처리
+   * 공식 소셜 OAuth2 인가 페이지 호출 (실제 네이버, 카카오, 구글 로그인 화면으로 이동)
    */
-  const executeOAuthSession = async (provider: AuthProvider, mode: 'login' | 'signup') => {
-    const mockId = `mock_${provider}_${Math.floor(100000 + Math.random() * 900000)}`;
-    const mockToken = `oauth2_${provider}_tok_${Date.now()}`;
-    const mockRefreshToken = `oauth2_${provider}_ref_${Date.now()}`;
-    const tokenExpiresAt = new Date(Date.now() + 3600 * 1000 * 24 * 30).toISOString();
+  const handleSocialAuth = (provider: AuthProvider) => {
+    setIsLoading(true);
+    setStatusMessage(null);
 
-    const providerNames: Record<AuthProvider, string> = {
-      naver: '네이버 트레커',
-      kakao: '카카오 트레커',
-      google: '구글 트레커'
-    };
+    // 1. 공식 OAuth2 인가 URL 빌드
+    const { url, error } = buildOAuthAuthorizeUrl(provider, activeTab);
 
-    if (mode === 'signup') {
-      // [가입 신청 흐름]: DB에 소셜 프로필 및 토큰 영구 보전
-      const newAccount = await registerUserAccount({
-        provider,
-        provider_user_id: mockId,
-        email: `${provider}_user@ewtguide.kr`,
-        name: providerNames[provider],
-        access_token: mockToken,
-        refresh_token: mockRefreshToken,
-        token_expires_at: tokenExpiresAt
-      });
-
+    if (error || !url) {
       setStatusMessage({
-        type: 'success',
-        text: `${provider.toUpperCase()} 계정으로 가입 신청이 승인되어 로그인되었습니다.`
+        type: 'error',
+        text: error || '소셜 인증 인가 URL 생성에 실패했습니다.'
       });
-      setTimeout(() => {
-        onAuthSuccess(newAccount);
-        onClose();
-      }, 800);
-    } else {
-      // [로그인 흐름]: DB에서 계정 존재 여부 검증
-      const existing = await findUserAccount(provider, mockId);
-      if (existing) {
-        // 이미 가입된 회원이면 토큰 갱신 후 로그인
-        const updated = await updateUserLoginSession(provider, mockId, {
-          access_token: mockToken,
-          refresh_token: mockRefreshToken,
-          token_expires_at: tokenExpiresAt
-        });
-        setStatusMessage({ type: 'success', text: '로그인에 성공했습니다.' });
+      setShowConfig(true); // 키 입력 패널 자동 열림
+      setIsLoading(false);
+      return;
+    }
+
+    // 2. 카카오 사전 설정 가이드 확인 안내
+    if (provider === 'kakao') {
+      setStatusMessage({
+        type: 'info',
+        text: '카카오 공식 인증 화면으로 이동합니다. (카카오 개발자 콘솔에서 [카카오 로그인: ON] 필수)'
+      });
+    } else if (provider === 'naver') {
+      setStatusMessage({
+        type: 'info',
+        text: '네이버 공식 로그인 화면으로 이동합니다.'
+      });
+    } else if (provider === 'google') {
+      setStatusMessage({
+        type: 'info',
+        text: '구글 공식 계정 선택 화면으로 이동합니다.'
+      });
+    }
+
+    // 3. 실제 공급자의 공식 OAuth2 로그인/가입 동의 페이지로 리다이렉트
+    setTimeout(() => {
+      window.location.href = url;
+    }, 400);
+  };
+
+  /**
+   * 개발/테스트용 즉시 체험 시뮬레이션 (API 키 등록 전 화면 플로우 확인용)
+   */
+  const handleSandboxSimulate = async (provider: AuthProvider) => {
+    setIsLoading(true);
+    setStatusMessage(null);
+    try {
+      const result = await processOAuthCallbackResult({
+        provider,
+        mode: activeTab,
+        accessToken: `sandbox_${provider}_tok_${Date.now()}`
+      });
+
+      if (result.success && result.user) {
+        setStatusMessage({ type: 'success', text: result.message });
         setTimeout(() => {
-          onAuthSuccess(updated || existing);
+          onAuthSuccess(result.user!);
           onClose();
         }, 800);
       } else {
-        // 미가입 계정인 경우: 가입 신청으로 안내 및 유도
-        setStatusMessage({
-          type: 'info',
-          text: `가입되지 않은 ${provider.toUpperCase()} 계정입니다. [가입 신청]을 먼저 진행해주세요.`
-        });
+        setStatusMessage({ type: 'info', text: result.message });
         setActiveTab('signup');
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -150,23 +166,41 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-xs p-4 select-none animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-700/80 w-full max-w-sm rounded-3xl p-6 shadow-2xl text-white space-y-5 animate-in zoom-in-95 duration-150">
+      <div className="bg-slate-900 border border-slate-700/80 w-full max-w-md rounded-3xl p-6 shadow-2xl text-white space-y-4 max-h-[92vh] overflow-y-auto animate-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
               <Shield className="w-4 h-4 text-emerald-400" />
             </div>
-            <h2 className="text-lg font-black text-white">
-              {currentUser ? '내 계정 관리' : activeTab === 'login' ? '로그인' : '회원가입 신청'}
-            </h2>
+            <div>
+              <h2 className="text-lg font-black text-white">
+                {currentUser ? '내 계정 관리' : activeTab === 'login' ? '소셜 로그인' : '소셜 회원가입 신청'}
+              </h2>
+            </div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded-full hover:bg-slate-800 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            {!currentUser && (
+              <button
+                type="button"
+                onClick={() => setShowConfig(!showConfig)}
+                className={`p-1.5 rounded-xl border transition-colors cursor-pointer ${
+                  showConfig
+                    ? 'bg-emerald-600/20 border-emerald-500/40 text-emerald-300'
+                    : 'text-slate-400 hover:text-white border-slate-700/60 hover:bg-slate-800'
+                }`}
+                title="OAuth Client ID 설정"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="text-slate-400 hover:text-white p-1.5 rounded-full hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* If Already Logged In */}
@@ -195,14 +229,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
             </div>
 
-            <div className="text-xs text-slate-400 bg-slate-800/40 p-3 rounded-xl border border-slate-800 space-y-1">
+            <div className="text-xs text-slate-400 bg-slate-800/40 p-3 rounded-xl border border-slate-800 space-y-1.5">
               <div className="flex justify-between">
-                <span>가입 상태</span>
-                <span className="text-emerald-400 font-bold">정상 인증 (토큰 보전됨)</span>
+                <span>계정 인증 상태</span>
+                <span className="text-emerald-400 font-bold flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>OAuth2 토큰 DB 보전됨</span>
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>최근 로그인</span>
-                <span>{currentUser.last_login_at ? new Date(currentUser.last_login_at).toLocaleDateString() : '-'}</span>
+                <span>{currentUser.last_login_at ? new Date(currentUser.last_login_at).toLocaleString() : '-'}</span>
               </div>
             </div>
 
@@ -226,7 +263,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   setActiveTab('login');
                   setStatusMessage(null);
                 }}
-                className={`py-2 rounded-xl transition-all cursor-pointer ${
+                className={`py-2.5 rounded-xl transition-all cursor-pointer ${
                   activeTab === 'login'
                     ? 'bg-emerald-600 text-white shadow-xs'
                     : 'text-slate-400 hover:text-white'
@@ -240,7 +277,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   setActiveTab('signup');
                   setStatusMessage(null);
                 }}
-                className={`py-2 rounded-xl transition-all cursor-pointer ${
+                className={`py-2.5 rounded-xl transition-all cursor-pointer ${
                   activeTab === 'signup'
                     ? 'bg-emerald-600 text-white shadow-xs'
                     : 'text-slate-400 hover:text-white'
@@ -250,20 +287,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </button>
             </div>
 
-            <p className="text-xs text-slate-400 text-center leading-relaxed">
+            <p className="text-xs text-slate-300 text-center leading-relaxed">
               {activeTab === 'login'
-                ? '소셜 계정의 표준 OAuth2 절차를 통해 간편하게 로그인합니다.'
-                : '표준 OAuth2 동의를 거쳐 안전하게 가입을 신청하며, 토큰은 DB에 보전됩니다.'}
+                ? '네이버, 카카오, 구글의 공식 OAuth2 로그인 화면으로 이동합니다.'
+                : '공식 OAuth2 표준 동의를 거쳐 가입 신청하며, 토큰은 DB에 보전됩니다.'}
             </p>
 
-            {/* Social Provider Buttons */}
+            {/* Social Provider Buttons (실제 공식 OAuth2 엔드포인트 호출) */}
             <div className="space-y-2.5 pt-1">
               {/* Naver Button */}
               <button
                 type="button"
                 onClick={() => handleSocialAuth('naver')}
                 disabled={isLoading}
-                className="w-full py-3 px-4 rounded-2xl bg-[#03C75A] hover:bg-[#02b350] active:scale-98 text-white font-bold text-sm flex items-center justify-center gap-3 transition-transform shadow-xs cursor-pointer"
+                className="w-full py-3.5 px-4 rounded-2xl bg-[#03C75A] hover:bg-[#02b350] active:scale-98 text-white font-bold text-sm flex items-center justify-center gap-3 transition-transform shadow-xs cursor-pointer"
               >
                 <span className="font-black text-base px-1">N</span>
                 <span>네이버로 {activeTab === 'login' ? '로그인' : '가입 신청'}</span>
@@ -274,7 +311,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 type="button"
                 onClick={() => handleSocialAuth('kakao')}
                 disabled={isLoading}
-                className="w-full py-3 px-4 rounded-2xl bg-[#FEE500] hover:bg-[#f5dc00] active:scale-98 text-[#191919] font-bold text-sm flex items-center justify-center gap-3 transition-transform shadow-xs cursor-pointer"
+                className="w-full py-3.5 px-4 rounded-2xl bg-[#FEE500] hover:bg-[#f5dc00] active:scale-98 text-[#191919] font-bold text-sm flex items-center justify-center gap-3 transition-transform shadow-xs cursor-pointer"
               >
                 <span className="font-black text-sm">💬</span>
                 <span>카카오로 {activeTab === 'login' ? '로그인' : '가입 신청'}</span>
@@ -285,7 +322,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 type="button"
                 onClick={() => handleSocialAuth('google')}
                 disabled={isLoading}
-                className="w-full py-3 px-4 rounded-2xl bg-white hover:bg-gray-100 active:scale-98 text-gray-800 font-bold text-sm flex items-center justify-center gap-3 transition-transform shadow-xs cursor-pointer border border-gray-300"
+                className="w-full py-3.5 px-4 rounded-2xl bg-white hover:bg-gray-100 active:scale-98 text-gray-800 font-bold text-sm flex items-center justify-center gap-3 transition-transform shadow-xs cursor-pointer border border-gray-300"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
                   <path
@@ -312,15 +349,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             {/* Status Message */}
             {statusMessage && (
               <div
-                className={`p-3 rounded-xl text-xs font-semibold leading-relaxed border ${
+                className={`p-3 rounded-xl text-xs font-semibold leading-relaxed border flex items-start gap-2 ${
                   statusMessage.type === 'error'
-                    ? 'bg-rose-950/60 border-rose-800 text-rose-300'
+                    ? 'bg-rose-950/70 border-rose-800 text-rose-300'
                     : statusMessage.type === 'success'
-                    ? 'bg-emerald-950/60 border-emerald-800 text-emerald-300'
-                    : 'bg-blue-950/60 border-blue-800 text-blue-300'
+                    ? 'bg-emerald-950/70 border-emerald-800 text-emerald-300'
+                    : 'bg-blue-950/70 border-blue-800 text-blue-300'
                 }`}
               >
-                {statusMessage.text}
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <div className="flex-1">{statusMessage.text}</div>
               </div>
             )}
 
@@ -352,6 +390,107 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </button>
               )}
             </div>
+
+            {/* Collapsible OAuth API Keys & Developer Console Setup */}
+            {showConfig && (
+              <div className="mt-4 p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3.5 text-xs text-slate-300 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between font-bold text-white">
+                  <span className="flex items-center gap-1.5">
+                    <Settings className="w-4 h-4 text-emerald-400" />
+                    <span>소셜 OAuth2 Client ID 설정</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400">Callback URI:</span>
+                </div>
+
+                <div className="p-2 bg-slate-900 rounded-lg border border-slate-800 font-mono text-[11px] text-emerald-300 break-all select-all">
+                  {redirectUri}
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  * 위 Callback URI를 각 포털 개발자 콘솔의 <strong>Redirect URI</strong>로 등록해야 합니다.
+                </p>
+
+                <form onSubmit={handleSaveConfig} className="space-y-2.5">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                      네이버 Client ID (Naver Developers)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="네이버 개발자센터에서 발급받은 Client ID"
+                      value={naverKey}
+                      onChange={(e) => setNaverKey(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                      카카오 REST / JavaScript Key (Kakao Developers)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="카카오 개발자 콘솔의 REST API 또는 JS 키"
+                      value={kakaoKey}
+                      onChange={(e) => setKakaoKey(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                    />
+                    <p className="text-[10px] text-amber-400 mt-0.5">
+                      ⚠️ 카카오 개발자 콘솔 &gt; [카카오 로그인]에서 <strong>[활성화 설정: ON]</strong> 필수 (KOE004 방지)
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                      구글 Client ID (Google Cloud Console)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Google Cloud Console 웹 클라이언트 ID"
+                      value={googleKey}
+                      onChange={(e) => setGoogleKey(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-colors cursor-pointer"
+                  >
+                    {configSaved ? '✓ 설정 저장 완료' : 'Client ID 설정 저장'}
+                  </button>
+                </form>
+
+                {/* Sandbox Mock Test Mode */}
+                <div className="pt-2 border-t border-slate-800">
+                  <span className="block text-[11px] font-bold text-slate-400 mb-1.5">
+                    💡 빠른 UI/기능 체험용 (테스트 세션)
+                  </span>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleSandboxSimulate('naver')}
+                      className="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-[11px] font-bold text-slate-300 transition-colors"
+                    >
+                      네이버 테스트
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSandboxSimulate('kakao')}
+                      className="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-[11px] font-bold text-slate-300 transition-colors"
+                    >
+                      카카오 테스트
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSandboxSimulate('google')}
+                      className="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-[11px] font-bold text-slate-300 transition-colors"
+                    >
+                      구글 테스트
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
