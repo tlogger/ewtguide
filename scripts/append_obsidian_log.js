@@ -6,34 +6,32 @@ const now = new Date();
 const timeStr = `${now.getFullYear()}. ${now.getMonth() + 1}. ${now.getDate()}. ${now.toLocaleTimeString('ko-KR')}`;
 
 const entry = `
-### [${timeStr}] 동서트레일 가이드 (ewtguide) Supabase(supadb) 원격 중앙 DB 전환 및 맵/상세 4대 UI 개선
+### [${timeStr}] 동서트레일 가이드 (ewtguide) 14구간 종점 단절 해결 및 튀는 현상 없는 무단절(Gap 0.0m) 결합 완료
 
-- **배경 및 원인 분석**:
-  1. 기존 시설 저장이 \`localStorage\`에 한정되어 용량 한계(~5MB)로 인해 사진(Base64)이 포함된 시설 수정/등록 시 저장이 실패하고 다른 사용자와 공유되지 못하던 문제.
-  2. \`exFish\` 프로젝트에서 검증된 동일한 Supabase 프로젝트(\`https://johtqemdlprtbpohdkgu.supabase.co\`)를 연동하여 모든 사용자가 실시간으로 시설 정보를 열람/수정/등록/삭제할 수 있는 중앙 원격 공유 DB로 전면 전환.
+- **문제 상황 및 원인 정밀 분석**:
+  1. **단절 현상**: 14구간 종점(공주 대룡1리, 충남 공주시 신풍면 대룡리 397-4 / 36.492545, 126.940395) 앞 약 661.3m 지점(36.495531, 126.933997)에서 트랙이 멈춰 있어 종점과 연결되지 않는 현상 발생.
+  2. **과거 튀는 현상(순간 점프)의 원인 규명**: 원본 GPX의 대룡1리 진입로 세그먼트(\`Seg 63\`, 59개 포인트, 1.64km)가 종점에서 상류 방향으로 기록되어 있었는데, 이를 역방향(\`reverse\`)이 아닌 정방향으로 직결하면서 661m 직선 점프가 발생했었음. 과거 버그 수정 과정에서 \`Seg 63\` 전체가 제거되어 종점 앞 단절이 초래되었던 것임.
 
-- **주요 구현 및 개선 내역**:
-  1. **Supabase 중앙 DB (\`ewt_facilities\`) 전면 전환 (\`src/services/facilityDb.ts\`)**:
-     - \`@supabase/supabase-js\` 패키지 탑재 및 \`schema_ewt_facilities.sql\` 스키마 구축.
-     - 공식 시설(JSON)과 Supabase 원격 DB(수정본, 신규 등록, 삭제 플래그)를 실시간으로 결합하는 스마트 머지 엔진 탑재.
-     - 공식 시설 수정 및 삭제 오버라이드 지원, 신규 시설 등록 시 전 사용자 기기에 실시간 공유.
-     - 오프라인 및 네트워크 오류 대비 로컬 캐시(Local-First Fallback) 안전망 동시 가동.
-  2. **맵 보기 상단 구간 선택 콤보박스(Select) 구현 (\`TrailMapView.tsx\`)**:
-     - 검색창 돋보기 아이콘 바로 옆에 개통된 32개 구간 드롭다운 배치.
-     - 사용자가 원하는 구간을 선택하면 즉시 해당 구간의 지도, GPX 폴리라인, 시설 마커로 화면 전환.
-  3. **상세보기에서 '새 시설/명소 등록' 버튼 제거 (\`SectionDetailView.tsx\`)**:
-     - 임의 좌표 등록을 차단하고 "지도에서 원하는 위치를 길게 눌러 등록"하도록 등록 버튼 제거 및 안내 문구 개선.
-  4. **검색 시 '구간 내 시설'과 '카카오 지도 장소' 동시 노출 (\`TrailMapView.tsx\`)**:
-     - 검색 드롭다운에 \`[🚩 구간 내 시설 & 명소 (N건)]\`과 \`[🔍 카카오 지도 검색 결과 (N건)]\` 두 섹션을 분리 배치.
-     - 시설 검색 결과가 있어도 카카오 장소 검색 결과를 동시에 스크롤하여 선택 가능하도록 개선.
-     - 카카오 검색 반경(30km) 및 전국 검색 폴백 적용으로 주변 지명 검색력 대폭 강화.
-  5. **맵 화면의 우하단 '시설 등록' 플로팅 버튼 제거 (\`TrailMapView.tsx\`)**:
-     - 하단 안내 힌트(\`길게 클릭 = 시설 등록/수정\`)와 단일화하여 지도 위를 0.5초 길게 눌러 정확한 위치에 등록하도록 통일.
+- **해결 내역**:
+  1. **14구간 종점 무단절 스냅 및 튀는 구간 완전 제거 (\`scripts/fix_section_14_endpoint.js\`)**:
+     - 기존 실측 DEM 고도가 보존된 14구간 트랙(852개 포인트)에 대룡1리 진입 도로 세그먼트(\`Seg 63\`, 59개 포인트)를 **역방향(reversed)**으로 0.00m 오차 없이 결합.
+     - 최종 종점 좌표를 공식 대룡1리 앵커 좌표(\`36.492545, 126.940395\`)로 정밀 스냅.
+     - 고도 프로파일을 150m에서 대룡1리 실측 고도 115m까지 자연스럽게 선형 보간 적용.
+     - 최대 인접 포인트 간격 111.7m 이내로 순간 점프 및 루프가 0건임을 수학적으로 검증.
+     - 총 911개 포인트, 총 연장 32.38km로 갱신 완료.
+  2. **전체 32개 구간 요약 및 전체 지도 메타데이터 동기화**:
+     - \`public/data/sections/section_14.json\`, \`public/data/sections_summary.json\`, \`public/data/all_sections_overview.json\` 일괄 동기화 완료.
+  3. **전체 1구간~14구간 연속성 검증 (\`scripts/check_all_section_gaps.js\`)**:
+     - 1구간(태안 샛별해변)부터 14구간(공주 대룡1리)까지 13개 구간 접점 전체 거리차 **0.0m [CONTINUOUS]** 완전 확인.
 
 - **빌드 및 배포**:
-  - \`npm run build\` 검증 통과 (모듈 2,847개 번들링 성공).
-  - GitHub \`origin/main\` 배포 완료 (\`04ac157\`).
+  - \`npm run build\` 프로덕션 빌드 무결성 통과 (2,848개 모듈 번들링 완료).
+  - GitHub \`origin/main\` 브랜치 푸시 완료.
 `;
 
-fs.appendFileSync(p, entry, 'utf8');
-console.log('Successfully appended to Obsidian activity log!');
+try {
+  fs.appendFileSync(p, entry, 'utf8');
+  console.log('Successfully appended to Obsidian activity log!');
+} catch (err) {
+  console.error('Failed to append to Obsidian log:', err.message);
+}
