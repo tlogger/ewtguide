@@ -6,20 +6,21 @@ export interface TrailPoint {
 }
 
 export type FacilityCategory = 
-  | 'viewpoint'    // 관광지 / 뷰포인트 / 명소 (NEW)
-  | 'shelter'      // 쉼터 / 정자
+  | 'viewpoint'    // 명소 (구 뷰포인트/명소)
   | 'toilet'       // 화장실
-  | 'restaurant'   // 식당 / 카페
-  | 'lodging'      // 숙소 / 민박 / 야영장
-  | 'mart'         // 마트 / 편의점
-  | 'transport'    // 대중교통 / 콜택시
-  | 'cert_center'  // 인증센터 / 안내소
-  | 'other';       // 기타 / 위험지역
+  | 'restaurant'   // 음식료 (구 식당/카페)
+  | 'lodging'      // 숙소/야영 (구 숙소/야영장)
+  | 'mart'         // 마트 (구 마트/편의점)
+  | 'transport'    // 교통 (구 교통/콜택시)
+  | 'cert_center'  // 안내소 (구 인증/안내소)
+  | 'other'        // 기타 (구 기타/주의지점)
+  | 'shelter';     // 구 쉼터/정자 (하위 호환 유지)
 
 export interface POI {
   id?: string;
   name: string;
   category: FacilityCategory;
+  categories?: FacilityCategory[]; // 다중 카테고리 지원
   description?: string;
   lat?: number;
   lng?: number;
@@ -31,6 +32,22 @@ export interface POI {
   is_deleted?: boolean;
   created_at?: string;
   updated_at?: string;
+}
+
+export type AuthProvider = 'google' | 'kakao' | 'naver';
+
+export interface UserAccount {
+  id: string;
+  provider: AuthProvider;
+  provider_user_id: string;
+  email?: string | null;
+  name?: string | null;
+  profile_image?: string | null;
+  access_token?: string | null;
+  refresh_token?: string | null;
+  token_expires_at?: string | null;
+  created_at?: string | null;
+  last_login_at?: string | null;
 }
 
 export interface SectionSummary {

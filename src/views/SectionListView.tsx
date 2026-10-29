@@ -292,9 +292,8 @@ export const SectionListView: React.FC<SectionListViewProps> = ({
                   </div>
 
                   {isOpened ? (
-                    <div className="flex items-center gap-1 font-bold text-emerald-700 group-hover:translate-x-1 transition-transform">
-                      <span>상세보기</span>
-                      <ChevronRight className="w-4 h-4" />
+                    <div className="flex items-center text-emerald-700 group-hover:translate-x-1 transition-transform">
+                      <ChevronRight className="w-5 h-5" />
                     </div>
                   ) : (
                     <span className="text-xs text-slate-400 font-semibold">미개통</span>

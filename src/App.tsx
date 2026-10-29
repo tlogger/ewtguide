@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SectionSummary, SectionDetail, TrekProgress, POI } from './types';
+import { SectionSummary, SectionDetail, TrekProgress, POI, UserAccount } from './types';
 import { Header } from './components/Header';
 import { TitleScreenView } from './views/TitleScreenView';
 import { SectionListView } from './views/SectionListView';
@@ -7,6 +7,7 @@ import { SectionDetailView } from './views/SectionDetailView';
 import { TrailMapView } from './views/TrailMapView';
 import { AllSectionsMapView } from './views/AllSectionsMapView';
 import { CertificationModal } from './components/CertificationModal';
+import { AuthModal } from './components/AuthModal';
 import {
   loadTrekProgress,
   toggleSectionCompletion,
@@ -16,7 +17,8 @@ import {
 import {
   loadSectionFacilities,
   saveFacilityToDb,
-  deleteFacilityFromDb
+  deleteFacilityFromDb,
+  getCurrentUser
 } from './services/facilityDb';
 
 export const App: React.FC = () => {
@@ -28,8 +30,19 @@ export const App: React.FC = () => {
   const [selectedSectionDetail, setSelectedSectionDetail] = useState<SectionDetail | null>(null);
   const [progress, setProgress] = useState<TrekProgress>(loadTrekProgress());
   const [userFacilities, setUserFacilities] = useState<POI[]>([]);
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => getCurrentUser());
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isCertModalOpen, setIsCertModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Listen for user auth changes
+  useEffect(() => {
+    const handleAuthChange = (e: any) => {
+      setCurrentUser(e.detail || null);
+    };
+    window.addEventListener('ewtguide_auth_changed', handleAuthChange);
+    return () => window.removeEventListener('ewtguide_auth_changed', handleAuthChange);
+  }, []);
 
   // Load summary on mount
   useEffect(() => {
@@ -185,6 +198,8 @@ export const App: React.FC = () => {
         sectionNumber={selectedSectionDetail?.section_number}
         completedCount={progress.completedSections.length}
         totalCount={sectionsSummary.length || 55}
+        currentUser={currentUser}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
       />
 
       <main className="flex-1">
@@ -235,6 +250,16 @@ export const App: React.FC = () => {
           />
         ) : null}
       </main>
+
+      {/* Auth Modal (Login / Sign Up / Token Preservation) */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        currentUser={currentUser}
+        onAuthSuccess={(user) => {
+          setCurrentUser(user);
+        }}
+      />
 
       {/* Certification Modal */}
       {selectedSectionDetail && (

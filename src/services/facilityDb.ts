@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { POI } from '../types';
+import { POI, UserAccount, AuthProvider } from '../types';
 import { generateDeterministicPoiId } from '../utils/poiId';
 
 export const DEFAULT_SUPABASE_URL = 'https://johtqemdlprtbpohdkgu.supabase.co';
@@ -8,6 +8,7 @@ export const DEFAULT_SUPABASE_KEY = 'sb_publishable_Aj8gNxqXefjkBg6H6zsCxw_icac_
 const CACHE_PREFIX = 'ewtguide_fac_cache';
 const TOMBSTONE_PREFIX = 'ewtguide_tombstones';
 const LEGACY_USER_KEY = 'ewtguide_user_facilities';
+const USER_SESSION_KEY = 'ewtguide_user_session';
 
 let supabaseClient: SupabaseClient | null = null;
 
@@ -86,6 +87,7 @@ function setLocalCachedFacilities(sectionId: number, facilities: POI[]): void {
  * 특정 구간의 시설 및 명소 목록 로드
  * - 크롤링 재실행으로 새 데이터가 유입되더라도 삭제된 시설(Tombstone)은 100% 차단
  * - Supabase 중앙 DB의 변경/신규/삭제 내역과 공식 시설을 스마트하게 머지
+ * - 다중 카테고리(categories: string[]) 지원
  */
 export async function loadSectionFacilities(
   sectionId: number,
@@ -94,12 +96,17 @@ export async function loadSectionFacilities(
   const client = getSupabase();
   const tombstones = getLocalTombstones(sectionId);
 
-  // 1. 공식 시설에 결정론적 고유 ID 런타임 보장
+  // 1. 공식 시설에 결정론적 고유 ID 런타임 보장 및 다중 카테고리 정규화
   const normalizedOfficials: POI[] = officialPois.map((poi) => {
     const id = poi.id || generateDeterministicPoiId(poi.name, poi.lat, poi.lng);
+    const categories = (poi.categories && poi.categories.length > 0)
+      ? poi.categories
+      : [poi.category || 'other'];
     return {
       ...poi,
       id,
+      category: categories[0],
+      categories,
       is_official: true
     };
   });
@@ -114,7 +121,16 @@ export async function loadSectionFacilities(
       .eq('section_id', sectionId);
 
     if (!error && data) {
-      dbRecords = data as POI[];
+      dbRecords = (data as any[]).map((row) => {
+        const categories = (row.categories && Array.isArray(row.categories) && row.categories.length > 0)
+          ? row.categories
+          : [row.category || 'other'];
+        return {
+          ...row,
+          category: categories[0],
+          categories
+        } as POI;
+      });
       isDbSuccess = true;
     }
   } catch (err) {
@@ -179,6 +195,7 @@ export async function loadSectionFacilities(
 
 /**
  * 시설 등록 또는 수정 내용을 Supabase 중앙 DB 및 로컬에 저장
+ * - 다중 카테고리(categories: string[]) 완벽 보전
  */
 export async function saveFacilityToDb(
   sectionId: number,
@@ -191,17 +208,26 @@ export async function saveFacilityToDb(
   // 재등록 또는 수정 시 묘지에서 해제
   removeLocalTombstone(sectionId, facilityId);
 
+  const categories = (facility.categories && facility.categories.length > 0)
+    ? facility.categories
+    : [facility.category || 'other'];
+  const primaryCategory = categories[0];
+
+  const currentUser = getCurrentUser();
+
   const record = {
     id: facilityId,
     section_id: sectionId,
     name: facility.name,
-    category: facility.category,
+    category: primaryCategory,
+    categories,
     lat: facility.lat,
     lng: facility.lng,
     phone: facility.phone || null,
     business_hours: facility.business_hours || null,
     memo: facility.memo || null,
     photo_url: facility.photo_url || null,
+    registered_by: currentUser?.id || null,
     is_official: facility.is_official ?? false,
     is_deleted: false,
     updated_at: now
@@ -210,6 +236,8 @@ export async function saveFacilityToDb(
   const updatedPoi: POI = {
     ...facility,
     id: facilityId,
+    category: primaryCategory,
+    categories,
     is_deleted: false,
     updated_at: now
   };
@@ -235,7 +263,6 @@ export async function saveFacilityToDb(
 
 /**
  * 시설 삭제 내용을 영구 묘지(Tombstone) 및 Supabase 중앙 DB에 즉시 반영
- * - 공식 시설/사용자 시설 불문하고 즉시 영구 삭제되며, 크롤링 재실행 시에도 절대 부활하지 않음
  */
 export async function deleteFacilityFromDb(
   sectionId: number,
@@ -264,6 +291,7 @@ export async function deleteFacilityFromDb(
         section_id: sectionId,
         name: facility.name,
         category: facility.category,
+        categories: facility.categories || [facility.category],
         lat: facility.lat,
         lng: facility.lng,
         is_official: facility.is_official ?? false,
@@ -273,4 +301,161 @@ export async function deleteFacilityFromDb(
   } catch (err) {
     console.warn('Supabase tombstone sync notice:', err);
   }
+}
+
+// ==============================================================================
+// 6번 소셜 OAuth2 계정 및 토큰 보전 관리 서비스
+// ==============================================================================
+
+/** 현재 로그인된 사용자 정보 획득 */
+export function getCurrentUser(): UserAccount | null {
+  try {
+    const raw = localStorage.getItem(USER_SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** 세션 사용자 저장 */
+export function setCurrentUser(user: UserAccount | null): void {
+  try {
+    if (user) {
+      localStorage.setItem(USER_SESSION_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(USER_SESSION_KEY);
+    }
+    window.dispatchEvent(new CustomEvent('ewtguide_auth_changed', { detail: user }));
+  } catch (e) {
+    console.warn('Failed to set user session:', e);
+  }
+}
+
+/** 로그아웃 처리 */
+export async function signOutUser(): Promise<void> {
+  const client = getSupabase();
+  try {
+    await client.auth.signOut();
+  } catch {
+    // ignore
+  }
+  setCurrentUser(null);
+}
+
+/** DB에서 소셜 계정 조회 */
+export async function findUserAccount(
+  provider: AuthProvider,
+  providerUserId: string
+): Promise<UserAccount | null> {
+  const client = getSupabase();
+  try {
+    const { data, error } = await client
+      .from('user_accounts')
+      .select('*')
+      .eq('provider', provider)
+      .eq('provider_user_id', providerUserId)
+      .maybeSingle();
+
+    if (!error && data) {
+      return data as UserAccount;
+    }
+  } catch (err) {
+    console.warn('findUserAccount notice:', err);
+  }
+  return null;
+}
+
+/** 회원가입 신청: DB에 소셜 프로필 및 OAuth2 토큰 영구 보전 */
+export async function registerUserAccount(account: {
+  provider: AuthProvider;
+  provider_user_id: string;
+  email?: string;
+  name?: string;
+  profile_image?: string;
+  access_token?: string;
+  refresh_token?: string;
+  token_expires_at?: string;
+}): Promise<UserAccount> {
+  const client = getSupabase();
+  const now = new Date().toISOString();
+
+  const record = {
+    provider: account.provider,
+    provider_user_id: account.provider_user_id,
+    email: account.email || null,
+    name: account.name || '트레커',
+    profile_image: account.profile_image || null,
+    access_token: account.access_token || null,
+    refresh_token: account.refresh_token || null,
+    token_expires_at: account.token_expires_at || null,
+    created_at: now,
+    last_login_at: now
+  };
+
+  let savedAccount: UserAccount = {
+    id: `usr_${Date.now()}`,
+    ...record
+  };
+
+  try {
+    const { data, error } = await client
+      .from('user_accounts')
+      .upsert(record, { onConflict: 'provider,provider_user_id' })
+      .select()
+      .single();
+
+    if (!error && data) {
+      savedAccount = data as UserAccount;
+    }
+  } catch (err) {
+    console.warn('registerUserAccount Supabase notice (saved locally):', err);
+  }
+
+  setCurrentUser(savedAccount);
+  return savedAccount;
+}
+
+/** 로그인: DB의 토큰 및 최근 로그인 일시 갱신 */
+export async function updateUserLoginSession(
+  provider: AuthProvider,
+  providerUserId: string,
+  tokens?: { access_token?: string; refresh_token?: string; token_expires_at?: string }
+): Promise<UserAccount | null> {
+  const client = getSupabase();
+  const now = new Date().toISOString();
+
+  try {
+    const updatePayload: Record<string, any> = {
+      last_login_at: now,
+      ...(tokens?.access_token ? { access_token: tokens.access_token } : {}),
+      ...(tokens?.refresh_token ? { refresh_token: tokens.refresh_token } : {}),
+      ...(tokens?.token_expires_at ? { token_expires_at: tokens.token_expires_at } : {})
+    };
+
+    const { data, error } = await client
+      .from('user_accounts')
+      .update(updatePayload)
+      .eq('provider', provider)
+      .eq('provider_user_id', providerUserId)
+      .select()
+      .maybeSingle();
+
+    if (!error && data) {
+      const user = data as UserAccount;
+      setCurrentUser(user);
+      return user;
+    }
+  } catch (err) {
+    console.warn('updateUserLoginSession notice:', err);
+  }
+
+  // 로컬 세션 갱신
+  const current = getCurrentUser();
+  if (current && current.provider === provider && current.provider_user_id === providerUserId) {
+    const updated = { ...current, last_login_at: now, ...tokens };
+    setCurrentUser(updated);
+    return updated;
+  }
+
+  return null;
 }

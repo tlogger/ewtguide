@@ -52,13 +52,13 @@ export const ElevationChart: React.FC<ElevationChartProps> = ({
     });
 
     const icon =
-      poi.category === 'viewpoint' ? '📸' :
-      poi.category === 'toilet' ? '🚻' :
-      poi.category === 'shelter' ? '⛺' :
-      poi.category === 'restaurant' ? '🍚' :
-      poi.category === 'lodging' ? '🏡' :
-      poi.category === 'mart' ? '🏪' :
-      poi.category === 'transport' ? '🚕' : '📍';
+      poi.category === 'viewpoint' ? '📷' :
+      poi.category === 'restaurant' ? '🍴' :
+      poi.category === 'transport' ? '🚗' :
+      poi.category === 'lodging' ? '⛺' :
+      poi.category === 'cert_center' ? 'ℹ️' :
+      poi.category === 'mart' ? '🛍️' :
+      poi.category === 'toilet' ? '🚻' : '📍';
 
     poiDots.push({
       name: poi.name,
@@ -179,11 +179,6 @@ export const ElevationChart: React.FC<ElevationChartProps> = ({
             ))}
           </AreaChart>
         </ResponsiveContainer>
-      </div>
-
-      <div className="flex items-center justify-between text-xs text-gray-500 pt-1 border-t border-gray-100">
-        <span>* 차트 위 아이콘은 해당 거리/고도에 위치한 편의시설 및 뷰포인트입니다.</span>
-        <span>↔ 지도 연동 가능</span>
       </div>
     </div>
   );

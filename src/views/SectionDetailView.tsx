@@ -81,7 +81,10 @@ export const SectionDetailView: React.FC<SectionDetailViewProps> = ({
   const allFacilities: POI[] = userFacilities.length > 0 ? userFacilities : (section.pois || []);
   const filteredFacilities = activeCategory === 'all'
     ? allFacilities
-    : allFacilities.filter(f => f.category === activeCategory);
+    : allFacilities.filter(f => 
+        (f.categories && f.categories.includes(activeCategory as any)) ||
+        f.category === activeCategory
+      );
 
   const waypoints = section.course
     .replace(`${section.section_number} : `, '')
@@ -307,18 +310,18 @@ export const SectionDetailView: React.FC<SectionDetailViewProps> = ({
           </button>
         </div>
 
-        {/* Category Tabs (9 Categories) */}
+        {/* Category Tabs */}
         <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
           {[
             { key: 'all', label: '전체' },
-            { key: 'viewpoint', label: '📸 뷰포인트' },
-            { key: 'shelter', label: '⛺ 쉼터' },
+            { key: 'viewpoint', label: '📷 명소' },
+            { key: 'restaurant', label: '🍴 음식료' },
+            { key: 'transport', label: '🚗 교통' },
+            { key: 'lodging', label: '⛺ 숙소/야영' },
+            { key: 'cert_center', label: 'ℹ️ 안내소' },
+            { key: 'mart', label: '🛍️ 마트' },
             { key: 'toilet', label: '🚻 화장실' },
-            { key: 'restaurant', label: '🍚 식당' },
-            { key: 'lodging', label: '🏡 숙소' },
-            { key: 'mart', label: '🏪 마트' },
-            { key: 'transport', label: '🚕 교통' },
-            { key: 'cert_center', label: '🚩 안내' }
+            { key: 'other', label: '📍 기타' }
           ].map((cat) => (
             <button
               key={cat.key}

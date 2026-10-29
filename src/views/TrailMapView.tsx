@@ -526,14 +526,13 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
             {allFacilities.map((fac, idx) => {
               if (!fac.lat || !fac.lng) return null;
               const iconChar =
-                fac.category === 'shelter' ? '⛺' :
-                fac.category === 'toilet' ? '🚻' :
-                fac.category === 'restaurant' ? '🍚' :
-                fac.category === 'viewpoint' ? '📸' :
-                fac.category === 'lodging' ? '🏡' :
-                fac.category === 'mart' ? '🏪' :
-                fac.category === 'transport' ? '🚕' :
-                fac.category === 'cert_center' ? '🚩' : '📍';
+                fac.category === 'viewpoint' ? '📷' :
+                fac.category === 'restaurant' ? '🍴' :
+                fac.category === 'transport' ? '🚗' :
+                fac.category === 'lodging' ? '⛺' :
+                fac.category === 'cert_center' ? 'ℹ️' :
+                fac.category === 'mart' ? '🛍️' :
+                fac.category === 'toilet' ? '🚻' : '📍';
 
               return (
                 <CustomOverlayMap
@@ -973,10 +972,20 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
             {/* Header */}
             <div className="flex items-start justify-between">
               <div>
-                <span className="text-[11px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold px-2 py-0.5 rounded">
-                  {getCategoryLabel(selectedFacility.category)}
-                </span>
-                <h3 className="text-lg font-black text-white mt-1">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {(selectedFacility.categories && selectedFacility.categories.length > 0
+                    ? selectedFacility.categories
+                    : [selectedFacility.category]
+                  ).map((cat) => (
+                    <span
+                      key={cat}
+                      className="text-[11px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold px-2 py-0.5 rounded"
+                    >
+                      {getCategoryLabel(cat)}
+                    </span>
+                  ))}
+                </div>
+                <h3 className="text-lg font-black text-white mt-1.5">
                   {selectedFacility.name}
                 </h3>
               </div>
@@ -1156,14 +1165,15 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
 
 function getCategoryLabel(category?: string): string {
   switch (category) {
-    case 'shelter': return '쉼터/정자';
+    case 'viewpoint': return '명소';
+    case 'restaurant': return '음식료';
+    case 'transport': return '교통';
+    case 'lodging': return '숙소/야영';
+    case 'cert_center': return '안내소';
+    case 'mart': return '마트';
     case 'toilet': return '화장실';
-    case 'restaurant': return '식당/카페';
-    case 'viewpoint': return '뷰포인트/명소';
-    case 'lodging': return '숙소/민박';
-    case 'mart': return '마트/편의점';
-    case 'transport': return '교통/택시';
-    case 'cert_center': return '인증/안내소';
-    default: return '편의시설';
+    case 'shelter': return '기타';
+    case 'other': return '기타';
+    default: return '명소';
   }
 }
