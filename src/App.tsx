@@ -54,10 +54,14 @@ export const App: React.FC = () => {
   useEffect(() => {
     const callbackData = parseOAuthCallback();
     if (callbackData) {
+      // 즉시 URL 해시 및 쿼리 파라미터 정격 제거하여 브라우저 재진입 루프 원천 차단
+      window.history.replaceState({}, document.title, window.location.pathname);
+
       processOAuthCallbackResult(callbackData).then((res) => {
         if (res.user) {
           setCurrentUser(res.user);
           setCurrentStep('list'); // 로그인/가입 완료 시 코스 목록 화면으로 바로 이동
+          setIsAuthModalOpen(false);
         }
         setAuthToast({ text: res.message, type: res.success ? 'success' : 'error' });
         setTimeout(() => setAuthToast(null), 4500);
@@ -65,8 +69,6 @@ export const App: React.FC = () => {
         if (!res.success) {
           setIsAuthModalOpen(true);
         }
-        // Clean URL query and hash
-        window.history.replaceState({}, document.title, window.location.pathname);
       });
     }
   }, []);

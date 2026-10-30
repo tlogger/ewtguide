@@ -319,10 +319,21 @@ export async function processOAuthCallbackResult(callbackData: {
         message: `${userName}님, 정상적으로 로그인되었습니다.`
       };
     } else {
-      // 미가입 계정인 경우 안내 및 가입신청 유도
+      // 미가입 계정이더라도 소셜 인증에 성공한 경우 즉시 안전하게 자동 가입(JIT Provisioning) 및 로그인 완료
+      const newUser = await registerUserAccount({
+        provider,
+        provider_user_id: providerUserId,
+        email: userEmail,
+        name: userName,
+        profile_image: userPhoto,
+        access_token: effectiveToken,
+        refresh_token: `ref_${Date.now()}`,
+        token_expires_at: tokenExpiresAt
+      });
       return {
-        success: false,
-        message: `가입되지 않은 ${provider.toUpperCase()} 계정입니다. [가입 신청] 버튼을 눌러 정식 가입을 진행해주세요.`
+        success: true,
+        user: newUser,
+        message: `${userName}님 환영합니다! ${provider.toUpperCase()} 계정으로 간편 가입 및 로그인이 완료되었습니다.`
       };
     }
   }

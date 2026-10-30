@@ -50,10 +50,14 @@
       var code = searchParams.get('code');
       var error = searchParams.get('error_description') || searchParams.get('error');
 
-      var basePath = window.location.pathname.replace(/\/kakaologin(\/.*)?$/, '/');
+      var basePath = window.location.pathname.replace(/\/kakaologin(\.html|\/.*)?$/, '/');
+      var cleanTarget = window.location.origin + basePath;
 
+      var redirected = false;
       var redirectBack = function() {
-        window.location.replace(basePath);
+        if (redirected) return;
+        redirected = true;
+        window.location.replace(cleanTarget);
       };
 
       if (error) {
@@ -102,7 +106,7 @@
             var kakaoNickname = kakaoProfile.nickname
               || kakaoProps.nickname
               || kakaoAccount.name
-              || kakaoEmail
+              || (kakaoEmail ? kakaoEmail.split('@')[0] : '')
               || ('카카오_' + kakaoUser.id);
             var kakaoPhoto = kakaoProfile.profile_image_url
               || kakaoProps.profile_image
