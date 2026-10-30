@@ -204,13 +204,51 @@ export async function processOAuthCallbackResult(callbackData: {
   directUser?: DirectUserPayload;
 }): Promise<{ success: boolean; user?: UserAccount; message: string }> {
   const { provider, mode, accessToken, code, directUser } = callbackData;
-  const effectiveToken = directUser?.access_token || accessToken || code || `tok_${Date.now()}`;
+  let effectiveToken = directUser?.access_token || accessToken || code || `tok_${Date.now()}`;
   
   // 실제 소셜 공급자에서 제공한 고유 식별자(ID) 및 정보 반영
-  const providerUserId = directUser?.id || `${provider}_${Math.floor(100000 + Math.random() * 900000)}`;
-  const userName = directUser?.name || (provider === 'naver' ? '네이버 트레커' : `${provider.toUpperCase()} 트레커`);
-  const userEmail = directUser?.email || `${provider}_user@ewtguide.kr`;
-  const userPhoto = directUser?.profile_image || null;
+  let providerUserId = directUser?.id || `${provider}_${Math.floor(100000 + Math.random() * 900000)}`;
+  let userName = directUser?.name || (provider === 'naver' ? '네이버 트레커' : `${provider.toUpperCase()} 트레커`);
+  let userEmail = directUser?.email || `${provider}_user@ewtguide.kr`;
+  let userPhoto = directUser?.profile_image || null;
+
+  // 카카오의 인가 코드(code)가 수신된 경우: 카카오 토큰 교환 및 사용자 프로필 실시간 조회
+  if (provider === 'kakao' && code) {
+    try {
+      const config = getOAuthClientConfig();
+      const tokenRes = await fetch('https://kauth.kakao.com/oauth/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8'
+        },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: config.kakaoClientId,
+          redirect_uri: getOAuthRedirectUri(),
+          code
+        })
+      });
+
+      const tokenData = await tokenRes.json();
+      if (tokenData.access_token) {
+        effectiveToken = tokenData.access_token;
+        const userRes = await fetch('https://kapi.kakao.com/v2/user/me', {
+          headers: {
+            Authorization: `Bearer ${tokenData.access_token}`
+          }
+        });
+        const kakaoUser = await userRes.json();
+        if (kakaoUser.id) {
+          providerUserId = `kakao_${kakaoUser.id}`;
+          userName = kakaoUser.kakao_account?.profile?.nickname || '카카오 트레커';
+          userEmail = kakaoUser.kakao_account?.email || `${providerUserId}@kakao.com`;
+          userPhoto = kakaoUser.kakao_account?.profile?.profile_image_url || null;
+        }
+      }
+    } catch (err) {
+      console.warn('Kakao token exchange notice:', err);
+    }
+  }
 
   const tokenExpiresAt = new Date(Date.now() + 3600 * 1000 * 24 * 30).toISOString();
 
