@@ -243,7 +243,7 @@ export async function processOAuthCallbackResult(callbackData: {
   let userEmail = directUser?.email || `${provider}_user@ewtguide.kr`;
   let userPhoto = directUser?.profile_image || null;
 
-  // 카카오의 인가 코드(code)가 URL로 직접 수신된 경우: 카카오 토큰 교환 및 사용자 프로필 실시간 조회
+  // 2. 카카오의 인가 코드(code)가 URL로 직접 수신된 경우: 카카오 토큰 교환 및 사용자 프로필 실시간 조회
   if (provider === 'kakao' && code && !directUser) {
     try {
       const config = getOAuthClientConfig();
@@ -282,6 +282,28 @@ export async function processOAuthCallbackResult(callbackData: {
       }
     } catch (err) {
       console.warn('Kakao token exchange notice:', err);
+    }
+  }
+
+  // 3. 구글 access_token이 수신된 경우: 구글 UserInfo API를 통해 실제 프로필 및 이메일 조회
+  if (provider === 'google' && accessToken && !directUser) {
+    try {
+      const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      });
+      if (res.ok) {
+        const googleUser = await res.json();
+        if (googleUser.sub) {
+          providerUserId = `google_${googleUser.sub}`;
+          userName = googleUser.name || (googleUser.email ? googleUser.email.split('@')[0] : '구글 트레커');
+          userEmail = googleUser.email || `${providerUserId}@gmail.com`;
+          userPhoto = googleUser.picture || null;
+        }
+      }
+    } catch (err) {
+      console.warn('Google userinfo fetch notice:', err);
     }
   }
 
