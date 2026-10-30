@@ -243,7 +243,8 @@ export async function processOAuthCallbackResult(callbackData: {
   // 실제 소셜 공급자에서 제공한 고유 식별자(ID) 및 정보 반영
   let providerUserId = directUser?.id || `${provider}_${Math.floor(100000 + Math.random() * 900000)}`;
   let userName = directUser?.name || (provider === 'naver' ? '네이버 트레커' : provider === 'kakao' ? '카카오 트레커' : '구글 트레커');
-  let userEmail = directUser?.email || `${provider}_user@ewtguide.kr`;
+  // 카카오의 경우 이메일이 없으면 가짜 이메일 대신 빈 값(null) 유지
+  let userEmail = directUser?.email || (provider === 'kakao' ? '' : `${provider}_user@ewtguide.kr`);
   let userPhoto = directUser?.profile_image || null;
 
   // 2. 카카오의 인가 코드(code)가 URL로 직접 수신된 경우: 카카오 토큰 교환 및 사용자 프로필 실시간 조회
@@ -279,7 +280,7 @@ export async function processOAuthCallbackResult(callbackData: {
         if (kakaoUser.id) {
           providerUserId = `kakao_${kakaoUser.id}`;
           userName = kakaoUser.kakao_account?.profile?.nickname || '카카오 트레커';
-          userEmail = kakaoUser.kakao_account?.email || `${providerUserId}@kakao.com`;
+          userEmail = kakaoUser.kakao_account?.email || '';
           userPhoto = kakaoUser.kakao_account?.profile?.profile_image_url || null;
         }
       }

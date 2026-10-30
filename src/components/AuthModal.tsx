@@ -57,10 +57,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     try {
       await signOutUser();
       onAuthSuccess(null);
-      setStatusMessage({ type: 'success', text: '정상적으로 로그아웃되었습니다.' });
-      setTimeout(() => {
-        onClose();
-      }, 400);
+      // 로그아웃 시 팝업에 머물지 않고 즉시 메인 창으로 복귀
+      onClose();
     } finally {
       setIsLoading(false);
     }
@@ -111,7 +109,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     {currentUser.provider}
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 truncate mt-0.5">{currentUser.email || '인증된 트레커'}</p>
+                {currentUser.email && !currentUser.email.includes('@kakao.com') && (
+                  <p className="text-xs text-slate-400 truncate mt-0.5">{currentUser.email}</p>
+                )}
               </div>
             </div>
 
