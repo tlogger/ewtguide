@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>카카오 로그인 처리 중 - 동서트레일 가이드</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background-color: #0f172a;
+      color: #f8fafc;
+    }
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 4px solid #FEE500;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 20px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .desc {
+      font-size: 13px;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <div class="spinner"></div>
+  <div class="title">카카오 로그인 정보를 인증하는 중입니다...</div>
+  <div class="desc">잠시만 기다려주세요. 메인 화면으로 자동 이동합니다.</div>
+
+  <script type="text/javascript">
+    (async function() {
+      var searchParams = new URLSearchParams(window.location.search);
+      var code = searchParams.get('code');
+      var error = searchParams.get('error_description') || searchParams.get('error');
+
+      var basePath = window.location.pathname.replace(/\/kakaologin(\/.*)?$/, '/');
+
+      if (error) {
+        console.error('Kakao error:', error);
+        window.location.replace(basePath);
+        return;
+      }
+
+      if (code) {
+        try {
+          var clientId = "354131879d586356f9c160db0f834840";
+          var redirectUri = window.location.href.split('?')[0].split('#')[0];
+
+          var tokenRes = await fetch('https://kauth.kakao.com/oauth/token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8'
+            },
+            body: new URLSearchParams({
+              grant_type: 'authorization_code',
+              client_id: clientId,
+              redirect_uri: redirectUri,
+              code: code
+            })
+          });
+
+          var tokenData = await tokenRes.json();
+
+          if (tokenData.access_token) {
+            var userRes = await fetch('https://kapi.kakao.com/v2/user/me', {
+              headers: {
+                Authorization: 'Bearer ' + tokenData.access_token
+              }
+            });
+
+            var kakaoUser = await userRes.json();
+
+            var nickname = (kakaoUser.kakao_account && kakaoUser.kakao_account.profile && kakaoUser.kakao_account.profile.nickname) || '카카오 트레커';
+            var profileImage = (kakaoUser.kakao_account && kakaoUser.kakao_account.profile && kakaoUser.kakao_account.profile.profile_image_url) || '';
+            var email = (kakaoUser.kakao_account && kakaoUser.kakao_account.email) || ('kakao_' + kakaoUser.id + '@kakao.com');
+
+            var authPayload = {
+              provider: 'kakao',
+              id: 'kakao_' + kakaoUser.id,
+              name: nickname,
+              email: email,
+              profile_image: profileImage,
+              access_token: tokenData.access_token,
+              refresh_token: tokenData.refresh_token,
+              timestamp: Date.now()
+            };
+
+            localStorage.setItem('ewtguide_kakao_auth_payload', JSON.stringify(authPayload));
+          } else {
+            localStorage.setItem('ewtguide_kakao_code', code);
+          }
+        } catch (e) {
+          console.error('Kakao login processing failed:', e);
+          localStorage.setItem('ewtguide_kakao_code', code);
+        }
+      }
+
+      window.location.replace(basePath);
+    })();
+  </script>
+</body>
+</html>

@@ -6,27 +6,28 @@ const now = new Date();
 const timeStr = `${now.getFullYear()}. ${now.getMonth() + 1}. ${now.getDate()}. ${now.toLocaleTimeString('ko-KR')}`;
 
 const entry = `
-### [${timeStr}] 동서트레일 가이드 (ewtguide) 네이버 아이디로 로그인(OAuth2) 가입 신청 & 로그인 실연동 완료
+### [${timeStr}] 동서트레일 가이드 (ewtguide) 카카오 로그인(OAuth2) 앱 ID \`1628651\` 실연동 및 실시간 프로필/토큰 연동 완료
 
-- **네이버 공식 자격증명 및 콜백 등록**:
-  - 클라이언트 ID: \`ZlO4zT_XXNDHb24LQL5u\`
-  - Client Secret: \`Wqt6MavrzV\`
-  - Callback 주소: \`https://tlogger.github.io/ewtguide/naverlogin\`
-  - \`.env\` 및 \`.env.example\` 환경 변수 주입 완료.
+- **카카오 신규 자격증명 및 리다이렉트 URI 반영**:
+  - 앱 ID: \`1628651\`
+  - JavaScript 키: \`354131879d586356f9c160db0f834840\`
+  - 카카오 로그인 Redirect URI: \`https://tlogger.github.io/ewtguide/kakaologin\`
+  - 인가 엔드포인트 사전 검증: HTTP 302 Redirect to \`accounts.kakao.com/login\` (KOE004 에러 없이 완전 정상 인증 페이지 확인).
 
-- **네이버 OAuth2 수신 및 프로필 동기화 엔진 구현**:
-  1. **정적 SPA 전용 네이버 콜백 리시버 탑재 (\`public/naverlogin/index.html\` & \`public/naverlogin.html\`)**:
+- **카카오 OAuth2 수신 및 프로필 동기화 파이프라인 탑재**:
+  1. **정적 SPA 전용 카카오 콜백 리시버 탑재 (\`public/kakaologin/index.html\` & \`public/kakaologin.html\`)**:
      - GitHub Pages에서 404 없이 즉시 수신되도록 독립 콜백 HTML 구축.
-     - 네이버 공식 JS SDK(\`naveridlogin_js_sdk_2.0.2.js\`)를 구동하여 브라우저 CORS 제약 없이 사용자 프로필(고유 ID, 이름/닉네임, 이메일, 프로필사진)과 \`access_token\` 획득.
-     - 획득한 인증 페이로드를 저장하고 메인 애플리케이션으로 안전하게 자동 리다이렉트 복귀.
+     - \`kauth.kakao.com/oauth/token\`(CORS 허용)을 통해 인가 코드(\`code\`)를 실제 OAuth \`access_token\`으로 실시간 교환.
+     - \`kapi.kakao.com/v2/user/me\`(CORS 허용)를 호출하여 사용자 고유 식별자(\`id\`), 카카오 닉네임, 프로필 사진 URL, 이메일 수신.
+     - 인증 페이로드를 저장하고 메인 애플리케이션으로 안전하게 자동 리다이렉트 복귀.
   2. **가입 신청 vs 로그인 분기 처리 (\`oauthService.ts\` & \`App.tsx\`)**:
-     - **[가입 신청]**: 네이버에서 동의/인증 후 복귀 시 Supabase \`user_accounts\` DB에 네이버 고유 ID, 프로필, 발급된 OAuth 토큰을 영구 보전하고 정식 회원 등록.
+     - **[가입 신청]**: 카카오에서 동의/인증 후 복귀 시 Supabase \`user_accounts\` DB에 카카오 고유 ID, 프로필, 발급된 OAuth 토큰을 영구 보전하고 정식 회원 등록.
      - **[로그인]**: DB에서 가입된 회원인지 확인 후 토큰 갱신 및 세션 로그인 처리 (미가입 상태인 경우 가입 신청 안내 모달 전환).
   3. **인앱 알림 토스트 (\`App.tsx\`)**:
-     - 로그인/가입 완료 시 상단에 환영 알림 토스트 자동 출력.
+     - 로그인/가입 완료 시 상단에 카카오 닉네임과 함께 환영 알림 토스트 자동 출력.
 
 - **빌드 및 배포**:
-  - \`npm run build\` 성공 (네이버 콜백 HTML 번들링 포함).
+  - \`npm run build\` 성공 (카카오 콜백 HTML 번들링 포함).
   - GitHub \`origin/main\` 브랜치 푸시 완료.
 `;
 
