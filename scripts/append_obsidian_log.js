@@ -6,18 +6,18 @@ const now = new Date();
 const timeStr = `${now.getFullYear()}. ${now.getMonth() + 1}. ${now.getDate()}. ${now.toLocaleTimeString('ko-KR')}`;
 
 const entry = `
-### [${timeStr}] 동서트레일 가이드 (ewtguide) 카카오 로그인 KOE205(invalid_scope) 에러 원인 규명 및 수정 배포
+### [${timeStr}] 동서트레일 가이드 (ewtguide) 카카오 로그인 시 기존 '카카오 트레커' 잔존 원인 규명 및 최신 프로필 자동 동기화 적용
 
-- **KOE205 에러 원인 정밀 분석**:
-  1. \`KOE205\`는 카카오 인가 요청 시 전달한 \`scope\`(동의 항목) 중 **카카오 디벨로퍼스 앱에 정식 승인·활성화되지 않은 항목이 포함되어 있을 때 카카오 인증 서버가 즉각 요청을 차단**하는 에러임.
-  2. 카카오 정책상 \`account_email\`(카카오계정 이메일)은 일반 개발자 앱에서는 원칙적으로 차단되어 있거나 '비즈 앱 전환' 및 검수가 선행되어야 사용 가능함.
-  3. 앞선 패치에서 \`scope\`에 \`account_email\`을 포함시켰기 때문에, 일반 앱 상태인 카카오 앱(ID: 1628651)에서 인가 요청 시 \`KOE205 (invalid_scope)\` 에러가 발생함.
-- **수정 및 해결 조치**:
-  - \`src/services/oauthService.ts\`: 카카오 인가 요청 \`scope\`를 일반 앱에서도 100% 즉시 승인되는 안전한 필수 프로필 스코프인 \`scope=profile_nickname,profile_image\`로 조정.
-  - 카카오 사용자 프로필 파싱 로직에서 닉네임과 프로필 사진을 1순위로 추출하고, 이메일은 제공된 경우에만 반영하며 미제공 시 고유 식별자 기반 이메일(\`kakao_{id}@kakao.com\`)로 안전하게 매핑.
+- **원인 분석**:
+  1. 카카오 API(\`https://kapi.kakao.com/v2/user/me\`) 실호출 결과, 카카오 인증 토큰을 통해 사용자의 실제 닉네임(\`정상돈\`)과 프로필 사진(\`http://k.kakaocdn.net/...\`)이 정상적으로 응답되고 있음을 직접 확인.
+  2. 그러나 Supabase 중앙 DB의 \`user_accounts\` 테이블에는 동의 항목을 켜기 전 최초 테스트 시 저장되었던 과거 레코드(\`name: '카카오 트레커'\`)가 고정되어 있었음.
+  3. 기존 \`updateUserLoginSession\` 함수가 로그인 시 토큰만 갱신하고 기존 \`name\`과 \`profile_image\`는 DB에 업데이트하지 않고 기존 DB 값을 그대로 반환했기 때문에, 새 닉네임이 반영되지 않고 과거 이름이 계속 출력됨.
+- **해결 조치**:
+  1. \`updateUserLoginSession\` 함수를 개정하여 로그인 시 소셜 포털에서 전달된 최신 프로필 정보(\`name\`, \`profile_image\`, \`email\`)가 DB에 즉시 동기화·업데이트되도록 파이프라인 구축.
+  2. Supabase DB의 기존 레코드도 즉시 정상 카카오 프로필(\`정상돈\`, 프로필 사진)로 보정 완료.
 - **배포 및 검증**:
   - \`npm run build\` 성공.
-  - GitHub \`origin/main\` 브랜치 커밋 (\`f677272\`) 및 푸시 완료.
+  - GitHub \`origin/main\` 브랜치 커밋 (\`079033d\`) 및 푸시 완료.
 `;
 
 try {
