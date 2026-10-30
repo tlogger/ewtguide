@@ -336,7 +336,10 @@ export async function processOAuthCallbackResult(callbackData: {
     if (existing) {
       const updated = await updateUserLoginSession(provider, providerUserId, {
         access_token: effectiveToken,
-        token_expires_at: tokenExpiresAt
+        token_expires_at: tokenExpiresAt,
+        name: userName,
+        email: userEmail,
+        profile_image: userPhoto
       });
       return {
         success: true,

@@ -415,11 +415,18 @@ export async function registerUserAccount(account: {
   return savedAccount;
 }
 
-/** 로그인: DB의 토큰 및 최근 로그인 일시 갱신 */
+/** 로그인: DB의 토큰, 최근 로그인 일시 및 최신 프로필 갱신 */
 export async function updateUserLoginSession(
   provider: AuthProvider,
   providerUserId: string,
-  tokens?: { access_token?: string; refresh_token?: string; token_expires_at?: string }
+  tokens?: {
+    access_token?: string;
+    refresh_token?: string;
+    token_expires_at?: string;
+    name?: string;
+    email?: string;
+    profile_image?: string | null;
+  }
 ): Promise<UserAccount | null> {
   const client = getSupabase();
   const now = new Date().toISOString();
@@ -429,7 +436,10 @@ export async function updateUserLoginSession(
       last_login_at: now,
       ...(tokens?.access_token ? { access_token: tokens.access_token } : {}),
       ...(tokens?.refresh_token ? { refresh_token: tokens.refresh_token } : {}),
-      ...(tokens?.token_expires_at ? { token_expires_at: tokens.token_expires_at } : {})
+      ...(tokens?.token_expires_at ? { token_expires_at: tokens.token_expires_at } : {}),
+      ...(tokens?.name ? { name: tokens.name } : {}),
+      ...(tokens?.email ? { email: tokens.email } : {}),
+      ...(tokens?.profile_image !== undefined ? { profile_image: tokens.profile_image } : {})
     };
 
     const { data, error } = await client
