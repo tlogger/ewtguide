@@ -102,7 +102,9 @@ export function buildOAuthAuthorizeUrl(provider: AuthProvider, mode: 'login' | '
     return {
       url: `https://kauth.kakao.com/oauth/authorize?client_id=${encodeURIComponent(
         kakaoKey
-      )}&redirect_uri=${encodeURIComponent(callbackUrl)}&response_type=code&state=${state}`
+      )}&redirect_uri=${encodeURIComponent(
+        callbackUrl
+      )}&response_type=code&scope=profile_nickname%2Cprofile_image%2Caccount_email&state=${state}`
     };
   }
 
