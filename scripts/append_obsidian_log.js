@@ -6,23 +6,34 @@ const now = new Date();
 const timeStr = `${now.getFullYear()}. ${now.getMonth() + 1}. ${now.getDate()}. ${now.toLocaleTimeString('ko-KR')}`;
 
 const entry = `
-### [${timeStr}] 동서트레일 가이드 (ewtguide) 카카오 닉네임/이메일 표시 개선 및 네이버·카카오 상시 [로그아웃] 버튼 전면 탑재
+### [${timeStr}] 동서트레일 가이드 (ewtguide) 네이버 로그인 무한루프 원인 규명 및 직접 JSONP 프로필 조회 & JIT 자동가입 엔진 구축
 
-- **원인 분석 및 해결**:
-  1. **카카오 로그인 시 '카카오_트래커' 기본값 출력 문제**:
-     - 카카오 프로필 객체 계층(\`kakao_account.profile.nickname\`, \`properties.nickname\`, \`kakao_account.email\`) 간의 다중 폴백 구조를 보강.
-     - 닉네임 또는 가입 이메일(\`user@kakao.com\`)이 최우선으로 사용자 이름에 반영되도록 개선.
-  2. **네이버 로그인 시 로그아웃 버튼 미노출 문제**:
-     - 네이버 콜백 HTML(\`naverlogin/index.html\`)에서 URL 해시의 \`access_token\`을 즉시 로컬스토리지에 저장하지 않고 비동기 SDK 호출 후 바로 리다이렉트되면서 세션이 누락되던 현상 해결.
-     - \`access_token\` 즉시 보전 엔진 및 프로필 비동기 보강 구조로 변경.
-  3. **상단 타이틀 바 및 시작 화면 상시 [로그아웃] 버튼 전면 탑재**:
-     - \`Header.tsx\`: 로그인 시 사용자 뱃지(프로필 사진 + 닉네임/이메일) 옆에 명확한 **[로그아웃]** 버튼을 모든 해상도(모바일 포함)에서 상시 노출.
-     - \`TitleScreenView.tsx\`: 초기 타이틀 화면 우측 상단에도 로그인/로그아웃 뱃지를 탑재하여 어느 화면에서든 로그인 상태 인지 및 원클릭 로그아웃 가능.
-     - 로그인/가입 완료 시 타이틀 화면에 머물지 않고 즉시 코스 목록 화면으로 이동하도록 전환.
+- **무한루프 발생 원인 정밀 분석**:
+  1. **네이버 JS SDK(naveridlogin_js_sdk_2.0.2.js)의 내부 state 토큰 불일치**:
+     - 네이버 공식 SDK는 자체 버튼 클릭 시 로컬에 저장된 \`state\`와 콜백 URL의 \`state\`를 \`checkStateToken\`으로 대조함.
+     - 메인 앱에서 자체 구성한 인가 URL로 리다이렉트되면서 SDK 내부 state 검증이 실패(\`false\`), 사용자 프로필 조회가 전면 차단됨.
+  2. **임의 ID 발급에 따른 미가입 처리 & 로그인 모달 재호출 루프**:
+     - SDK 실패로 인해 \`id\`가 \`naver_\${Date.now()}\`로 임의 생성됨.
+     - \`oauthService.ts\`의 [로그인] 흐름에서 DB에 매번 다른 임의 ID가 조회되므로 "미가입 계정"으로 판정되어 실패 처리.
+     - 실패 시 메인 화면이 다시 로그인 모달을 띄우고, 이미 네이버에 세션이 맺어져 있는 사용자는 네이버 로그인 클릭 시 즉시 리다이렉트되어 동일 실패를 무한 반복하는 악순환 발생.
+  3. **콜백 리다이렉트 시 URL Hash 잔존 간섭**:
+     - 콜백 페이지에서 \`replace(basePath)\` 실행 시 일부 브라우저에서 기존 \`#access_token=...\` 해시가 유지되어 재파싱 간섭을 유발함.
+
+- **해결 방안 및 구현 내용**:
+  1. **버그 많은 129KB Naver SDK 완전 제거 & 순수 OpenAPI JSONP 프로필 엔진 도입**:
+     - \`public/naverlogin/index.html\` 및 \`public/naverlogin.html\`에서 무거운 SDK 의존성을 완전히 제거.
+     - URL 해시에서 \`access_token\`을 순수 정규식으로 안전하게 추출한 뒤, 네이버 공식 OpenAPI 엔드포인트(\`https://openapi.naver.com/v1/nid/me?access_token=...&oauth_callback=...\`)를 JSONP 방식으로 직접 호출.
+     - 네이버 서버로부터 정식 영구 고유 식별자(\`id\`), \`nickname\`, \`name\`, \`email\`, \`profile_image\`를 즉각 수신하여 로컬스토리지에 보전.
+  2. **JIT(Just-In-Time) 프로비저닝 (로그인 시 자동 가입 및 세션 활성화)**:
+     - \`src/services/oauthService.ts\`: [로그인] 탭을 눌러 진입한 사용자라도 네이버/카카오 인증이 완료되었으면 미가입 거부 대신 즉시 Supabase/로컬 DB에 자동 가입(JIT Provisioning) 및 로그인을 원스톱 처리.
+     - 사용자가 가입 신청과 로그인 중 어느 쪽을 클릭하더라도 단 한 번의 소셜 인증으로 즉시 로그인 완료.
+  3. **완전한 클린 리다이렉트 & URL 상태 정리**:
+     - 콜백 페이지 이동 시 \`window.location.origin + basePath\`로 해시나 쿼리 없이 깨끗한 메인 URL로 이동.
+     - \`src/App.tsx\` 진입 즉시 \`history.replaceState\`로 파라미터를 정리하고 모달 닫기 및 코스 목록 화면 자동 전환.
 
 - **빌드 및 배포**:
-  - \`npm run build\` 성공 (네이버/카카오 콜백 HTML 및 에셋 번들링 완료).
-  - GitHub \`origin/main\` 브랜치 푸시 완료.
+  - \`npm run build\` 성공 및 배포 완료.
+  - GitHub \`origin/main\` 브랜치 커밋 (\`d695ef1\`) 및 푸시 완료.
 `;
 
 try {
