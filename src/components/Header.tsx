@@ -62,16 +62,16 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Right Action Icons (Single Row) */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Main List Screen: only '전체 지도' */}
           {currentStep === 'list' && (
             <button
               onClick={() => onNavigate('all_map')}
-              className="px-3 py-1.5 rounded-xl flex items-center gap-1.5 text-xs sm:text-sm font-bold bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 text-slate-200 transition-all active:scale-95 cursor-pointer shadow-xs"
+              className="p-2 sm:px-3 sm:py-1.5 rounded-xl flex items-center gap-1.5 text-xs sm:text-sm font-bold bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 text-slate-200 transition-all active:scale-95 cursor-pointer shadow-xs"
               title="동서트레일 55개 전 구간 전체 지도"
             >
               <Map className="w-4 h-4 text-emerald-400" />
-              <span>전체 지도</span>
+              <span className="hidden sm:inline">전체 지도</span>
             </button>
           )}
 
@@ -143,57 +143,45 @@ export const Header: React.FC<HeaderProps> = ({
           {currentStep === 'all_map' && (
             <button
               onClick={() => onNavigate('list')}
-              className="px-3 py-1.5 rounded-xl flex items-center gap-1.5 text-xs sm:text-sm font-bold bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 text-slate-200 transition-all active:scale-95 cursor-pointer shadow-xs"
+              className="p-2 sm:px-3 sm:py-1.5 rounded-xl flex items-center gap-1.5 text-xs sm:text-sm font-bold bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 text-slate-200 transition-all active:scale-95 cursor-pointer shadow-xs"
               title="구간 목록으로 돌아가기"
             >
               <List className="w-4 h-4 text-emerald-400" />
-              <span>구간 목록</span>
+              <span className="hidden sm:inline">구간 목록</span>
             </button>
           )}
 
-          {/* 6. 화면 상단 타이틀 바에 항상 '로그인'/'로그아웃' 명확히 표시 */}
+          {/* 로그인 / 프로필 단독 아바타 표시 (모바일 최적화 & 이름/로그아웃 버튼 제거) */}
           {onOpenAuth && (
             <div className="pl-1 border-l border-slate-800/80">
               {currentUser ? (
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <div
-                    onClick={onOpenAuth}
-                    className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-slate-800/90 border border-slate-700 hover:border-emerald-500/50 text-slate-200 text-xs font-bold cursor-pointer transition-colors max-w-[90px] sm:max-w-[140px]"
-                    title={`${currentUser.name || currentUser.email} (${currentUser.provider}) 계정 정보`}
-                  >
-                    {currentUser.profile_image ? (
-                      <img
-                        src={currentUser.profile_image}
-                        alt=""
-                        className="w-4 h-4 rounded-full object-cover shrink-0"
-                      />
-                    ) : (
-                      <User className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                    )}
-                    <span className="truncate text-emerald-300">
-                      {currentUser.name || currentUser.email}
-                    </span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={onSignOut || onOpenAuth}
-                    className="px-2 sm:px-2.5 py-1.5 rounded-xl bg-rose-950/70 hover:bg-rose-900 active:bg-rose-800 border border-rose-700/80 text-rose-200 flex items-center gap-1 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-xs"
-                    title="로그아웃"
-                  >
-                    <LogOut className="w-3.5 h-3.5 text-rose-300" />
-                    <span>로그아웃</span>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={onOpenAuth}
+                  className="p-1 sm:p-1.5 rounded-xl bg-slate-800/90 border border-slate-700 hover:border-emerald-500/50 text-slate-200 flex items-center justify-center transition-all cursor-pointer shadow-xs hover:scale-105"
+                  title={`${currentUser.name || currentUser.email} (${currentUser.provider}) 계정 관리`}
+                >
+                  {currentUser.profile_image ? (
+                    <img
+                      src={currentUser.profile_image}
+                      alt=""
+                      className="w-5 h-5 rounded-full object-cover ring-1 ring-emerald-400/60"
+                    />
+                  ) : (
+                    <div className="w-5 h-5 rounded-full bg-emerald-600/30 flex items-center justify-center border border-emerald-500/50">
+                      <User className="w-3.5 h-3.5 text-emerald-400" />
+                    </div>
+                  )}
+                </button>
               ) : (
                 <button
                   type="button"
                   onClick={onOpenAuth}
-                  className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 text-slate-200 flex items-center gap-1.5 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-xs"
-                  title="로그인 / 회원가입"
+                  className="p-2 sm:px-2.5 sm:py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 text-slate-200 flex items-center gap-1.5 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-xs"
+                  title="로그인"
                 >
                   <LogIn className="w-4 h-4 text-emerald-400" />
-                  <span>로그인</span>
+                  <span className="hidden sm:inline">로그인</span>
                 </button>
               )}
             </div>

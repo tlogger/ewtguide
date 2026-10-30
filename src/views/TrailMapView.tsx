@@ -6,9 +6,10 @@ import {
   MapTypeId,
   useKakaoLoader
 } from 'react-kakao-maps-sdk';
-import { SectionDetail, SectionSummary, POI, TrailPoint } from '../types';
+import { SectionDetail, SectionSummary, POI, TrailPoint, FacilityCategory } from '../types';
 import { FacilityModal } from '../components/FacilityModal';
 import { MapScaleBar } from '../components/MapScaleBar';
+import { CategoryIcon } from '../components/CategoryIcon';
 import {
   Navigation,
   Plus,
@@ -525,14 +526,11 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
             {/* Facility Markers */}
             {allFacilities.map((fac, idx) => {
               if (!fac.lat || !fac.lng) return null;
-              const iconChar =
-                fac.category === 'viewpoint' ? '📷' :
-                fac.category === 'restaurant' ? '🍴' :
-                fac.category === 'transport' ? '🚗' :
-                fac.category === 'lodging' ? '⛺' :
-                fac.category === 'cert_center' ? 'ℹ️' :
-                fac.category === 'mart' ? '🛍️' :
-                fac.category === 'toilet' ? '🚻' : '📍';
+              
+              // 다중 카테고리 목록 정규화 (fac.categories 우선, 없으면 fac.category 단일)
+              const catList: FacilityCategory[] = Array.isArray(fac.categories) && fac.categories.length > 0
+                ? (fac.categories as FacilityCategory[])
+                : [(fac.category as FacilityCategory) || 'other'];
 
               return (
                 <CustomOverlayMap
@@ -545,10 +543,20 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
                       e.stopPropagation();
                       setSelectedFacility(fac);
                     }}
-                    className="bg-white text-gray-900 font-bold text-[11px] px-2 py-0.5 rounded-xl shadow-md border border-emerald-600 whitespace-nowrap cursor-pointer flex items-center gap-1 hover:scale-105 transition-transform"
+                    className="bg-white/95 text-slate-900 font-bold text-[11px] px-2 py-0.5 rounded-full shadow-md border border-emerald-600 whitespace-nowrap cursor-pointer flex items-center gap-1.5 hover:scale-105 transition-transform"
                   >
-                    <span>{iconChar}</span>
-                    <span>{fac.name}</span>
+                    <div className="flex items-center -space-x-1 shrink-0">
+                      {catList.map((catKey, cIdx) => (
+                        <CategoryIcon
+                          key={`${catKey}-${cIdx}`}
+                          category={catKey}
+                          size="xs"
+                          variant="solid"
+                          className="border border-white shadow-2xs"
+                        />
+                      ))}
+                    </div>
+                    <span className="leading-tight">{fac.name}</span>
                   </div>
                 </CustomOverlayMap>
               );

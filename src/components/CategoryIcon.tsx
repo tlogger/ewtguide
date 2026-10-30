@@ -122,7 +122,7 @@ export const SELECTABLE_CATEGORIES: CategoryMeta[] = [
 
 interface CategoryIconProps {
   category: FacilityCategory;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   variant?: 'solid' | 'outline' | 'ghost';
   selected?: boolean;
   className?: string;
@@ -139,6 +139,7 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({
   const IconComp = meta.icon;
 
   const sizeClasses = {
+    xs: 'w-4 h-4 p-0.5',
     sm: 'w-6 h-6 text-xs p-1',
     md: 'w-8 h-8 text-sm p-1.5',
     lg: 'w-10 h-10 text-base p-2',
@@ -146,6 +147,7 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({
   }[size];
 
   const iconSizes = {
+    xs: 'w-2.5 h-2.5',
     sm: 'w-3.5 h-3.5',
     md: 'w-4 h-4',
     lg: 'w-5 h-5',
