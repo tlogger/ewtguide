@@ -6,17 +6,17 @@ const now = new Date();
 const timeStr = `${now.getFullYear()}. ${now.getMonth() + 1}. ${now.getDate()}. ${now.toLocaleTimeString('ko-KR')}`;
 
 const entry = `
-### [${timeStr}] 동서트레일 가이드 (ewtguide) 지도 시설 마커 상하 분리(아이콘 상단 확대 + 텍스트 하단) UI 개선
+### [${timeStr}] 동서트레일 가이드 (ewtguide) 구글(Google) 공식 소셜 OAuth2 로그인 완전 구현 및 실서버 테스트 완료
 
-- **작업 내용**:
-  - \`TrailMapView.tsx\`: 지도 위 편의시설/명소 마커 렌더링 구조 개편.
-  - **아이콘 크기 확대**: 아이콘 사이즈를 기존 \`xs\`(16px)에서 \`sm\`(24px)로 확대하여 시인성 대폭 개선.
-  - **상하 분리(줄바꿈) 배치**: 상단에는 시설 종류 아이콘 뱃지(복수 카테고리 시 가로 나열), 하단에는 시설명 라벨 캡슐을 배치하여 지도 지형과의 간섭을 최소화하고 가독성 극대화.
-  - 앵커 포인트(\`yAnchor={1.1}\`) 조정을 통해 실제 좌표 지점 위에 자연스럽게 핀 형태로 안착되도록 정렬.
-
-- **빌드 및 배포**:
-  - \`npm run build\` 성공 및 배포 완료.
-  - GitHub \`origin/main\` 브랜치 커밋 (\`0962273\`) 및 푸시 완료.
+- **구글 OAuth 연동 설정**:
+  - 환경변수 및 \`src/services/oauthService.ts\` 기본값에 구글 클라이언트 ID 등록 완료.
+- **인증 및 프로필 처리 파이프라인**:
+  - Google OAuth 2.0 Implicit Flow (\`response_type=token\`, Scopes: \`email profile openid\`) 적용.
+  - 인가 엔드포인트 실호출 테스트 결과: 구글 공식 계정 선택 페이지로 **HTTP 302 리다이렉트 정상 확인**.
+  - 리다이렉트 복귀 시 \`https://www.googleapis.com/oauth2/v3/userinfo\` API를 비동기 호출하여 실제 구글 계정 이름, 이메일, 프로필 사진을 추출하고 Supabase/로컬 DB에 자동 가입(JIT) 및 세션 유지 연동.
+- **배포 및 검증**:
+  - \`npm run build\` 정상 완료.
+  - GitHub \`origin/main\` 브랜치 푸시 완료.
 `;
 
 try {
