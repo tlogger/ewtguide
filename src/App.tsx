@@ -38,6 +38,7 @@ export const App: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isCertModalOpen, setIsCertModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [authToast, setAuthToast] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   // Listen for user auth changes
   useEffect(() => {
@@ -55,6 +56,12 @@ export const App: React.FC = () => {
       processOAuthCallbackResult(callbackData).then((res) => {
         if (res.user) {
           setCurrentUser(res.user);
+        }
+        setAuthToast({ text: res.message, type: res.success ? 'success' : 'error' });
+        setTimeout(() => setAuthToast(null), 4500);
+
+        if (!res.success) {
+          setIsAuthModalOpen(true);
         }
         // Clean URL query and hash
         window.history.replaceState({}, document.title, window.location.pathname);
@@ -268,6 +275,20 @@ export const App: React.FC = () => {
           />
         ) : null}
       </main>
+
+      {/* Global Auth Toast */}
+      {authToast && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-2xl shadow-2xl text-xs sm:text-sm font-bold flex items-center gap-2 border animate-in slide-in-from-top-4 duration-200 max-w-sm w-full mx-4 select-none bg-slate-900/95 text-white border-slate-700">
+          <span>{authToast.type === 'success' ? '✅' : authToast.type === 'error' ? '⚠️' : 'ℹ️'}</span>
+          <span className="flex-1">{authToast.text}</span>
+          <button
+            onClick={() => setAuthToast(null)}
+            className="text-slate-400 hover:text-white p-1"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Auth Modal (Login / Sign Up / Token Preservation) */}
       <AuthModal

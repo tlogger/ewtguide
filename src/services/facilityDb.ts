@@ -369,12 +369,12 @@ export async function findUserAccount(
 export async function registerUserAccount(account: {
   provider: AuthProvider;
   provider_user_id: string;
-  email?: string;
-  name?: string;
-  profile_image?: string;
-  access_token?: string;
-  refresh_token?: string;
-  token_expires_at?: string;
+  email?: string | null;
+  name?: string | null;
+  profile_image?: string | null;
+  access_token?: string | null;
+  refresh_token?: string | null;
+  token_expires_at?: string | null;
 }): Promise<UserAccount> {
   const client = getSupabase();
   const now = new Date().toISOString();
