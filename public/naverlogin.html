@@ -50,60 +50,69 @@
       var hash = window.location.hash || '';
       var search = window.location.search || '';
 
-      var naverLogin = new naver.LoginWithNaverId({
-        clientId: "ZlO4zT_XXNDHb24LQL5u",
-        callbackUrl: window.location.href.split('#')[0].split('?')[0],
-        isPopup: false,
-        callbackHandle: true
-      });
+      var matchToken = hash.match(/access_token=([^&]+)/);
+      var accessToken = matchToken ? matchToken[1] : '';
 
-      naverLogin.init();
+      var basePath = window.location.pathname.replace(/\/naverlogin(\/.*)?$/, '/');
 
-      naverLogin.getLoginStatus(function (status) {
-        if (status) {
-          try {
-            var email = naverLogin.user.getEmail() || '';
-            var name = naverLogin.user.getName() || naverLogin.user.getNickName() || '네이버 트레커';
-            var id = naverLogin.user.getId() || ('naver_' + Date.now());
-            var profileImage = naverLogin.user.getProfileImage() || '';
-            var accessToken = (naverLogin.accessToken && naverLogin.accessToken.accessToken) || '';
+      // 1. URL 해시에서 access_token 즉시 보전
+      if (accessToken) {
+        var basePayload = {
+          provider: 'naver',
+          id: 'naver_' + Date.now(),
+          name: '네이버 회원',
+          access_token: accessToken,
+          timestamp: Date.now()
+        };
+        localStorage.setItem('ewtguide_naver_auth_payload', JSON.stringify(basePayload));
+      }
 
-            var authPayload = {
-              provider: 'naver',
-              id: id,
-              email: email,
-              name: name,
-              profile_image: profileImage,
-              access_token: accessToken,
-              timestamp: Date.now()
-            };
-
-            localStorage.setItem('ewtguide_naver_auth_payload', JSON.stringify(authPayload));
-          } catch (e) {
-            console.error('Failed to parse naver user:', e);
-          }
-        }
-
-        var basePath = window.location.pathname.replace(/\/naverlogin(\/.*)?$/, '/');
+      var redirectHandler = function() {
         window.location.replace(basePath);
-      });
+      };
 
-      setTimeout(function() {
-        if (!localStorage.getItem('ewtguide_naver_auth_payload')) {
-          var match = hash.match(/access_token=([^&]+)/);
-          if (match && match[1]) {
-            localStorage.setItem('ewtguide_naver_auth_payload', JSON.stringify({
-              provider: 'naver',
-              id: 'naver_' + Date.now(),
-              name: '네이버 트레커',
-              access_token: match[1],
-              timestamp: Date.now()
-            }));
+      try {
+        var naverLogin = new naver.LoginWithNaverId({
+          clientId: "ZlO4zT_XXNDHb24LQL5u",
+          callbackUrl: "https://tlogger.github.io/ewtguide/naverlogin",
+          isPopup: false,
+          callbackHandle: true
+        });
+
+        naverLogin.init();
+
+        naverLogin.getLoginStatus(function (status) {
+          if (status && naverLogin.user) {
+            try {
+              var email = naverLogin.user.getEmail() || '';
+              var name = naverLogin.user.getName() || naverLogin.user.getNickName() || email || '네이버 회원';
+              var id = naverLogin.user.getId() || ('naver_' + Date.now());
+              var profileImage = naverLogin.user.getProfileImage() || '';
+              var token = (naverLogin.accessToken && naverLogin.accessToken.accessToken) || accessToken;
+
+              var authPayload = {
+                provider: 'naver',
+                id: id,
+                email: email,
+                name: name,
+                profile_image: profileImage,
+                access_token: token,
+                timestamp: Date.now()
+              };
+
+              localStorage.setItem('ewtguide_naver_auth_payload', JSON.stringify(authPayload));
+            } catch (err) {
+              console.error('Naver profile error:', err);
+            }
           }
-        }
-        var basePath = window.location.pathname.replace(/\/naverlogin(\/.*)?$/, '/');
-        window.location.replace(basePath);
-      }, 2500);
+          redirectHandler();
+        });
+      } catch (e) {
+        console.warn('Naver SDK init notice:', e);
+        setTimeout(redirectHandler, 500);
+      }
+
+      setTimeout(redirectHandler, 1800);
     })();
   </script>
 </body>

@@ -18,7 +18,8 @@ import {
   loadSectionFacilities,
   saveFacilityToDb,
   deleteFacilityFromDb,
-  getCurrentUser
+  getCurrentUser,
+  signOutUser
 } from './services/facilityDb';
 import {
   parseOAuthCallback,
@@ -56,6 +57,7 @@ export const App: React.FC = () => {
       processOAuthCallbackResult(callbackData).then((res) => {
         if (res.user) {
           setCurrentUser(res.user);
+          setCurrentStep('list'); // 로그인/가입 완료 시 코스 목록 화면으로 바로 이동
         }
         setAuthToast({ text: res.message, type: res.success ? 'success' : 'error' });
         setTimeout(() => setAuthToast(null), 4500);
@@ -68,6 +70,13 @@ export const App: React.FC = () => {
       });
     }
   }, []);
+
+  const handleSignOut = async () => {
+    await signOutUser();
+    setCurrentUser(null);
+    setAuthToast({ text: '정상적으로 로그아웃되었습니다.', type: 'info' });
+    setTimeout(() => setAuthToast(null), 3000);
+  };
 
   // Load summary on mount
   useEffect(() => {
@@ -203,6 +212,9 @@ export const App: React.FC = () => {
         totalDistance="867.1"
         totalSections={55}
         openedSectionsCount={32}
+        currentUser={currentUser}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onSignOut={handleSignOut}
       />
     );
   }
@@ -225,6 +237,7 @@ export const App: React.FC = () => {
         totalCount={sectionsSummary.length || 55}
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthModalOpen(true)}
+        onSignOut={handleSignOut}
       />
 
       <main className="flex-1">

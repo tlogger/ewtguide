@@ -52,18 +52,24 @@
 
       var basePath = window.location.pathname.replace(/\/kakaologin(\/.*)?$/, '/');
 
-      if (error) {
-        console.error('Kakao error:', error);
+      var redirectBack = function() {
         window.location.replace(basePath);
+      };
+
+      if (error) {
+        console.error('Kakao auth error:', error);
+        redirectBack();
         return;
       }
 
       if (code) {
         try {
           var clientId = "354131879d586356f9c160db0f834840";
-          var redirectUri = window.location.href.split('?')[0].split('#')[0];
+          var redirectUri = window.location.hostname === 'localhost'
+            ? (window.location.origin + '/kakaologin')
+            : "https://tlogger.github.io/ewtguide/kakaologin";
 
-          // 1. 카카오 토큰 발급 요청 (kauth.kakao.com은 CORS 허용)
+          // 1. 카카오 토큰 발급 요청
           var tokenRes = await fetch('https://kauth.kakao.com/oauth/token', {
             method: 'POST',
             headers: {
@@ -80,7 +86,7 @@
           var tokenData = await tokenRes.json();
 
           if (tokenData.access_token) {
-            // 2. 카카오 사용자 프로필 조회 (kapi.kakao.com은 CORS 허용)
+            // 2. 카카오 사용자 프로필 조회 (닉네임, 이메일, 프로필사진)
             var userRes = await fetch('https://kapi.kakao.com/v2/user/me', {
               headers: {
                 Authorization: 'Bearer ' + tokenData.access_token
@@ -88,17 +94,26 @@
             });
 
             var kakaoUser = await userRes.json();
+            var kakaoAccount = kakaoUser.kakao_account || {};
+            var kakaoProfile = kakaoAccount.profile || {};
+            var kakaoProps = kakaoUser.properties || {};
 
-            var nickname = (kakaoUser.kakao_account && kakaoUser.kakao_account.profile && kakaoUser.kakao_account.profile.nickname) || '카카오 트레커';
-            var profileImage = (kakaoUser.kakao_account && kakaoUser.kakao_account.profile && kakaoUser.kakao_account.profile.profile_image_url) || '';
-            var email = (kakaoUser.kakao_account && kakaoUser.kakao_account.email) || ('kakao_' + kakaoUser.id + '@kakao.com');
+            var kakaoEmail = kakaoAccount.email || '';
+            var kakaoNickname = kakaoProfile.nickname
+              || kakaoProps.nickname
+              || kakaoAccount.name
+              || kakaoEmail
+              || ('카카오_' + kakaoUser.id);
+            var kakaoPhoto = kakaoProfile.profile_image_url
+              || kakaoProps.profile_image
+              || '';
 
             var authPayload = {
               provider: 'kakao',
               id: 'kakao_' + kakaoUser.id,
-              name: nickname,
-              email: email,
-              profile_image: profileImage,
+              name: kakaoNickname,
+              email: kakaoEmail || (kakaoUser.id + '@kakao.com'),
+              profile_image: kakaoPhoto,
               access_token: tokenData.access_token,
               refresh_token: tokenData.refresh_token,
               timestamp: Date.now()
@@ -106,7 +121,7 @@
 
             localStorage.setItem('ewtguide_kakao_auth_payload', JSON.stringify(authPayload));
           } else {
-            // 토큰 교환 실패 시 code만 전달하여 메인 앱에서 재시도
+            console.warn('Kakao token exchange failed:', tokenData);
             localStorage.setItem('ewtguide_kakao_code', code);
           }
         } catch (e) {
@@ -115,7 +130,7 @@
         }
       }
 
-      window.location.replace(basePath);
+      redirectBack();
     })();
   </script>
 </body>

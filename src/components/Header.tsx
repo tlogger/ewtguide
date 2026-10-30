@@ -10,6 +10,7 @@ interface HeaderProps {
   totalCount?: number;
   currentUser?: UserAccount | null;
   onOpenAuth?: () => void;
+  onSignOut?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -17,7 +18,8 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigate,
   sectionNumber,
   currentUser = null,
-  onOpenAuth
+  onOpenAuth,
+  onSignOut
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md text-white border-b border-slate-800 shadow-sm select-none">
@@ -149,28 +151,40 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          {/* 6. 화면 상단 타이틀 바에 항상 '로그인'/'로그아웃' 아이콘 표시 */}
+          {/* 6. 화면 상단 타이틀 바에 항상 '로그인'/'로그아웃' 명확히 표시 */}
           {onOpenAuth && (
             <div className="pl-1 border-l border-slate-800/80">
               {currentUser ? (
-                <button
-                  type="button"
-                  onClick={onOpenAuth}
-                  className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl bg-emerald-950/70 hover:bg-emerald-900 active:bg-emerald-800 border border-emerald-600/70 text-emerald-300 flex items-center gap-1.5 text-xs font-bold transition-all active:scale-95 cursor-pointer"
-                  title={`${currentUser.name} (${currentUser.provider}) - 로그아웃`}
-                >
-                  {currentUser.profile_image ? (
-                    <img
-                      src={currentUser.profile_image}
-                      alt={currentUser.name || ''}
-                      className="w-4 h-4 rounded-full object-cover"
-                    />
-                  ) : (
-                    <User className="w-4 h-4 text-emerald-400" />
-                  )}
-                  <span className="hidden sm:inline truncate max-w-[70px]">{currentUser.name}</span>
-                  <LogOut className="w-3.5 h-3.5 text-emerald-400 hidden sm:inline" />
-                </button>
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <div
+                    onClick={onOpenAuth}
+                    className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-slate-800/90 border border-slate-700 hover:border-emerald-500/50 text-slate-200 text-xs font-bold cursor-pointer transition-colors max-w-[90px] sm:max-w-[140px]"
+                    title={`${currentUser.name || currentUser.email} (${currentUser.provider}) 계정 정보`}
+                  >
+                    {currentUser.profile_image ? (
+                      <img
+                        src={currentUser.profile_image}
+                        alt=""
+                        className="w-4 h-4 rounded-full object-cover shrink-0"
+                      />
+                    ) : (
+                      <User className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    )}
+                    <span className="truncate text-emerald-300">
+                      {currentUser.name || currentUser.email}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={onSignOut || onOpenAuth}
+                    className="px-2 sm:px-2.5 py-1.5 rounded-xl bg-rose-950/70 hover:bg-rose-900 active:bg-rose-800 border border-rose-700/80 text-rose-200 flex items-center gap-1 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-xs"
+                    title="로그아웃"
+                  >
+                    <LogOut className="w-3.5 h-3.5 text-rose-300" />
+                    <span>로그아웃</span>
+                  </button>
+                </div>
               ) : (
                 <button
                   type="button"
@@ -179,7 +193,7 @@ export const Header: React.FC<HeaderProps> = ({
                   title="로그인 / 회원가입"
                 >
                   <LogIn className="w-4 h-4 text-emerald-400" />
-                  <span className="hidden sm:inline">로그인</span>
+                  <span>로그인</span>
                 </button>
               )}
             </div>

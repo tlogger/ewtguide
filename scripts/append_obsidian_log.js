@@ -6,28 +6,22 @@ const now = new Date();
 const timeStr = `${now.getFullYear()}. ${now.getMonth() + 1}. ${now.getDate()}. ${now.toLocaleTimeString('ko-KR')}`;
 
 const entry = `
-### [${timeStr}] 동서트레일 가이드 (ewtguide) 카카오 로그인(OAuth2) 앱 ID \`1628651\` 실연동 및 실시간 프로필/토큰 연동 완료
+### [${timeStr}] 동서트레일 가이드 (ewtguide) 카카오 닉네임/이메일 표시 개선 및 네이버·카카오 상시 [로그아웃] 버튼 전면 탑재
 
-- **카카오 신규 자격증명 및 리다이렉트 URI 반영**:
-  - 앱 ID: \`1628651\`
-  - JavaScript 키: \`354131879d586356f9c160db0f834840\`
-  - 카카오 로그인 Redirect URI: \`https://tlogger.github.io/ewtguide/kakaologin\`
-  - 인가 엔드포인트 사전 검증: HTTP 302 Redirect to \`accounts.kakao.com/login\` (KOE004 에러 없이 완전 정상 인증 페이지 확인).
-
-- **카카오 OAuth2 수신 및 프로필 동기화 파이프라인 탑재**:
-  1. **정적 SPA 전용 카카오 콜백 리시버 탑재 (\`public/kakaologin/index.html\` & \`public/kakaologin.html\`)**:
-     - GitHub Pages에서 404 없이 즉시 수신되도록 독립 콜백 HTML 구축.
-     - \`kauth.kakao.com/oauth/token\`(CORS 허용)을 통해 인가 코드(\`code\`)를 실제 OAuth \`access_token\`으로 실시간 교환.
-     - \`kapi.kakao.com/v2/user/me\`(CORS 허용)를 호출하여 사용자 고유 식별자(\`id\`), 카카오 닉네임, 프로필 사진 URL, 이메일 수신.
-     - 인증 페이로드를 저장하고 메인 애플리케이션으로 안전하게 자동 리다이렉트 복귀.
-  2. **가입 신청 vs 로그인 분기 처리 (\`oauthService.ts\` & \`App.tsx\`)**:
-     - **[가입 신청]**: 카카오에서 동의/인증 후 복귀 시 Supabase \`user_accounts\` DB에 카카오 고유 ID, 프로필, 발급된 OAuth 토큰을 영구 보전하고 정식 회원 등록.
-     - **[로그인]**: DB에서 가입된 회원인지 확인 후 토큰 갱신 및 세션 로그인 처리 (미가입 상태인 경우 가입 신청 안내 모달 전환).
-  3. **인앱 알림 토스트 (\`App.tsx\`)**:
-     - 로그인/가입 완료 시 상단에 카카오 닉네임과 함께 환영 알림 토스트 자동 출력.
+- **원인 분석 및 해결**:
+  1. **카카오 로그인 시 '카카오_트래커' 기본값 출력 문제**:
+     - 카카오 프로필 객체 계층(\`kakao_account.profile.nickname\`, \`properties.nickname\`, \`kakao_account.email\`) 간의 다중 폴백 구조를 보강.
+     - 닉네임 또는 가입 이메일(\`user@kakao.com\`)이 최우선으로 사용자 이름에 반영되도록 개선.
+  2. **네이버 로그인 시 로그아웃 버튼 미노출 문제**:
+     - 네이버 콜백 HTML(\`naverlogin/index.html\`)에서 URL 해시의 \`access_token\`을 즉시 로컬스토리지에 저장하지 않고 비동기 SDK 호출 후 바로 리다이렉트되면서 세션이 누락되던 현상 해결.
+     - \`access_token\` 즉시 보전 엔진 및 프로필 비동기 보강 구조로 변경.
+  3. **상단 타이틀 바 및 시작 화면 상시 [로그아웃] 버튼 전면 탑재**:
+     - \`Header.tsx\`: 로그인 시 사용자 뱃지(프로필 사진 + 닉네임/이메일) 옆에 명확한 **[로그아웃]** 버튼을 모든 해상도(모바일 포함)에서 상시 노출.
+     - \`TitleScreenView.tsx\`: 초기 타이틀 화면 우측 상단에도 로그인/로그아웃 뱃지를 탑재하여 어느 화면에서든 로그인 상태 인지 및 원클릭 로그아웃 가능.
+     - 로그인/가입 완료 시 타이틀 화면에 머물지 않고 즉시 코스 목록 화면으로 이동하도록 전환.
 
 - **빌드 및 배포**:
-  - \`npm run build\` 성공 (카카오 콜백 HTML 번들링 포함).
+  - \`npm run build\` 성공 (네이버/카카오 콜백 HTML 및 에셋 번들링 완료).
   - GitHub \`origin/main\` 브랜치 푸시 완료.
 `;
 
