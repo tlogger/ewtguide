@@ -6,18 +6,19 @@ const now = new Date();
 const timeStr = `${now.getFullYear()}. ${now.getMonth() + 1}. ${now.getDate()}. ${now.toLocaleTimeString('ko-KR')}`;
 
 const entry = `
-### [${timeStr}] 동서트레일 가이드 (ewtguide) 카카오 로그인 시 기존 '카카오 트레커' 잔존 원인 규명 및 최신 프로필 자동 동기화 적용
+### [${timeStr}] 동서트레일 가이드 (ewtguide) 카카오 로그인 이메일 비우기(이름+프로필만 노출) 및 로그아웃 시 즉시 메인 화면 복귀 개선
 
-- **원인 분석**:
-  1. 카카오 API(\`https://kapi.kakao.com/v2/user/me\`) 실호출 결과, 카카오 인증 토큰을 통해 사용자의 실제 닉네임(\`정상돈\`)과 프로필 사진(\`http://k.kakaocdn.net/...\`)이 정상적으로 응답되고 있음을 직접 확인.
-  2. 그러나 Supabase 중앙 DB의 \`user_accounts\` 테이블에는 동의 항목을 켜기 전 최초 테스트 시 저장되었던 과거 레코드(\`name: '카카오 트레커'\`)가 고정되어 있었음.
-  3. 기존 \`updateUserLoginSession\` 함수가 로그인 시 토큰만 갱신하고 기존 \`name\`과 \`profile_image\`는 DB에 업데이트하지 않고 기존 DB 값을 그대로 반환했기 때문에, 새 닉네임이 반영되지 않고 과거 이름이 계속 출력됨.
-- **해결 조치**:
-  1. \`updateUserLoginSession\` 함수를 개정하여 로그인 시 소셜 포털에서 전달된 최신 프로필 정보(\`name\`, \`profile_image\`, \`email\`)가 DB에 즉시 동기화·업데이트되도록 파이프라인 구축.
-  2. Supabase DB의 기존 레코드도 즉시 정상 카카오 프로필(\`정상돈\`, 프로필 사진)로 보정 완료.
-- **배포 및 검증**:
-  - \`npm run build\` 성공.
-  - GitHub \`origin/main\` 브랜치 커밋 (\`079033d\`) 및 푸시 완료.
+- **작업 내용**:
+  1. **카카오 로그인 계정 이메일 비움 처리**:
+     - 카카오는 이메일 동의가 제외되어 있으므로 가짜 임의 이메일(\`kakao_{id}@kakao.com\`)을 생성하지 않고 빈 값(\`null\` 또는 \`''\`)으로 유지.
+     - 계정 모달(\`AuthModal.tsx\`)에서 카카오 계정의 경우 불필요한 이메일 행을 노출하지 않고, 사용자 이름과 카카오 프로필 사진만 깔끔하게 출력하도록 조정.
+     - Supabase 중앙 DB의 기존 사용자 레코드에서도 \`email: null\`로 정제 완료.
+  2. **로그아웃 시 모달 즉시 닫힘 및 메인 화면 복귀**:
+     - \`AuthModal.tsx\`에서 [로그아웃] 클릭 시 '로그인 창'으로 리로드/업데이트되지 않고, 팝업을 즉시 닫고(\`onClose()\`) 원래 보고 있던 메인 지도/코스 화면으로 부드럽게 복귀하도록 흐름 개선.
+
+- **빌드 및 배포**:
+  - \`npm run build\` 성공 및 배포 완료.
+  - GitHub \`origin/main\` 브랜치 커밋 (\`76bdcfc\`) 및 푸시 완료.
 `;
 
 try {
