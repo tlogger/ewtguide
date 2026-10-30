@@ -536,27 +536,32 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
                 <CustomOverlayMap
                   key={fac.id || idx}
                   position={{ lat: fac.lat, lng: fac.lng }}
-                  yAnchor={0.5}
+                  yAnchor={1.1}
                 >
                   <div
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedFacility(fac);
                     }}
-                    className="bg-white/95 text-slate-900 font-bold text-[11px] px-2 py-0.5 rounded-full shadow-md border border-emerald-600 whitespace-nowrap cursor-pointer flex items-center gap-1.5 hover:scale-105 transition-transform"
+                    className="flex flex-col items-center group cursor-pointer hover:scale-110 hover:z-30 transition-all select-none"
                   >
-                    <div className="flex items-center -space-x-1 shrink-0">
+                    {/* 상단: 약간 더 커진 시설 아이콘 뱃지들 (여러 개일 경우 가로 나열) */}
+                    <div className="flex items-center -space-x-1.5 p-0.5 bg-white/95 rounded-full shadow-md border border-slate-300 group-hover:border-emerald-500 transition-colors">
                       {catList.map((catKey, cIdx) => (
                         <CategoryIcon
                           key={`${catKey}-${cIdx}`}
                           category={catKey}
-                          size="xs"
+                          size="sm"
                           variant="solid"
-                          className="border border-white shadow-2xs"
+                          className="border border-white shadow-xs"
                         />
                       ))}
                     </div>
-                    <span className="leading-tight">{fac.name}</span>
+
+                    {/* 하단: 줄바꿈된 시설명 라벨 캡슐 */}
+                    <div className="mt-0.5 px-2 py-0.5 bg-slate-900/90 text-white font-bold text-[10px] sm:text-[11px] rounded-md shadow-md border border-slate-700/80 whitespace-nowrap leading-tight group-hover:bg-emerald-700 group-hover:border-emerald-400 transition-colors">
+                      {fac.name}
+                    </div>
                   </div>
                 </CustomOverlayMap>
               );
