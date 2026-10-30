@@ -22,7 +22,7 @@ export function getOAuthClientConfig(): OAuthClientConfig {
   const envKakaoCallback = import.meta.env.VITE_KAKAO_CALLBACK_URL || 'https://tlogger.github.io/ewtguide/kakaologin';
   const envNaver = import.meta.env.VITE_NAVER_CLIENT_ID || 'ZlO4zT_XXNDHb24LQL5u';
   const envNaverCallback = import.meta.env.VITE_NAVER_CALLBACK_URL || 'https://tlogger.github.io/ewtguide/naverlogin';
-  const envGoogle = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+  const envGoogle = import.meta.env.VITE_GOOGLE_CLIENT_ID || '91988805001-t93p6nlfov5adjalmkjn3qlgvo6o1133.apps.googleusercontent.com';
 
   try {
     const raw = localStorage.getItem(OAUTH_KEYS_STORAGE);
@@ -60,11 +60,12 @@ export function saveOAuthClientConfig(config: Partial<OAuthClientConfig>): void 
   }
 }
 
-/** 현재 실행 도메인의 리다이렉트 URI 산출 */
+/** 현재 실행 도메인의 리다이렉트 URI 산출 (SPA 기본 경로 보장) */
 export function getOAuthRedirectUri(): string {
   const origin = window.location.origin;
-  const pathname = window.location.pathname;
-  return `${origin}${pathname}`;
+  // GitHub Pages 배포 환경 (/ewtguide/) 또는 로컬 개발 환경 (/) 지원
+  const basePath = window.location.pathname.startsWith('/ewtguide') ? '/ewtguide/' : '/';
+  return `${origin}${basePath}`;
 }
 
 /** 소셜 공급자별 실제 공식 OAuth2 인가 URL 생성 */
