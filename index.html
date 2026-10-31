@@ -9,6 +9,25 @@
     <title>동서트레일 가이드 | ewtguide</title>
     <!-- Pretendard web font for crisp senior-friendly typography -->
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <script>
+      (function() {
+        try {
+          var hash = window.location.hash || '';
+          var search = window.location.search || '';
+          var query = hash.substring(1) || search.substring(1);
+          if (query.indexOf('state=') !== -1) {
+            var params = new URLSearchParams(query);
+            var rawState = params.get('state');
+            if (rawState) {
+              var stateObj = JSON.parse(decodeURIComponent(rawState));
+              if (stateObj && stateObj.isApp) {
+                window.location.href = 'com.ewtguide.app://oauth?' + query;
+              }
+            }
+          }
+        } catch(e) {}
+      })();
+    </script>
   </head>
   <body class="bg-gray-50 text-gray-900 antialiased font-sans select-none sm:select-auto">
     <div id="root"></div>

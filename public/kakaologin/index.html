@@ -124,7 +124,25 @@
             };
 
             localStorage.setItem('ewtguide_kakao_auth_payload', JSON.stringify(authPayload));
-          } else {
+
+            // 모바일 앱(Capacitor) 딥링크 복귀 지원
+            var isApp = false;
+            try {
+              var rawState = searchParams.get('state');
+              if (rawState) {
+                var stateObj = JSON.parse(decodeURIComponent(rawState));
+                if (stateObj && stateObj.isApp) isApp = true;
+              }
+            } catch(e) {}
+
+            if (isApp) {
+              var appDeepLink = 'com.ewtguide.app://oauth?provider=kakao&payload=' + encodeURIComponent(JSON.stringify(authPayload));
+              window.location.href = appDeepLink;
+              setTimeout(function() {
+                redirectBack();
+              }, 2500);
+              return;
+            }
             console.warn('Kakao token exchange failed:', tokenData);
             localStorage.setItem('ewtguide_kakao_code', code);
           }

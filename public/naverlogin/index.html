@@ -116,7 +116,25 @@
               timestamp: Date.now()
             };
             localStorage.setItem('ewtguide_naver_auth_payload', JSON.stringify(successPayload));
-          }
+
+            // 모바일 앱(Capacitor) 딥링크 복귀 지원
+            var isApp = false;
+            try {
+              var stateMatch = (hash.match(/state=([^&]+)/) || search.match(/state=([^&]+)/));
+              if (stateMatch) {
+                var stateObj = JSON.parse(decodeURIComponent(stateMatch[1]));
+                if (stateObj && stateObj.isApp) isApp = true;
+              }
+            } catch(e) {}
+
+            if (isApp) {
+              var appDeepLink = 'com.ewtguide.app://oauth?provider=naver&payload=' + encodeURIComponent(JSON.stringify(successPayload));
+              window.location.href = appDeepLink;
+              setTimeout(function() {
+                redirectBack();
+              }, 2500);
+              return;
+            }
         } catch (e) {
           console.error('Error handling Naver profile response:', e);
         }

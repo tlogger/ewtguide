@@ -1,4 +1,6 @@
 import { AuthProvider, UserAccount } from '../types';
+import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
 import {
   registerUserAccount,
   findUserAccount,
@@ -62,8 +64,11 @@ export function saveOAuthClientConfig(config: Partial<OAuthClientConfig>): void 
 
 /** 현재 실행 도메인의 리다이렉트 URI 산출 (SPA 기본 경로 보장) */
 export function getOAuthRedirectUri(): string {
+  if (Capacitor.isNativePlatform()) {
+    // 모바일 앱 환경에서는 Google OAuth의 허용 도메인인 공식 GitHub Pages URL을 리다이렉트 URI로 제공
+    return 'https://tlogger.github.io/ewtguide/';
+  }
   const origin = window.location.origin;
-  // GitHub Pages 배포 환경 (/ewtguide/) 또는 로컬 개발 환경 (/) 지원
   const basePath = window.location.pathname.startsWith('/ewtguide') ? '/ewtguide/' : '/';
   return `${origin}${basePath}`;
 }
@@ -71,7 +76,9 @@ export function getOAuthRedirectUri(): string {
 /** 소셜 공급자별 실제 공식 OAuth2 인가 URL 생성 */
 export function buildOAuthAuthorizeUrl(provider: AuthProvider, mode: 'login' | 'signup'): { url: string; error?: string } {
   const config = getOAuthClientConfig();
-  const state = encodeURIComponent(JSON.stringify({ provider, mode, t: Date.now() }));
+  const isNative = Capacitor.isNativePlatform();
+  // 모바일 앱 여부(isApp)를 state에 함께 인코딩하여 콜백 시 딥링크(com.ewtguide.app://)로 안전 복귀
+  const state = encodeURIComponent(JSON.stringify({ provider, mode, isApp: isNative, t: Date.now() }));
 
   // 요청 모드(가입신청 vs 로그인)를 로컬스토리지에 안전하게 보존
   try {
@@ -82,7 +89,8 @@ export function buildOAuthAuthorizeUrl(provider: AuthProvider, mode: 'login' | '
 
   if (provider === 'naver') {
     const naverClientId = config.naverClientId || 'ZlO4zT_XXNDHb24LQL5u';
-    const callbackUrl = window.location.hostname === 'localhost'
+    // 모바일 앱 환경이거나 배포 환경인 경우 네이버 개발자 센터에 등록된 정식 callbackUrl 사용
+    const callbackUrl = (!isNative && window.location.hostname === 'localhost')
       ? `${window.location.origin}/naverlogin`
       : config.naverCallbackUrl;
 
@@ -95,7 +103,8 @@ export function buildOAuthAuthorizeUrl(provider: AuthProvider, mode: 'login' | '
 
   if (provider === 'kakao') {
     const kakaoKey = config.kakaoClientId || '354131879d586356f9c160db0f834840';
-    const callbackUrl = window.location.hostname === 'localhost'
+    // 모바일 앱 환경이거나 배포 환경인 경우 카카오 개발자 센터에 등록된 정식 callbackUrl 사용
+    const callbackUrl = (!isNative && window.location.hostname === 'localhost')
       ? `${window.location.origin}/kakaologin`
       : config.kakaoCallbackUrl;
 
@@ -124,6 +133,83 @@ export function buildOAuthAuthorizeUrl(provider: AuthProvider, mode: 'login' | '
   }
 
   return { url: '', error: '지원되지 않는 공급자입니다.' };
+}
+
+/**
+ * 소셜 로그인 시작 (웹에서는 location.href 이동, 모바일 앱에서는 Chrome Custom Tab 오픈)
+ */
+export async function startSocialAuth(provider: AuthProvider, mode: 'login' | 'signup' = 'login'): Promise<{ error?: string }> {
+  const { url, error } = buildOAuthAuthorizeUrl(provider, mode);
+  if (error || !url) {
+    return { error: error || '소셜 인증 인가 URL 생성에 실패했습니다.' };
+  }
+
+  if (Capacitor.isNativePlatform()) {
+    // 모바일 앱: Google WebView 차단(403 disallowed_useragent)을 우회하고 브라우저 기존 로그인 세션을 활용하기 위해 CCT 실행
+    try {
+      await Browser.open({ url, windowName: '_system' });
+    } catch (e) {
+      console.error('Failed to open browser:', e);
+      window.location.href = url;
+    }
+  } else {
+    // 일반 웹: 기존대로 페이지 이동
+    window.location.href = url;
+  }
+
+  return {};
+}
+
+/**
+ * 모바일 앱 딥링크 (com.ewtguide.app://oauth?...) 파싱 헬퍼
+ */
+export function parseAppDeepLink(urlStr: string): {
+  provider: AuthProvider;
+  mode: 'login' | 'signup';
+  accessToken?: string;
+  code?: string;
+  directUser?: DirectUserPayload;
+  error?: string;
+} | null {
+  try {
+    const rawSearch = urlStr.includes('?') ? urlStr.substring(urlStr.indexOf('?') + 1) : '';
+    const params = new URLSearchParams(rawSearch);
+
+    // 1. 네이버/카카오에서 완성된 payload를 직접 전달한 경우
+    const payloadRaw = params.get('payload');
+    if (payloadRaw) {
+      const parsed = JSON.parse(decodeURIComponent(payloadRaw));
+      return {
+        provider: parsed.provider as AuthProvider,
+        mode: 'login',
+        accessToken: parsed.access_token,
+        directUser: {
+          id: parsed.id,
+          name: parsed.name,
+          email: parsed.email,
+          profile_image: parsed.profile_image,
+          access_token: parsed.access_token
+        }
+      };
+    }
+
+    // 2. 구글 또는 URL 쿼리 파라미터 직접 수신
+    const provider = (params.get('provider') as AuthProvider) || 'google';
+    const accessToken = params.get('access_token') || undefined;
+    const code = params.get('code') || undefined;
+    const error = params.get('error_description') || params.get('error') || undefined;
+
+    return {
+      provider,
+      mode: 'login',
+      accessToken,
+      code,
+      error
+    };
+  } catch (e) {
+    console.error('Failed to parse app deep link:', e);
+    return null;
+  }
 }
 
 export interface DirectUserPayload {

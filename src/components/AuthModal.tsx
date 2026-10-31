@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { UserAccount, AuthProvider } from '../types';
 import { signOutUser } from '../services/facilityDb';
-import { buildOAuthAuthorizeUrl } from '../services/oauthService';
+import { startSocialAuth } from '../services/oauthService';
 import {
   X,
   LogOut,
@@ -30,26 +30,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   if (!isOpen) return null;
 
   /**
-   * 공식 소셜 OAuth2 인가 페이지 호출 (실제 네이버, 카카오, 구글 로그인 화면으로 이동)
+   * 공식 소셜 OAuth2 인가 페이지 호출 (웹: 페이지 이동 / 모바일 앱: Chrome Custom Tab 오픈)
    */
-  const handleSocialAuth = (provider: AuthProvider) => {
+  const handleSocialAuth = async (provider: AuthProvider) => {
     setIsLoading(true);
     setStatusMessage(null);
 
-    // 1. 공식 OAuth2 인가 URL 빌드 (JIT 자동 가입 지원으로 기본 모드는 'login')
-    const { url, error } = buildOAuthAuthorizeUrl(provider, 'login');
-
-    if (error || !url) {
+    const res = await startSocialAuth(provider, 'login');
+    if (res.error) {
       setStatusMessage({
         type: 'error',
-        text: error || '소셜 인증 인가 URL 생성에 실패했습니다.'
+        text: res.error
       });
       setIsLoading(false);
-      return;
+    } else {
+      setIsLoading(false);
     }
-
-    // 2. 실제 공급자의 공식 OAuth2 로그인/동의 페이지로 이동
-    window.location.href = url;
   };
 
   const handleSignOut = async () => {

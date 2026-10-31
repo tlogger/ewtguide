@@ -23,8 +23,11 @@ import {
 } from './services/facilityDb';
 import {
   parseOAuthCallback,
-  processOAuthCallbackResult
+  processOAuthCallbackResult,
+  parseAppDeepLink
 } from './services/oauthService';
+import { App as CapApp } from '@capacitor/app';
+import { Browser } from '@capacitor/browser';
 
 export const App: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<'title' | 'list' | 'detail' | 'map' | 'all_map'>(() => {
@@ -71,6 +74,46 @@ export const App: React.FC = () => {
         }
       });
     }
+  }, []);
+
+  // Handle native mobile app deep link (com.ewtguide.app://oauth?...)
+  useEffect(() => {
+    let sub: any = null;
+    try {
+      sub = CapApp.addListener('appUrlOpen', async (data) => {
+        if (!data || !data.url) return;
+        if (data.url.startsWith('com.ewtguide.app://oauth')) {
+          try {
+            await Browser.close();
+          } catch {}
+
+          const callbackData = parseAppDeepLink(data.url);
+          if (callbackData) {
+            processOAuthCallbackResult(callbackData).then((res) => {
+              if (res.user) {
+                setCurrentUser(res.user);
+                setCurrentStep('list');
+                setIsAuthModalOpen(false);
+              }
+              setAuthToast({ text: res.message, type: res.success ? 'success' : 'error' });
+              setTimeout(() => setAuthToast(null), 4500);
+
+              if (!res.success) {
+                setIsAuthModalOpen(true);
+              }
+            });
+          }
+        }
+      });
+    } catch (e) {
+      console.warn('Capacitor App listener not active:', e);
+    }
+
+    return () => {
+      if (sub && typeof sub.then === 'function') {
+        sub.then((s: any) => s.remove && s.remove());
+      }
+    };
   }, []);
 
   const handleSignOut = async () => {
