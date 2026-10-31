@@ -875,7 +875,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
         onPointerDown={(e) => e.stopPropagation()}
         onClick={() => setIsElevationOpen(!isElevationOpen)}
         className={`absolute left-4 px-3.5 py-2 rounded-2xl bg-slate-900/95 hover:bg-slate-800 text-white border border-slate-700/80 shadow-xl backdrop-blur-md text-xs font-bold flex items-center gap-1.5 transition-all duration-200 active:scale-95 cursor-pointer ${
-          isElevationOpen ? 'bottom-[198px] z-30' : 'bottom-20 z-20'
+          isElevationOpen ? 'bottom-[160px] z-30' : 'bottom-10 z-20'
         }`}
         title="고도 프로파일 열기/닫기"
       >
@@ -883,8 +883,8 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
         {isElevationOpen ? <ChevronDown className="w-4 h-4 text-emerald-400" /> : <ChevronUp className="w-4 h-4 text-emerald-400" />}
       </button>
 
-      {/* Map Scale Bar (Elevated above elevation chart when drawer is open) */}
-      <div className={`absolute left-4 transition-all duration-200 ${isElevationOpen ? 'bottom-[160px] z-30' : 'bottom-10 z-20'}`}>
+      {/* Map Scale Bar (Always positioned ABOVE the elevation profile button & drawer) */}
+      <div className={`absolute left-4 transition-all duration-200 ${isElevationOpen ? 'bottom-[204px] z-30' : 'bottom-[84px] z-20'}`}>
         <MapScaleBar level={level} />
       </div>
 
