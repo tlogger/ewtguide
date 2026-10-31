@@ -9,7 +9,9 @@ import {
   Map,
   Clock,
   AlertCircle,
-  FileText
+  FileText,
+  Download,
+  Smartphone
 } from 'lucide-react';
 
 interface SectionListViewProps {
@@ -345,6 +347,34 @@ export const SectionListView: React.FC<SectionListViewProps> = ({
             );
           })
         )}
+        {/* Android App Download Banner at Bottom of Section List */}
+        <div className="mt-8 mb-4 p-5 rounded-3xl bg-linear-to-r from-emerald-950 via-slate-900 to-slate-900 text-white shadow-xl border border-emerald-800/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5 text-center sm:text-left">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-600/20 border border-emerald-500/40 flex items-center justify-center shrink-0 shadow-inner">
+              <Smartphone className="w-6 h-6 text-emerald-400" />
+            </div>
+            <div>
+              <div className="flex items-center justify-center sm:justify-start gap-2">
+                <h4 className="font-extrabold text-base text-white">동서트레일 가이드 안드로이드 전용 앱</h4>
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold border border-emerald-500/30">
+                  APK
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 mt-1">
+                현장 트레킹 시 실시간 GPS 경로 안내와 빠른 원클릭 실행을 위해 설치해 보세요.
+              </p>
+            </div>
+          </div>
+
+          <a
+            href={`${import.meta.env.BASE_URL}ewtguide.apk`}
+            download="ewtguide.apk"
+            className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 shrink-0"
+          >
+            <Download className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+            <span>앱(APK) 다운로드</span>
+          </a>
+        </div>
       </div>
     </div>
   );

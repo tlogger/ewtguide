@@ -18,4 +18,5 @@ android/app/build/
 android/local.properties
 android/.idea/
 *.apk
+!public/ewtguide.apk
 
