@@ -7,9 +7,13 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "enrich:retry": "python scripts/enrich_elevations_reliable.py"
+    "enrich:retry": "python scripts/enrich_elevations_reliable.py",
+    "cap:sync": "cap sync android",
+    "build:apk": "npm run build && npx cap sync android && powershell -Command \"$env:JAVA_HOME='C:\\Users\\pyros\\AppData\\Local\\jdk-21'; $env:ANDROID_HOME='C:\\Users\\pyros\\AppData\\Local\\Android\\Sdk'; cd android; .\\gradlew.bat assembleDebug; Copy-Item -Force .\\app\\build\\outputs\\apk\\debug\\app-debug.apk ..\\ewtguide.apk\""
   },
   "dependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
     "@supabase/supabase-js": "^2.118.0",
     "canvas-confetti": "^1.9.3",
     "clsx": "^2.1.1",
@@ -21,6 +25,7 @@
     "tailwind-merge": "^2.5.4"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.6.0",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^22.8.1",
     "@types/react": "^18.3.12",

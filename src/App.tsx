@@ -253,6 +253,7 @@ export const App: React.FC = () => {
             sections={sectionsSummary}
             progress={progress}
             onSelectSection={handleSelectSection}
+            onOpenSectionMap={handleOpenSectionMap}
             onToggleComplete={handleToggleComplete}
             onOpenAllMap={() => setCurrentStep('all_map')}
           />

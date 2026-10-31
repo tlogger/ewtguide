@@ -22,6 +22,23 @@ export interface CategoryMeta {
   icon: React.ComponentType<{ className?: string }>;
 }
 
+/** 표준 화장실 픽토그램 (남/여 실루엣 심볼) */
+const ToiletIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className}
+    aria-hidden="true"
+  >
+    {/* 남성 픽토그램 */}
+    <circle cx="7.5" cy="4" r="1.8" />
+    <path d="M5.5 7.2h4c.7 0 1.3.6 1.3 1.3v4.5h-1.2v7h-1.6v-7h-0.8v7H5.6v-7H4.4V8.5c0-.7.6-1.3 1.1-1.3z" />
+    {/* 여성 픽토그램 */}
+    <circle cx="16.5" cy="4" r="1.8" />
+    <path d="M14.5 7.2h4c.7 0 1.3.6 1.3 1.3v3.8l-1 4.5h-1v3.2h-1.6v-3.2h-1l-1-4.5V8.5c0-.7.6-1.3 1.3-1.3z" />
+  </svg>
+);
+
 export const CATEGORY_DEFINITIONS: Record<FacilityCategory, CategoryMeta> = {
   viewpoint: {
     key: 'viewpoint',
@@ -84,9 +101,7 @@ export const CATEGORY_DEFINITIONS: Record<FacilityCategory, CategoryMeta> = {
     textClass: 'text-cyan-600',
     borderClass: 'border-cyan-400',
     activeBgClass: 'bg-cyan-700 text-white',
-    icon: () => (
-      <span className="font-black text-[13px] leading-none select-none tracking-tighter">WC</span>
-    )
+    icon: ToiletIcon
   },
   other: {
     key: 'other',

@@ -11,6 +11,13 @@ import { FacilityModal } from '../components/FacilityModal';
 import { MapScaleBar } from '../components/MapScaleBar';
 import { CategoryIcon } from '../components/CategoryIcon';
 import {
+  getSavedMapMode,
+  saveMapMode,
+  getSavedElevationOpen,
+  saveElevationOpen,
+  MapTypeMode
+} from '../utils/cookieStorage';
+import {
   Navigation,
   Plus,
   AlertTriangle,
@@ -69,7 +76,12 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     libraries: ['services', 'clusterer']
   });
 
-  const [mapMode, setMapMode] = useState<'ROADMAP' | 'HYBRID' | 'TERRAIN'>('ROADMAP');
+  const [mapMode, setMapModeState] = useState<MapTypeMode>(getSavedMapMode());
+  const setMapMode = (mode: MapTypeMode) => {
+    setMapModeState(mode);
+    saveMapMode(mode);
+  };
+
   const [center, setCenter] = useState<{ lat: number; lng: number }>({
     lat: section.start_point?.lat || 36.5,
     lng: section.start_point?.lng || 126.8
@@ -88,8 +100,15 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     lng: number;
   } | null>(null);
 
-  // Elevation Profile Drawer State
-  const [isElevationOpen, setIsElevationOpen] = useState(false);
+  // Elevation Profile Drawer State (Preserved in Cookie)
+  const [isElevationOpen, setIsElevationOpenState] = useState(getSavedElevationOpen());
+  const setIsElevationOpen = (open: boolean | ((prev: boolean) => boolean)) => {
+    setIsElevationOpenState((prev) => {
+      const next = typeof open === 'function' ? open(prev) : open;
+      saveElevationOpen(next);
+      return next;
+    });
+  };
   const [hoveredPoint, setHoveredPoint] = useState<TrailPoint | null>(null);
   const [hoverCoord, setHoverCoord] = useState<{ x: number; y: number } | null>(null);
 
@@ -740,7 +759,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
                   .filter((s) => s.is_opened !== false)
                   .map((s) => (
                     <option key={s.section_id} value={s.section_id} className="bg-slate-900 text-white font-semibold">
-                      {s.section_number} ({s.region.split(' ')[0]})
+                      {s.section_number} ({s.region.replace(/,/g, ' ').trim().split(/\s+/)[0]})
                     </option>
                   ))}
               </select>
@@ -855,15 +874,17 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
       <button
         onPointerDown={(e) => e.stopPropagation()}
         onClick={() => setIsElevationOpen(!isElevationOpen)}
-        className="absolute bottom-20 left-4 z-20 px-3.5 py-2 rounded-2xl bg-slate-900/95 hover:bg-slate-800 text-white border border-slate-700/80 shadow-xl backdrop-blur-md text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+        className={`absolute left-4 px-3.5 py-2 rounded-2xl bg-slate-900/95 hover:bg-slate-800 text-white border border-slate-700/80 shadow-xl backdrop-blur-md text-xs font-bold flex items-center gap-1.5 transition-all duration-200 active:scale-95 cursor-pointer ${
+          isElevationOpen ? 'bottom-[198px] z-30' : 'bottom-20 z-20'
+        }`}
         title="고도 프로파일 열기/닫기"
       >
         <span>고도 프로파일</span>
         {isElevationOpen ? <ChevronDown className="w-4 h-4 text-emerald-400" /> : <ChevronUp className="w-4 h-4 text-emerald-400" />}
       </button>
 
-      {/* Map Scale Bar */}
-      <div className={`absolute left-4 z-20 transition-all ${isElevationOpen ? 'bottom-36' : 'bottom-10'}`}>
+      {/* Map Scale Bar (Elevated above elevation chart when drawer is open) */}
+      <div className={`absolute left-4 transition-all duration-200 ${isElevationOpen ? 'bottom-[160px] z-30' : 'bottom-10 z-20'}`}>
         <MapScaleBar level={level} />
       </div>
 
@@ -970,9 +991,9 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
         </div>
       )}
 
-      {/* Bottom Center Hint: "길게 클릭=시설 등록/수정" */}
+      {/* Bottom Center Hint: "길게 클릭 = 새로운 시설 등록" */}
       <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 px-3.5 py-1 bg-slate-900/85 backdrop-blur-md rounded-full border border-slate-700/80 text-[11px] font-semibold text-slate-300 shadow-xl pointer-events-none whitespace-nowrap">
-        길게 클릭 = 시설 등록/수정
+        길게 클릭 = 새로운 시설 등록
       </div>
 
       {/* Facility Selected Popup Modal with Photo Support */}

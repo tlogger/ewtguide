@@ -1,11 +1,22 @@
 import React, { useState, useMemo } from 'react';
 import { SectionSummary, TrekProgress } from '../types';
-import { Search, MapPin, TrendingUp, CheckCircle, ChevronRight, Map, Clock, AlertCircle } from 'lucide-react';
+import { cleanTrailingCommaInParentheses } from '../utils/cookieStorage';
+import {
+  Search,
+  MapPin,
+  TrendingUp,
+  CheckCircle,
+  Map,
+  Clock,
+  AlertCircle,
+  FileText
+} from 'lucide-react';
 
 interface SectionListViewProps {
   sections: SectionSummary[];
   progress: TrekProgress;
   onSelectSection: (sectionId: number) => void;
+  onOpenSectionMap?: (sectionId: number) => void;
   onToggleComplete: (sectionId: number, e: React.MouseEvent) => void;
   onOpenAllMap: () => void;
 }
@@ -24,6 +35,7 @@ export const SectionListView: React.FC<SectionListViewProps> = ({
   sections,
   progress,
   onSelectSection,
+  onOpenSectionMap,
   onToggleComplete,
   onOpenAllMap
 }) => {
@@ -219,7 +231,7 @@ export const SectionListView: React.FC<SectionListViewProps> = ({
                           {sec.section_number}
                         </span>
                         <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md font-medium">
-                          {sec.region}
+                          {cleanTrailingCommaInParentheses(sec.region)}
                         </span>
 
                         {isOpened ? (
@@ -242,7 +254,7 @@ export const SectionListView: React.FC<SectionListViewProps> = ({
                       <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
                         <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                         <span className="truncate max-w-[240px] sm:max-w-md">
-                          {sec.course.replace(`${sec.section_number} : `, '')}
+                          {cleanTrailingCommaInParentheses(sec.course.replace(`${sec.section_number} : `, ''))}
                         </span>
                       </div>
                     </div>
@@ -263,8 +275,8 @@ export const SectionListView: React.FC<SectionListViewProps> = ({
                   )}
                 </div>
 
-                {/* Section Stats & Details */}
-                <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-600">
+                {/* Section Stats & Direct Action Buttons */}
+                <div className="mt-4 pt-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2.5 text-xs text-gray-600">
                   <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                     <div>
                       거리: <strong className="text-gray-900 text-sm">{sec.official_distance_km} km</strong>
@@ -292,8 +304,38 @@ export const SectionListView: React.FC<SectionListViewProps> = ({
                   </div>
 
                   {isOpened ? (
-                    <div className="flex items-center text-emerald-700 group-hover:translate-x-1 transition-transform">
-                      <ChevronRight className="w-5 h-5" />
+                    <div className="flex items-center gap-1.5 ml-auto">
+                      {/* 상세 보기 버튼 */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectSection(sec.section_id);
+                        }}
+                        className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center gap-1 border border-slate-200/80 transition-all active:scale-95 cursor-pointer shadow-2xs"
+                        title="구간 상세 정보 보기"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-slate-500" />
+                        <span>상세 보기</span>
+                      </button>
+
+                      {/* 지도 보기 버튼 */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onOpenSectionMap) {
+                            onOpenSectionMap(sec.section_id);
+                          } else {
+                            onSelectSection(sec.section_id);
+                          }
+                        }}
+                        className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer"
+                        title="구간 지도 보기"
+                      >
+                        <Map className="w-3.5 h-3.5 text-emerald-100" />
+                        <span>지도 보기</span>
+                      </button>
                     </div>
                   ) : (
                     <span className="text-xs text-slate-400 font-semibold">미개통</span>

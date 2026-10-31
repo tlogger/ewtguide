@@ -8,6 +8,7 @@ import {
 } from 'react-kakao-maps-sdk';
 import { SectionSummary } from '../types';
 import { MapScaleBar } from '../components/MapScaleBar';
+import { getSavedMapMode, saveMapMode, MapTypeMode } from '../utils/cookieStorage';
 import {
   ZoomIn,
   ZoomOut,
@@ -55,7 +56,11 @@ export const AllSectionsMapView: React.FC<AllSectionsMapViewProps> = ({
   });
 
   const [sections, setSections] = useState<OverviewSection[]>([]);
-  const [mapMode, setMapMode] = useState<'ROADMAP' | 'HYBRID' | 'TERRAIN'>('ROADMAP');
+  const [mapMode, setMapModeState] = useState<MapTypeMode>(getSavedMapMode());
+  const setMapMode = (mode: MapTypeMode) => {
+    setMapModeState(mode);
+    saveMapMode(mode);
+  };
   const [center, setCenter] = useState<{ lat: number; lng: number }>({ lat: 36.5, lng: 127.8 });
   const [level, setLevel] = useState<number>(11);
   const [isLoading, setIsLoading] = useState(true);

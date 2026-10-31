@@ -34,6 +34,12 @@
 6. **빌드 검증 및 Git 초기화 커밋 완료**:
    - `npm run build` 성공 (`dist/` 생성 확인)
    - Git 초기 커밋 완료 (`feat: complete ewtguide gpx preprocessing, elevation profile enrichment, and 3-step linear ui`)
+7. **안드로이드 네이티브 모바일 앱 (Capacitor + Gradle) 빌드 완료 (2026-10-31)**:
+   - Capacitor 8 설치 및 안드로이드 프로젝트(`android/`) 연동
+   - GPS 실시간 위치 추적 및 코스 이탈 경보를 위한 `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`, 네트워크 및 Cleartext 트래픽 허용
+   - JDK 21 및 Android SDK 빌드 파이프라인 연동
+   - `ewtguide.apk` (약 5.06 MB) 빌드 및 프로젝트 루트(`c:\work\ewtguide\ewtguide.apk`) 배치 완료
+   - `npm run build:apk` 원스톱 빌드 파이프라인 추가
 
 ---
 

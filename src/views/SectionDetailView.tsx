@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { SectionDetail, SectionSummary, POI, Checkpoint } from '../types';
+import { cleanTrailingCommaInParentheses } from '../utils/cookieStorage';
 import { ElevationChart } from '../components/ElevationChart';
 import { TaxiCallCard } from '../components/TaxiCallCard';
 import {
@@ -410,7 +411,7 @@ export const SectionDetailView: React.FC<SectionDetailViewProps> = ({
           >
             <ChevronLeft className="w-4 h-4 text-emerald-700" />
             <span className="truncate max-w-[130px] sm:max-w-none">
-              이전: {prevSection.section_number} ({prevSection.region})
+              이전: {prevSection.section_number} ({cleanTrailingCommaInParentheses(prevSection.region)})
             </span>
           </button>
         ) : (
@@ -423,7 +424,7 @@ export const SectionDetailView: React.FC<SectionDetailViewProps> = ({
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 transition-colors"
           >
             <span className="truncate max-w-[130px] sm:max-w-none">
-              다음: {nextSection.section_number} ({nextSection.region})
+              다음: {nextSection.section_number} ({cleanTrailingCommaInParentheses(nextSection.region)})
             </span>
             <ChevronRight className="w-4 h-4 text-emerald-700" />
           </button>
