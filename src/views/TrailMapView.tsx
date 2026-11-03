@@ -18,6 +18,14 @@ import {
   MapTypeMode
 } from '../utils/cookieStorage';
 import {
+  getDistanceMeters,
+  getBearing,
+  getBearingDirectionText,
+  findNearestTrailPoint,
+  calculateWalkingTime,
+  playOffTrackWarningBeep
+} from '../utils/trailMath';
+import {
   Navigation,
   Plus,
   AlertTriangle,
@@ -35,7 +43,11 @@ import {
   ChevronDown,
   Edit3,
   Camera,
-  Trash2
+  Trash2,
+  FlaskConical,
+  Volume2,
+  VolumeX,
+  Compass
 } from 'lucide-react';
 
 const KAKAO_APP_KEY = import.meta.env.VITE_KAKAO_MAP_API_KEY || '61ebf0b7a0daf24cba357d92677c8d8a';
@@ -111,6 +123,231 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
   };
   const [hoveredPoint, setHoveredPoint] = useState<TrailPoint | null>(null);
   const [hoverCoord, setHoverCoord] = useState<{ x: number; y: number } | null>(null);
+
+  // Adjacent 4 Sections (N-2, N-1, N+1, N+2) State
+  const [allSectionsOverview, setAllSectionsOverview] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.BASE_URL}data/all_sections_overview.json`)
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to load sections overview');
+        return res.json();
+      })
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setAllSectionsOverview(data);
+        }
+      })
+      .catch((err) => console.warn('Adjacent sections fetch warning:', err));
+  }, []);
+
+  const adjacentSections = useMemo(() => {
+    if (!allSectionsOverview || allSectionsOverview.length === 0) return [];
+
+    const currentIndex = allSectionsOverview.findIndex(
+      (s) => s.section_id === section.section_id || s.section_number === section.section_number
+    );
+
+    if (currentIndex === -1) return [];
+
+    const results: Array<{
+      section_id: number;
+      section_number: string;
+      title: string;
+      path: Array<{ lat: number; lng: number; ele?: number }>;
+      color: string;
+      label: string;
+    }> = [];
+
+    const colorMap = {
+      prev2: '#0284c7', // Sky Blue 600
+      prev1: '#2563eb', // Blue 600
+      next1: '#9333ea', // Purple 600
+      next2: '#e11d48'  // Rose 600
+    };
+
+    // Previous 2 sections
+    if (currentIndex - 2 >= 0) {
+      const s = allSectionsOverview[currentIndex - 2];
+      if (s.path && s.path.length > 0) {
+        results.push({
+          section_id: s.section_id,
+          section_number: s.section_number,
+          title: s.title,
+          path: s.path,
+          color: colorMap.prev2,
+          label: `${s.section_number}`
+        });
+      }
+    }
+
+    // Previous 1 section
+    if (currentIndex - 1 >= 0) {
+      const s = allSectionsOverview[currentIndex - 1];
+      if (s.path && s.path.length > 0) {
+        results.push({
+          section_id: s.section_id,
+          section_number: s.section_number,
+          title: s.title,
+          path: s.path,
+          color: colorMap.prev1,
+          label: `${s.section_number}`
+        });
+      }
+    }
+
+    // Next 1 section
+    if (currentIndex + 1 < allSectionsOverview.length) {
+      const s = allSectionsOverview[currentIndex + 1];
+      if (s.path && s.path.length > 0) {
+        results.push({
+          section_id: s.section_id,
+          section_number: s.section_number,
+          title: s.title,
+          path: s.path,
+          color: colorMap.next1,
+          label: `${s.section_number}`
+        });
+      }
+    }
+
+    // Next 2 section
+    if (currentIndex + 2 < allSectionsOverview.length) {
+      const s = allSectionsOverview[currentIndex + 2];
+      if (s.path && s.path.length > 0) {
+        results.push({
+          section_id: s.section_id,
+          section_number: s.section_number,
+          title: s.title,
+          path: s.path,
+          color: colorMap.next2,
+          label: `${s.section_number}`
+        });
+      }
+    }
+
+    return results;
+  }, [allSectionsOverview, section.section_id, section.section_number]);
+
+  // Test Mode Simulation State (Off-track alert & distance test without GPS)
+  const [isTestMode, setIsTestMode] = useState<boolean>(false);
+  const [mockLocation, setMockLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [testNearestPoint, setTestNearestPoint] = useState<{
+    point: { lat: number; lng: number };
+    distance: number;
+  } | null>(null);
+  const [testBearingInfo, setTestBearingInfo] = useState<{
+    bearing: number;
+    text: string;
+    arrow: string;
+  } | null>(null);
+  const [testStartInfo, setTestStartInfo] = useState<{
+    distanceKm: number;
+    timeText: string;
+  } | null>(null);
+  const [testEndInfo, setTestEndInfo] = useState<{
+    distanceKm: number;
+    timeText: string;
+  } | null>(null);
+  const [testNotification, setTestNotification] = useState<string | null>(null);
+  const offTrackTimerRef = useRef<any>(null);
+
+  const clearOffTrackTimer = () => {
+    if (offTrackTimerRef.current) {
+      clearInterval(offTrackTimerRef.current);
+      offTrackTimerRef.current = null;
+    }
+  };
+
+  const handleToggleTestMode = () => {
+    if (isTestMode) {
+      setIsTestMode(false);
+      setMockLocation(null);
+      setTestNearestPoint(null);
+      setTestBearingInfo(null);
+      setTestStartInfo(null);
+      setTestEndInfo(null);
+      setTestNotification(null);
+      clearOffTrackTimer();
+    } else {
+      setIsTestMode(true);
+      setTestNotification('🧪 테스트 모드 켬: 지도의 아무 곳이나 클릭하여 가상 위치를 지정하세요.');
+    }
+  };
+
+  const handleTestLocationUpdate = useCallback(
+    (coord: { lat: number; lng: number }) => {
+      setMockLocation(coord);
+      clearOffTrackTimer();
+
+      if (!section.points || section.points.length === 0) return;
+
+      // 1. Find nearest trail point & distance
+      const nearestResult = findNearestTrailPoint(coord, section.points);
+      if (!nearestResult) return;
+
+      const nearestPoint = nearestResult.nearest;
+      const distanceM = nearestResult.distanceM;
+      setTestNearestPoint({ point: nearestPoint, distance: distanceM });
+
+      // 2. Bearing from mock location to trail
+      const bearing = getBearing(coord.lat, coord.lng, nearestPoint.lat, nearestPoint.lng);
+      const dirText = getBearingDirectionText(bearing);
+      setTestBearingInfo({ bearing, text: dirText.text, arrow: dirText.arrow });
+
+      // 3. Distance & estimated walking time to Start Point
+      if (section.start_point) {
+        const startDistM = getDistanceMeters(
+          coord.lat,
+          coord.lng,
+          section.start_point.lat,
+          section.start_point.lng
+        );
+        const startDistKm = parseFloat((startDistM / 1000).toFixed(1));
+        setTestStartInfo({
+          distanceKm: startDistKm,
+          timeText: calculateWalkingTime(startDistKm)
+        });
+      }
+
+      // 4. Distance & estimated walking time to End Point
+      if (section.end_point) {
+        const endDistM = getDistanceMeters(
+          coord.lat,
+          coord.lng,
+          section.end_point.lat,
+          section.end_point.lng
+        );
+        const endDistKm = parseFloat((endDistM / 1000).toFixed(1));
+        setTestEndInfo({
+          distanceKm: endDistKm,
+          timeText: calculateWalkingTime(endDistKm)
+        });
+      }
+
+      // 5. Off-track check (> 50m)
+      if (distanceM > 50) {
+        playOffTrackWarningBeep();
+        const msg = `🚨 경로 이탈 경고! 코스에서 ${distanceM}m 벗어남 (${dirText.text} ${dirText.arrow} ${bearing}°)`;
+        setTestNotification(msg);
+
+        // 30 seconds repeat timer
+        offTrackTimerRef.current = setInterval(() => {
+          playOffTrackWarningBeep();
+          setTestNotification(`🚨 [30초 재경보] 코스에서 ${distanceM}m 벗어남 (${dirText.text} ${dirText.arrow})`);
+        }, 30000);
+      } else {
+        setTestNotification(`✅ 정상 경로 범위 내 위치 (코스까지 ${distanceM}m)`);
+      }
+    },
+    [section.points, section.start_point, section.end_point]
+  );
+
+  useEffect(() => {
+    return () => {
+      clearOffTrackTimer();
+    };
+  }, []);
 
   // GPS Tracking & In-App Toast
   const [gpsActive, setGpsActive] = useState(false);
@@ -380,6 +617,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
 
   // Map-only Long-press Detection (Accurate coordinates via projection coordsFromContainerPoint)
   const handleMapPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isTestMode) return; // Do not trigger facility registration while testing virtual positions
     touchStartPosRef.current = { x: e.clientX, y: e.clientY };
     if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
 
@@ -449,16 +687,41 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     return { linePath: lPath, areaPath: aPath };
   }, [elevationSamples, minEle, maxEle]);
 
-  // Elevation SVG Hover tracking
-  const handleSvgPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+  // Elevation SVG Hover & Mobile Touch tracking
+  const updateElevationPoint = (clientX: number, clientY: number, target: SVGSVGElement | HTMLElement) => {
     if (elevationSamples.length === 0) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clientX = e.clientX - rect.left;
-    const clientY = e.clientY - rect.top;
-    const ratio = Math.max(0, Math.min(1, clientX / rect.width));
+    const rect = target.getBoundingClientRect();
+    const relX = clientX - rect.left;
+    const relY = clientY - rect.top;
+    const ratio = Math.max(0, Math.min(1, relX / rect.width));
     const index = Math.min(elevationSamples.length - 1, Math.floor(ratio * elevationSamples.length));
     setHoveredPoint(elevationSamples[index]);
-    setHoverCoord({ x: ratio * chartWidth, y: clientY });
+    setHoverCoord({ x: ratio * chartWidth, y: relY });
+  };
+
+  const handleSvgPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
+    e.stopPropagation();
+    updateElevationPoint(e.clientX, e.clientY, e.currentTarget);
+  };
+
+  const handleSvgPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (e.pointerType === 'mouse' || e.buttons > 0) {
+      updateElevationPoint(e.clientX, e.clientY, e.currentTarget);
+    }
+  };
+
+  const handleSvgTouchStart = (e: React.TouchEvent<SVGSVGElement>) => {
+    e.stopPropagation();
+    if (e.touches.length > 0) {
+      updateElevationPoint(e.touches[0].clientX, e.touches[0].clientY, e.currentTarget);
+    }
+  };
+
+  const handleSvgTouchMove = (e: React.TouchEvent<SVGSVGElement>) => {
+    e.stopPropagation();
+    if (e.touches.length > 0) {
+      updateElevationPoint(e.touches[0].clientX, e.touches[0].clientY, e.currentTarget);
+    }
   };
 
   return (
@@ -488,6 +751,13 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
             level={level}
             mapTypeId={mapMode === 'HYBRID' ? 'HYBRID' : 'ROADMAP'}
             onCreate={onKakaoMapCreate}
+            onClick={(_target, mouseEvent) => {
+              if (isTestMode) {
+                const latlng = mouseEvent.latLng;
+                const clickedCoord = { lat: latlng.getLat(), lng: latlng.getLng() };
+                handleTestLocationUpdate(clickedCoord);
+              }
+            }}
             onCenterChanged={(map) => {
               const c = map.getCenter();
               setCenter({ lat: c.getLat(), lng: c.getLng() });
@@ -505,7 +775,53 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
             {/* Topographic Contour Overlay when in TERRAIN mode */}
             {mapMode === 'TERRAIN' && <MapTypeId type="TERRAIN" />}
 
-            {/* High contrast dark halo casing */}
+            {/* Adjacent 4 Sections Polylines & Navigation Badges */}
+            {adjacentSections.map((adj) => {
+              const midIndex = Math.floor(adj.path.length / 2);
+              const midPoint = adj.path[midIndex] || adj.path[0];
+              return (
+                <React.Fragment key={`adj-${adj.section_id}`}>
+                  {/* Subtle casing */}
+                  <Polyline
+                    path={adj.path.map((p) => ({ lat: p.lat, lng: p.lng }))}
+                    strokeWeight={6}
+                    strokeColor="#0f172a"
+                    strokeOpacity={0.4}
+                    strokeStyle="solid"
+                  />
+                  {/* Color-coded adjacent trail */}
+                  <Polyline
+                    path={adj.path.map((p) => ({ lat: p.lat, lng: p.lng }))}
+                    strokeWeight={4}
+                    strokeColor={adj.color}
+                    strokeOpacity={0.85}
+                    strokeStyle="solid"
+                  />
+                  {/* Clickable section badge */}
+                  {midPoint && onNavigateSection && (
+                    <CustomOverlayMap
+                      position={{ lat: midPoint.lat, lng: midPoint.lng }}
+                      yAnchor={0.5}
+                      zIndex={25}
+                    >
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onNavigateSection(adj.section_id);
+                        }}
+                        style={{ backgroundColor: adj.color }}
+                        className="text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg border border-white/80 hover:scale-110 active:scale-95 transition-all cursor-pointer whitespace-nowrap flex items-center gap-1"
+                        title={`${adj.title} (클릭하여 이동)`}
+                      >
+                        <span>{adj.label}</span>
+                      </button>
+                    </CustomOverlayMap>
+                  )}
+                </React.Fragment>
+              );
+            })}
+
+            {/* High contrast dark halo casing for Current Trail */}
             <Polyline
               path={kakaoPath}
               strokeWeight={8}
@@ -522,22 +838,38 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
               strokeStyle={section.is_opened !== false ? 'solid' : 'shortdash'}
             />
 
-            {/* Start Point Badge with Name */}
+            {/* Start Point Badge with Name & Distance/Walking Time */}
             {section.start_point && (
               <CustomOverlayMap position={section.start_point} yAnchor={1.2}>
-                <div className="bg-slate-900/95 text-white font-extrabold text-[11px] px-2.5 py-1 rounded-xl shadow-lg border-2 border-emerald-400 whitespace-nowrap flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>시점: {section.start_name || `${section.section_number} 시점`}</span>
+                <div className="flex flex-col items-center select-none">
+                  <div className="bg-slate-900/95 text-white font-extrabold text-[11px] px-2.5 py-1 rounded-xl shadow-lg border-2 border-emerald-400 whitespace-nowrap flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>시점: {section.start_name || `${section.section_number} 시점`}</span>
+                  </div>
+                  {/* Distance & Walking Time from Current / Mock Location */}
+                  {testStartInfo && (
+                    <div className="mt-1 bg-emerald-950/90 text-emerald-300 font-bold text-[10px] px-2 py-0.5 rounded-lg border border-emerald-500/50 shadow-md whitespace-nowrap animate-in fade-in">
+                      현위치에서 {testStartInfo.distanceKm}km ({testStartInfo.timeText})
+                    </div>
+                  )}
                 </div>
               </CustomOverlayMap>
             )}
 
-            {/* End Point Badge with Name */}
+            {/* End Point Badge with Name & Distance/Walking Time */}
             {section.end_point && (
               <CustomOverlayMap position={section.end_point} yAnchor={1.2}>
-                <div className="bg-slate-900/95 text-white font-extrabold text-[11px] px-2.5 py-1 rounded-xl shadow-lg border-2 border-orange-400 whitespace-nowrap flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-orange-400" />
-                  <span>종점: {section.end_name || `${section.section_number} 종점`}</span>
+                <div className="flex flex-col items-center select-none">
+                  <div className="bg-slate-900/95 text-white font-extrabold text-[11px] px-2.5 py-1 rounded-xl shadow-lg border-2 border-orange-400 whitespace-nowrap flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-orange-400" />
+                    <span>종점: {section.end_name || `${section.section_number} 종점`}</span>
+                  </div>
+                  {/* Distance & Walking Time from Current / Mock Location */}
+                  {testEndInfo && (
+                    <div className="mt-1 bg-orange-950/90 text-orange-300 font-bold text-[10px] px-2 py-0.5 rounded-lg border border-orange-500/50 shadow-md whitespace-nowrap animate-in fade-in">
+                      현위치에서 {testEndInfo.distanceKm}km ({testEndInfo.timeText})
+                    </div>
+                  )}
                 </div>
               </CustomOverlayMap>
             )}
@@ -629,6 +961,58 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
                   <div className="w-4 h-4 rounded-full bg-blue-600 border-2 border-white shadow-lg" />
                 </div>
               </CustomOverlayMap>
+            )}
+
+            {/* Test Mode: Virtual Mock Location Pin & Shortest Connector to Trail */}
+            {isTestMode && mockLocation && testNearestPoint && (
+              <>
+                {/* Dashed connector line to nearest trail point */}
+                <Polyline
+                  path={[mockLocation, testNearestPoint.point]}
+                  strokeWeight={3}
+                  strokeColor={testNearestPoint.distance > 50 ? '#f43f5e' : '#a855f7'}
+                  strokeOpacity={0.9}
+                  strokeStyle="dash"
+                />
+
+                {/* Nearest Trail Point on Course (Flashing purple dot) */}
+                <CustomOverlayMap position={testNearestPoint.point} yAnchor={0.5} zIndex={45}>
+                  <div className="relative flex items-center justify-center">
+                    <div className="w-4 h-4 rounded-full bg-purple-500/50 animate-ping absolute" />
+                    <div className="w-3 h-3 rounded-full bg-purple-600 border-2 border-white shadow-md" />
+                  </div>
+                </CustomOverlayMap>
+
+                {/* Virtual Mock Location Pin with Direction & Distance Badge */}
+                <CustomOverlayMap position={mockLocation} yAnchor={1.15} zIndex={50}>
+                  <div className="flex flex-col items-center select-none animate-in zoom-in-90 duration-150">
+                    <div
+                      className={`px-2.5 py-1 rounded-xl shadow-xl border-2 border-white text-white font-black text-[11px] flex items-center gap-1.5 whitespace-nowrap ${
+                        testNearestPoint.distance > 50
+                          ? 'bg-rose-600 animate-bounce'
+                          : 'bg-purple-600'
+                      }`}
+                    >
+                      <Compass className="w-3.5 h-3.5" />
+                      <span>
+                        {testNearestPoint.distance > 50 ? '이탈' : '정상'}{' '}
+                        {testNearestPoint.distance}m
+                      </span>
+                      {testBearingInfo && (
+                        <span className="bg-black/35 px-1.5 py-0.5 rounded text-[10px] text-purple-200">
+                          {testBearingInfo.text} {testBearingInfo.arrow} ({testBearingInfo.bearing}°)
+                        </span>
+                      )}
+                    </div>
+                    {/* Pin Marker Arrow Point */}
+                    <div
+                      className={`w-3 h-3 rotate-45 -mt-1.5 border-r-2 border-b-2 border-white shadow-sm ${
+                        testNearestPoint.distance > 50 ? 'bg-rose-600' : 'bg-purple-600'
+                      }`}
+                    />
+                  </div>
+                </CustomOverlayMap>
+              </>
             )}
           </KakaoMap>
         )}
@@ -815,6 +1199,21 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
           </div>
         )}
 
+        {/* Test Mode Notification & Repeat Alarm Banner */}
+        {isTestMode && testNotification && (
+          <div className="self-center bg-purple-950/95 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-2xl border border-purple-400 backdrop-blur-md flex items-center gap-2 animate-in fade-in">
+            <FlaskConical className="w-4 h-4 text-purple-300 shrink-0 animate-pulse" />
+            <span className="leading-tight">{testNotification}</span>
+            <button
+              onClick={() => playOffTrackWarningBeep()}
+              className="ml-1 p-1 bg-purple-700/80 hover:bg-purple-600 rounded-md text-[10px] text-white cursor-pointer transition-colors"
+              title="비프음 수동 테스트"
+            >
+              <Volume2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
         {/* GPS Error Toast */}
         {gpsErrorMessage && (
           <div className="self-center bg-amber-600/90 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg border border-amber-400 backdrop-blur-md flex items-center gap-1.5">
@@ -829,6 +1228,19 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
         onPointerDown={(e) => e.stopPropagation()}
         className="absolute top-16 right-3 z-30 flex flex-col gap-2"
       >
+        {/* Test Mode Toggle Button (Off-track alert simulation without GPS) */}
+        <button
+          onClick={handleToggleTestMode}
+          className={`p-2.5 rounded-xl shadow-xl border backdrop-blur-md transition-all active:scale-95 cursor-pointer flex items-center justify-center ${
+            isTestMode
+              ? 'bg-purple-600 text-white border-purple-300 ring-4 ring-purple-500/40 animate-pulse'
+              : 'bg-slate-900/90 text-white border-slate-700/80 hover:bg-slate-800'
+          }`}
+          title={isTestMode ? '테스트 모드 끄기' : '이탈 경보 & 거리/소요시간 시뮬레이션 Test 모드'}
+        >
+          <FlaskConical className={`w-5 h-5 ${isTestMode ? 'text-white' : 'text-purple-400'}`} />
+        </button>
+
         {/* GPS Track Toggle */}
         <button
           onClick={() => setGpsActive(!gpsActive)}
@@ -873,7 +1285,16 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
       {/* Elevation Profile Drawer Toggle Button (Stops propagation) */}
       <button
         onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => setIsElevationOpen(!isElevationOpen)}
+        onClick={() => {
+          setIsElevationOpen((prev) => {
+            const next = !prev;
+            if (!next) {
+              setHoveredPoint(null);
+              setHoverCoord(null);
+            }
+            return next;
+          });
+        }}
         className={`absolute left-4 px-3.5 py-2 rounded-2xl bg-slate-900/95 hover:bg-slate-800 text-white border border-slate-700/80 shadow-xl backdrop-blur-md text-xs font-bold flex items-center gap-1.5 transition-all duration-200 active:scale-95 cursor-pointer ${
           isElevationOpen ? 'bottom-[160px] z-30' : 'bottom-10 z-20'
         }`}
@@ -910,22 +1331,32 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
 
             {/* Close Button inside Chart (3.1) */}
             <button
-              onClick={() => setIsElevationOpen(false)}
+              onClick={() => {
+                setIsElevationOpen(false);
+                setHoveredPoint(null);
+                setHoverCoord(null);
+              }}
               className="absolute top-1.5 right-1.5 z-10 text-slate-400 hover:text-white p-1 rounded-md bg-slate-900/80 hover:bg-slate-800 border border-slate-700/60 shadow-xs cursor-pointer transition-colors"
               title="닫기"
             >
               <X className="w-3.5 h-3.5" />
             </button>
 
-            {/* SVG Chart */}
+            {/* SVG Chart (Touch drag enabled for mobile apps & pointer support) */}
             <svg
               viewBox={`0 0 ${chartWidth} ${chartHeight}`}
               preserveAspectRatio="none"
-              className="w-full h-full cursor-crosshair"
+              className="w-full h-full cursor-crosshair touch-none select-none"
+              style={{ touchAction: 'none' }}
+              onPointerDown={handleSvgPointerDown}
               onPointerMove={handleSvgPointerMove}
-              onPointerLeave={() => {
-                setHoveredPoint(null);
-                setHoverCoord(null);
+              onTouchStart={handleSvgTouchStart}
+              onTouchMove={handleSvgTouchMove}
+              onPointerLeave={(e) => {
+                if (e.pointerType === 'mouse') {
+                  setHoveredPoint(null);
+                  setHoverCoord(null);
+                }
               }}
             >
               <defs>
