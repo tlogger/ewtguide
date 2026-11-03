@@ -10,6 +10,7 @@ import { SectionDetail, SectionSummary, POI, TrailPoint, FacilityCategory } from
 import { FacilityModal } from '../components/FacilityModal';
 import { MapScaleBar } from '../components/MapScaleBar';
 import { CategoryIcon } from '../components/CategoryIcon';
+import { loadSectionFacilities } from '../services/facilityDb';
 import {
   getSavedMapMode,
   saveMapMode,
@@ -229,7 +230,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     return results;
   }, [allSectionsOverview, section.section_id, section.section_number]);
 
-  // Adjacent Sections POIs (Excluding Start and End Points)
+  // Adjacent Sections POIs (Loaded directly from Supabase DB, excluding Start and End Points)
   const [adjacentPois, setAdjacentPois] = useState<Array<POI & { sectionColor?: string; sectionName?: string }>>([]);
 
   useEffect(() => {
@@ -246,34 +247,48 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
         await Promise.all(
           adjacentSections.map(async (adj) => {
             try {
-              const res = await fetch(`${import.meta.env.BASE_URL}data/sections/section_${adj.section_id}.json`);
-              if (!res.ok) return;
-              const data = await res.json();
-              if (Array.isArray(data.pois)) {
-                const sName = (data.start_name || '').trim().toLowerCase();
-                const eName = (data.end_name || '').trim().toLowerCase();
+              let officialList: POI[] = [];
+              let sName = '';
+              let eName = '';
 
-                const filtered = data.pois.filter((poi: POI) => {
-                  const pName = (poi.name || '').trim().toLowerCase();
-                  const pCat = (poi.category || '').toLowerCase();
-                  // 시점, 종점 제외
-                  if (pCat === 'start' || pCat === 'end' || pCat === 'start_point' || pCat === 'end_point') return false;
-                  if (pName.endsWith('시점') || pName.endsWith('종점') || pName.includes('코스 시점') || pName.includes('코스 종점')) return false;
-                  if (sName && pName === sName) return false;
-                  if (eName && pName === eName) return false;
-                  return true;
-                });
-
-                filtered.forEach((p: POI) => {
-                  fetchedPois.push({
-                    ...p,
-                    sectionColor: adj.color,
-                    sectionName: adj.section_number
-                  });
-                });
+              try {
+                const res = await fetch(`${import.meta.env.BASE_URL}data/sections/section_${adj.section_id}.json`);
+                if (res.ok) {
+                  const data = await res.json();
+                  if (Array.isArray(data.pois)) {
+                    officialList = data.pois;
+                  }
+                  sName = (data.start_name || '').trim().toLowerCase();
+                  eName = (data.end_name || '').trim().toLowerCase();
+                }
+              } catch (e) {
+                console.warn(`Static json fallback for section ${adj.section_id}:`, e);
               }
+
+              // Supabase 클라우드 DB와 로컬 묘지(Tombstone)가 병합된 최신 시설 목록 호출
+              const dbFacilities = await loadSectionFacilities(adj.section_id, officialList);
+
+              const filtered = dbFacilities.filter((poi: POI) => {
+                const pName = (poi.name || '').trim().toLowerCase();
+                const pCat = (poi.category || '').toLowerCase();
+                // 시점, 종점 제외
+                if (pCat === 'start' || pCat === 'end' || pCat === 'start_point' || pCat === 'end_point') return false;
+                if (pName.endsWith('시점') || pName.endsWith('종점') || pName.includes('코스 시점') || pName.includes('코스 종점')) return false;
+                if (sName && pName === sName) return false;
+                if (eName && pName === eName) return false;
+                return true;
+              });
+
+              filtered.forEach((p: POI) => {
+                fetchedPois.push({
+                  ...p,
+                  section_id: adj.section_id,
+                  sectionColor: adj.color,
+                  sectionName: adj.section_number
+                });
+              });
             } catch (err) {
-              console.warn(`Failed to load POIs for section ${adj.section_id}:`, err);
+              console.warn(`Failed to load DB POIs for section ${adj.section_id}:`, err);
             }
           })
         );
@@ -282,7 +297,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
           setAdjacentPois(fetchedPois);
         }
       } catch (err) {
-        console.warn('Error loading adjacent POIs:', err);
+        console.warn('Error loading adjacent POIs from DB:', err);
       }
     };
 
@@ -1700,6 +1715,9 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
                 onClick={() => {
                   if (onRemoveFacility && facilityToDelete) {
                     onRemoveFacility(facilityToDelete);
+                    if (facilityToDelete.id) {
+                      setAdjacentPois((prev) => prev.filter((p) => p.id !== facilityToDelete.id));
+                    }
                   }
                   setFacilityToDelete(null);
                   setSelectedFacility(null);
@@ -1764,12 +1782,19 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
         }}
         onSubmit={(fac) => {
           onAddFacility(fac);
+          // 인접 구간 POI인 경우 adjacentPois 상태도 실시간 동기화
+          setAdjacentPois((prev) =>
+            prev.map((item) => (item.id === fac.id ? { ...item, ...fac } : item))
+          );
           setIsModalOpen(false);
           setEditingFacility(null);
         }}
         onDelete={(fac) => {
           if (onRemoveFacility) {
             onRemoveFacility(fac);
+            if (fac.id) {
+              setAdjacentPois((prev) => prev.filter((p) => p.id !== fac.id));
+            }
           }
           setIsModalOpen(false);
           setEditingFacility(null);
@@ -1777,7 +1802,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
         }}
         lat={modalCoords.lat}
         lng={modalCoords.lng}
-        defaultSectionName={section.section_number}
+        defaultSectionName={editingFacility?.section_id ? `${editingFacility.section_id}구간` : section.section_number}
         initialFacility={editingFacility}
       />
     </div>

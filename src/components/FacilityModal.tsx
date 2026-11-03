@@ -134,6 +134,7 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
 
     onSubmit({
       id: initialFacility?.id,
+      section_id: initialFacility?.section_id,
       name: finalName,
       category: primaryCategory,
       categories: selectedCategories,

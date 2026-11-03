@@ -201,30 +201,35 @@ export const App: React.FC = () => {
   };
 
   const handleAddFacility = async (fac: POI) => {
-    if (!selectedSectionId) return;
-    const saved = await saveFacilityToDb(selectedSectionId, fac);
-    setUserFacilities((prev) => {
-      const exists = prev.some((f) => f.id === saved.id);
-      return exists
-        ? prev.map((f) => (f.id === saved.id ? saved : f))
-        : [saved, ...prev];
-    });
+    const targetSectionId = fac.section_id || selectedSectionId;
+    if (!targetSectionId) return;
+    const saved = await saveFacilityToDb(targetSectionId, fac);
+    if (targetSectionId === selectedSectionId) {
+      setUserFacilities((prev) => {
+        const exists = prev.some((f) => f.id === saved.id);
+        return exists
+          ? prev.map((f) => (f.id === saved.id ? saved : f))
+          : [saved, ...prev];
+      });
+    }
   };
 
   const handleRemoveFacility = async (facilityOrId: string | POI) => {
-    if (!selectedSectionId) return;
     const targetId = typeof facilityOrId === 'string' ? facilityOrId : facilityOrId.id;
     const targetObj = typeof facilityOrId === 'object'
       ? facilityOrId
       : userFacilities.find((f) => f.id === targetId);
 
+    const targetSectionId = (targetObj && targetObj.section_id) || selectedSectionId;
+    if (!targetSectionId) return;
+
     if (targetObj) {
-      await deleteFacilityFromDb(selectedSectionId, targetObj);
+      await deleteFacilityFromDb(targetSectionId, targetObj);
     } else if (targetId) {
-      await deleteFacilityFromDb(selectedSectionId, { id: targetId, name: '', category: 'other' });
+      await deleteFacilityFromDb(targetSectionId, { id: targetId, name: '', category: 'other' });
     }
 
-    if (targetId) {
+    if (targetId && targetSectionId === selectedSectionId) {
       setUserFacilities((prev) => prev.filter((f) => f.id !== targetId));
     }
   };

@@ -18,6 +18,7 @@ export type FacilityCategory =
 
 export interface POI {
   id?: string;
+  section_id?: number; // 속한 구간 ID (인접 구간 POI 지원)
   name: string;
   category: FacilityCategory;
   categories?: FacilityCategory[]; // 다중 카테고리 지원
