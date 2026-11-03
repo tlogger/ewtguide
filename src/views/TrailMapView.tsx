@@ -229,6 +229,93 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     return results;
   }, [allSectionsOverview, section.section_id, section.section_number]);
 
+  // Adjacent Sections POIs (Excluding Start and End Points)
+  const [adjacentPois, setAdjacentPois] = useState<Array<POI & { sectionColor?: string; sectionName?: string }>>([]);
+
+  useEffect(() => {
+    if (!adjacentSections || adjacentSections.length === 0) {
+      setAdjacentPois([]);
+      return;
+    }
+
+    let isMounted = true;
+    const loadAdjacentPois = async () => {
+      try {
+        const fetchedPois: Array<POI & { sectionColor?: string; sectionName?: string }> = [];
+
+        await Promise.all(
+          adjacentSections.map(async (adj) => {
+            try {
+              const res = await fetch(`${import.meta.env.BASE_URL}data/sections/section_${adj.section_id}.json`);
+              if (!res.ok) return;
+              const data = await res.json();
+              if (Array.isArray(data.pois)) {
+                const sName = (data.start_name || '').trim().toLowerCase();
+                const eName = (data.end_name || '').trim().toLowerCase();
+
+                const filtered = data.pois.filter((poi: POI) => {
+                  const pName = (poi.name || '').trim().toLowerCase();
+                  const pCat = (poi.category || '').toLowerCase();
+                  // 시점, 종점 제외
+                  if (pCat === 'start' || pCat === 'end' || pCat === 'start_point' || pCat === 'end_point') return false;
+                  if (pName.endsWith('시점') || pName.endsWith('종점') || pName.includes('코스 시점') || pName.includes('코스 종점')) return false;
+                  if (sName && pName === sName) return false;
+                  if (eName && pName === eName) return false;
+                  return true;
+                });
+
+                filtered.forEach((p: POI) => {
+                  fetchedPois.push({
+                    ...p,
+                    sectionColor: adj.color,
+                    sectionName: adj.section_number
+                  });
+                });
+              }
+            } catch (err) {
+              console.warn(`Failed to load POIs for section ${adj.section_id}:`, err);
+            }
+          })
+        );
+
+        if (isMounted) {
+          setAdjacentPois(fetchedPois);
+        }
+      } catch (err) {
+        console.warn('Error loading adjacent POIs:', err);
+      }
+    };
+
+    loadAdjacentPois();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [adjacentSections]);
+
+  // Dynamic Canvas Height to fit actual available mobile viewport
+  const [containerHeight, setContainerHeight] = useState<string>('calc(100dvh - 56px)');
+
+  useEffect(() => {
+    const updateViewportHeight = () => {
+      const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      setContainerHeight(`${Math.max(300, vh - 56)}px`);
+    };
+
+    updateViewportHeight();
+    window.addEventListener('resize', updateViewportHeight);
+    window.addEventListener('orientationchange', updateViewportHeight);
+    window.visualViewport?.addEventListener('resize', updateViewportHeight);
+    window.visualViewport?.addEventListener('scroll', updateViewportHeight);
+
+    return () => {
+      window.removeEventListener('resize', updateViewportHeight);
+      window.removeEventListener('orientationchange', updateViewportHeight);
+      window.visualViewport?.removeEventListener('resize', updateViewportHeight);
+      window.visualViewport?.removeEventListener('scroll', updateViewportHeight);
+    };
+  }, []);
+
   // Test Mode Simulation State (Off-track alert & distance test without GPS)
   const [isTestMode, setIsTestMode] = useState<boolean>(false);
   const [mockLocation, setMockLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -271,7 +358,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
       clearOffTrackTimer();
     } else {
       setIsTestMode(true);
-      setTestNotification('🧪 테스트 모드 켬: 지도의 아무 곳이나 클릭하여 가상 위치를 지정하세요.');
+      setTestNotification('🧪 테스트 모드: 지도 클릭하여 가상 위치 지정');
     }
   };
 
@@ -325,19 +412,19 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
         });
       }
 
-      // 5. Off-track check (> 50m)
+      // 5. Off-track check (> 50m) - Format: '<- 156m'
       if (distanceM > 50) {
         playOffTrackWarningBeep();
-        const msg = `🚨 경로 이탈 경고! 코스에서 ${distanceM}m 벗어남 (${dirText.text} ${dirText.arrow} ${bearing}°)`;
-        setTestNotification(msg);
+        const shortFormat = `${dirText.arrow} ${distanceM}m`;
+        setTestNotification(`🚨 ${shortFormat}`);
 
         // 30 seconds repeat timer
         offTrackTimerRef.current = setInterval(() => {
           playOffTrackWarningBeep();
-          setTestNotification(`🚨 [30초 재경보] 코스에서 ${distanceM}m 벗어남 (${dirText.text} ${dirText.arrow})`);
+          setTestNotification(`🚨 ${shortFormat}`);
         }, 30000);
       } else {
-        setTestNotification(`✅ 정상 경로 범위 내 위치 (코스까지 ${distanceM}m)`);
+        setTestNotification(`✅ ${distanceM}m (정상 경로)`);
       }
     },
     [section.points, section.start_point, section.end_point]
@@ -725,7 +812,10 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
   };
 
   return (
-    <div className="relative w-full h-[calc(100vh-56px)] bg-slate-900 overflow-hidden select-none">
+    <div
+      className="relative w-full bg-slate-900 overflow-hidden select-none"
+      style={{ height: containerHeight }}
+    >
       {/* 1. Kakao Map Container with direct pointer tracking for accurate coordinates */}
       <div
         ref={mapContainerRef}
@@ -775,26 +865,26 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
             {/* Topographic Contour Overlay when in TERRAIN mode */}
             {mapMode === 'TERRAIN' && <MapTypeId type="TERRAIN" />}
 
-            {/* Adjacent 4 Sections Polylines & Navigation Badges */}
+            {/* Adjacent 4 Sections Polylines (Thinner line to strongly emphasize current section) */}
             {adjacentSections.map((adj) => {
               const midIndex = Math.floor(adj.path.length / 2);
               const midPoint = adj.path[midIndex] || adj.path[0];
               return (
                 <React.Fragment key={`adj-${adj.section_id}`}>
-                  {/* Subtle casing */}
+                  {/* Subtle thin casing */}
                   <Polyline
                     path={adj.path.map((p) => ({ lat: p.lat, lng: p.lng }))}
-                    strokeWeight={6}
+                    strokeWeight={3.5}
                     strokeColor="#0f172a"
-                    strokeOpacity={0.4}
+                    strokeOpacity={0.3}
                     strokeStyle="solid"
                   />
-                  {/* Color-coded adjacent trail */}
+                  {/* Thinner line (weight: 2.2) to make current section stand out */}
                   <Polyline
                     path={adj.path.map((p) => ({ lat: p.lat, lng: p.lng }))}
-                    strokeWeight={4}
+                    strokeWeight={2.2}
                     strokeColor={adj.color}
-                    strokeOpacity={0.85}
+                    strokeOpacity={0.75}
                     strokeStyle="solid"
                   />
                   {/* Clickable section badge */}
@@ -918,18 +1008,77 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
               );
             })}
 
-            {/* Elevation Profile Hover Marker */}
+            {/* Adjacent Sections POIs (Excluding Start and End Points) */}
+            {adjacentPois.map((fac, idx) => {
+              if (!fac.lat || !fac.lng) return null;
+              const catList: FacilityCategory[] = Array.isArray(fac.categories) && fac.categories.length > 0
+                ? (fac.categories as FacilityCategory[])
+                : [(fac.category as FacilityCategory) || 'other'];
+
+              return (
+                <CustomOverlayMap
+                  key={`adj-poi-${fac.id || idx}`}
+                  position={{ lat: fac.lat, lng: fac.lng }}
+                  yAnchor={1.1}
+                  zIndex={28}
+                >
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedFacility(fac);
+                    }}
+                    className="flex flex-col items-center group cursor-pointer hover:scale-110 hover:z-30 transition-all select-none opacity-90 hover:opacity-100"
+                  >
+                    {/* 상단: 인접 구간 고유 색상 링이 둘러진 소형 아이콘 */}
+                    <div
+                      style={{ borderColor: fac.sectionColor || '#94a3b8' }}
+                      className="flex items-center -space-x-1 p-0.5 bg-white/95 rounded-full shadow border-2 group-hover:scale-105 transition-transform"
+                    >
+                      {catList.map((catKey, cIdx) => (
+                        <CategoryIcon
+                          key={`adj-${catKey}-${cIdx}`}
+                          category={catKey}
+                          size="sm"
+                          variant="solid"
+                          className="border border-white scale-90"
+                        />
+                      ))}
+                    </div>
+
+                    {/* 하단: 시설명 라벨 (인접 구간 번호 소형 태그 포함) */}
+                    <div className="mt-0.5 px-1.5 py-0.5 bg-slate-900/85 text-slate-200 font-semibold text-[9.5px] rounded-md shadow border border-slate-700/60 whitespace-nowrap leading-tight group-hover:bg-slate-800 transition-colors flex items-center gap-1">
+                      {fac.sectionName && (
+                        <span
+                          style={{ color: fac.sectionColor || '#38bdf8' }}
+                          className="font-bold text-[8.5px]"
+                        >
+                          {fac.sectionName}
+                        </span>
+                      )}
+                      <span>{fac.name}</span>
+                    </div>
+                  </div>
+                </CustomOverlayMap>
+              );
+            })}
+
+            {/* Elevation Profile Hover Marker (High contrast neon style for vivid visibility) */}
             {hoveredPoint && (
               <CustomOverlayMap
                 position={{ lat: hoveredPoint.lat, lng: hoveredPoint.lng }}
                 yAnchor={0.5}
                 zIndex={50}
               >
-                <div className="relative flex flex-col items-center">
-                  <div className="w-4 h-4 rounded-full bg-red-600 border-2 border-white shadow-lg animate-ping absolute" />
-                  <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow-lg" />
-                  <div className="mt-1 px-2 py-0.5 bg-slate-900/90 text-white font-extrabold text-[10px] rounded shadow-md whitespace-nowrap border border-red-400">
-                    {hoveredPoint.dist}km · {hoveredPoint.ele}m
+                <div className="relative flex flex-col items-center select-none">
+                  {/* Neon Cyan & Neon Yellow Triple Pulsing Rings */}
+                  <div className="w-8 h-8 rounded-full bg-cyan-400/40 animate-ping absolute -top-1.5" />
+                  <div className="w-5 h-5 rounded-full bg-amber-300/80 animate-ping absolute" />
+                  {/* High Visibility Vivid Amber & White Pin Core */}
+                  <div className="w-4 h-4 rounded-full bg-amber-400 border-2 border-white shadow-2xl relative z-10" />
+                  {/* High contrast bold label */}
+                  <div className="mt-1 px-2.5 py-0.5 bg-slate-950 text-amber-300 font-black text-[11px] rounded-lg shadow-2xl whitespace-nowrap border-2 border-amber-400 flex items-center gap-1 animate-in zoom-in-95">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                    <span>{hoveredPoint.dist}km · {hoveredPoint.ele}m</span>
                   </div>
                 </div>
               </CustomOverlayMap>
@@ -983,11 +1132,11 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
                   </div>
                 </CustomOverlayMap>
 
-                {/* Virtual Mock Location Pin with Direction & Distance Badge */}
+                {/* Virtual Mock Location Pin with Direction & Distance Badge (Format: '<- 156m') */}
                 <CustomOverlayMap position={mockLocation} yAnchor={1.15} zIndex={50}>
                   <div className="flex flex-col items-center select-none animate-in zoom-in-90 duration-150">
                     <div
-                      className={`px-2.5 py-1 rounded-xl shadow-xl border-2 border-white text-white font-black text-[11px] flex items-center gap-1.5 whitespace-nowrap ${
+                      className={`px-2.5 py-1 rounded-xl shadow-xl border-2 border-white text-white font-black text-xs flex items-center gap-1.5 whitespace-nowrap ${
                         testNearestPoint.distance > 50
                           ? 'bg-rose-600 animate-bounce'
                           : 'bg-purple-600'
@@ -995,14 +1144,8 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
                     >
                       <Compass className="w-3.5 h-3.5" />
                       <span>
-                        {testNearestPoint.distance > 50 ? '이탈' : '정상'}{' '}
-                        {testNearestPoint.distance}m
+                        {testBearingInfo ? `${testBearingInfo.arrow} ` : ''}{testNearestPoint.distance}m
                       </span>
-                      {testBearingInfo && (
-                        <span className="bg-black/35 px-1.5 py-0.5 rounded text-[10px] text-purple-200">
-                          {testBearingInfo.text} {testBearingInfo.arrow} ({testBearingInfo.bearing}°)
-                        </span>
-                      )}
                     </div>
                     {/* Pin Marker Arrow Point */}
                     <div
@@ -1282,7 +1425,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
         </button>
       </div>
 
-      {/* Elevation Profile Drawer Toggle Button (Stops propagation) */}
+      {/* Elevation Profile Drawer Toggle Button (Positioned safely above mobile browser toolbar) */}
       <button
         onPointerDown={(e) => e.stopPropagation()}
         onClick={() => {
@@ -1295,8 +1438,13 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
             return next;
           });
         }}
+        style={{
+          bottom: isElevationOpen
+            ? 'calc(170px + env(safe-area-inset-bottom, 0px))'
+            : 'calc(48px + env(safe-area-inset-bottom, 0px))'
+        }}
         className={`absolute left-4 px-3.5 py-2 rounded-2xl bg-slate-900/95 hover:bg-slate-800 text-white border border-slate-700/80 shadow-xl backdrop-blur-md text-xs font-bold flex items-center gap-1.5 transition-all duration-200 active:scale-95 cursor-pointer ${
-          isElevationOpen ? 'bottom-[160px] z-30' : 'bottom-10 z-20'
+          isElevationOpen ? 'z-30' : 'z-20'
         }`}
         title="고도 프로파일 열기/닫기"
       >
@@ -1305,31 +1453,45 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
       </button>
 
       {/* Map Scale Bar (Always positioned ABOVE the elevation profile button & drawer) */}
-      <div className={`absolute left-4 transition-all duration-200 ${isElevationOpen ? 'bottom-[204px] z-30' : 'bottom-[84px] z-20'}`}>
+      <div
+        style={{
+          bottom: isElevationOpen
+            ? 'calc(216px + env(safe-area-inset-bottom, 0px))'
+            : 'calc(94px + env(safe-area-inset-bottom, 0px))'
+        }}
+        className={`absolute left-4 transition-all duration-200 ${isElevationOpen ? 'z-30' : 'z-20'}`}
+      >
         <MapScaleBar level={level} />
       </div>
 
-      {/* Elevation Profile Drawer (3.1: Compact integrated chart, 3.2: strokeWidth 1.2, 3.3: balanced column gradient) */}
+      {/* Elevation Profile Drawer (Compact integrated chart, high-contrast neon drag indicator) */}
       {isElevationOpen && (
         <div
           onPointerDown={(e) => e.stopPropagation()}
-          className="absolute bottom-10 left-3 right-3 z-30 bg-slate-900/95 backdrop-blur-md rounded-2xl p-2.5 shadow-2xl border border-slate-700/80 text-white animate-in slide-in-from-bottom duration-200"
+          style={{
+            bottom: 'calc(44px + env(safe-area-inset-bottom, 0px))'
+          }}
+          className="absolute left-3 right-3 z-30 bg-slate-900/95 backdrop-blur-md rounded-2xl p-2.5 shadow-2xl border border-slate-700/80 text-white animate-in slide-in-from-bottom duration-200"
         >
           {/* SVG Gradient Area & Line Chart Container */}
           <div className="relative w-full h-24 bg-slate-950/80 rounded-xl overflow-hidden border border-slate-800">
-            {/* Integrated Header inside Chart (3.1) */}
+            {/* Integrated Header inside Chart */}
             <div className="absolute top-1.5 left-2.5 z-10 flex items-center gap-2 pointer-events-none">
               <span className="font-extrabold text-white text-xs tracking-tight bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-700/60 shadow-xs">
                 고도 프로파일
               </span>
-              <span className="text-emerald-300 font-bold bg-slate-900/80 px-2 py-0.5 rounded-md border border-emerald-500/30 text-[10px] shadow-xs">
+              <span className={`font-bold px-2 py-0.5 rounded-md text-[10px] shadow-xs transition-all ${
+                hoveredPoint
+                  ? 'bg-amber-400 text-slate-950 font-black border-2 border-amber-300 scale-105'
+                  : 'text-emerald-300 bg-slate-900/80 border border-emerald-500/30'
+              }`}>
                 {hoveredPoint
-                  ? `${hoveredPoint.dist}km 지점 · ${hoveredPoint.ele}m`
+                  ? `📍 ${hoveredPoint.dist}km 지점 · ${hoveredPoint.ele}m`
                   : `최고 ${section.max_elevation_m || maxEle}m · 최저 ${section.min_elevation_m || minEle}m`}
               </span>
             </div>
 
-            {/* Close Button inside Chart (3.1) */}
+            {/* Close Button inside Chart */}
             <button
               onClick={() => {
                 setIsElevationOpen(false);
@@ -1367,11 +1529,11 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
                   <stop offset="100%" stopColor="#020617" stopOpacity="0.90" />
                 </linearGradient>
 
-                {/* Vertical Column Gradient: centered at red dashed line, subtle and uniform from top to bottom (3.3) */}
+                {/* High contrast Neon Yellow & Cyan Column Glow */}
                 <linearGradient id="cursorColumnGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity="0" />
-                  <stop offset="50%" stopColor="#34d399" stopOpacity="0.22" />
-                  <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+                  <stop offset="0%" stopColor="#38bdf8" stopOpacity="0" />
+                  <stop offset="50%" stopColor="#facc15" stopOpacity="0.45" />
+                  <stop offset="100%" stopColor="#38bdf8" stopOpacity="0" />
                 </linearGradient>
               </defs>
 
@@ -1380,19 +1542,19 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
                 <path d={areaPath} fill="url(#elevationGrad)" />
               )}
 
-              {/* Symmetric vertical gradient band around dashed line (3.3) */}
+              {/* Symmetric high-contrast neon vertical band around drag line */}
               {hoverCoord && (
                 <rect
-                  x={Math.max(0, hoverCoord.x - 20)}
+                  x={Math.max(0, hoverCoord.x - 22)}
                   y={0}
-                  width={40}
+                  width={44}
                   height={chartHeight}
                   fill="url(#cursorColumnGlow)"
                   pointerEvents="none"
                 />
               )}
 
-              {/* Thin line path (3.2: strokeWidth="1.2") */}
+              {/* Thin line path */}
               {linePath && (
                 <path
                   d={linePath}
@@ -1404,26 +1566,43 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
                 />
               )}
 
-              {/* Red dashed vertical line centered at cursor */}
+              {/* High-visibility Neon Yellow vertical guide line centered at cursor */}
               {hoverCoord && (
-                <line
-                  x1={hoverCoord.x}
-                  y1={0}
-                  x2={hoverCoord.x}
-                  y2={chartHeight}
-                  stroke="#f43f5e"
-                  strokeWidth="1.2"
-                  strokeDasharray="3,3"
-                  opacity="0.9"
-                />
+                <g pointerEvents="none">
+                  {/* Outer bright neon yellow line */}
+                  <line
+                    x1={hoverCoord.x}
+                    y1={0}
+                    x2={hoverCoord.x}
+                    y2={chartHeight}
+                    stroke="#fde047"
+                    strokeWidth="2.2"
+                    opacity="1"
+                  />
+                  {/* Inner crisp white core */}
+                  <line
+                    x1={hoverCoord.x}
+                    y1={0}
+                    x2={hoverCoord.x}
+                    y2={chartHeight}
+                    stroke="#ffffff"
+                    strokeWidth="0.8"
+                    opacity="0.95"
+                  />
+                </g>
               )}
             </svg>
           </div>
         </div>
       )}
 
-      {/* Bottom Center Hint: "길게 클릭 = 새로운 시설 등록" */}
-      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 px-3.5 py-1 bg-slate-900/85 backdrop-blur-md rounded-full border border-slate-700/80 text-[11px] font-semibold text-slate-300 shadow-xl pointer-events-none whitespace-nowrap">
+      {/* Bottom Center Hint: "길게 클릭 = 새로운 시설 등록" (Positioned safely above browser bottom toolbar) */}
+      <div
+        style={{
+          bottom: 'calc(14px + env(safe-area-inset-bottom, 0px))'
+        }}
+        className="absolute left-1/2 -translate-x-1/2 z-20 px-3.5 py-1 bg-slate-900/85 backdrop-blur-md rounded-full border border-slate-700/80 text-[11px] font-semibold text-slate-300 shadow-xl pointer-events-none whitespace-nowrap"
+      >
         길게 클릭 = 새로운 시설 등록
       </div>
 
