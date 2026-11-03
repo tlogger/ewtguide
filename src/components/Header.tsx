@@ -1,6 +1,6 @@
 import React from 'react';
-import { Compass, List, MapPin, FileText, Map, LogIn, LogOut, User } from 'lucide-react';
-import { UserAccount } from '../types';
+import { Compass, List, MapPin, FileText, Map, LogIn, LogOut, User, ChevronDown } from 'lucide-react';
+import { UserAccount, SectionSummary } from '../types';
 
 interface HeaderProps {
   currentStep: 'title' | 'list' | 'detail' | 'map' | 'all_map';
@@ -11,6 +11,9 @@ interface HeaderProps {
   currentUser?: UserAccount | null;
   onOpenAuth?: () => void;
   onSignOut?: () => void;
+  allSections?: SectionSummary[];
+  currentSectionId?: number;
+  onSelectSection?: (sectionId: number) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -19,7 +22,10 @@ export const Header: React.FC<HeaderProps> = ({
   sectionNumber,
   currentUser = null,
   onOpenAuth,
-  onSignOut
+  onSignOut,
+  allSections = [],
+  currentSectionId,
+  onSelectSection
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md text-white border-b border-slate-800 shadow-sm select-none">
@@ -41,13 +47,38 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
 
-          {(currentStep === 'detail' || currentStep === 'map') && (
+          {/* Map Screen: Section Selection Combo Box on Title Bar */}
+          {currentStep === 'map' && allSections && allSections.length > 0 && onSelectSection ? (
+            <div className="relative flex items-center">
+              <select
+                value={currentSectionId}
+                onChange={(e) => onSelectSection(Number(e.target.value))}
+                className="appearance-none bg-slate-800/95 hover:bg-slate-700/90 text-emerald-400 font-black text-xs sm:text-sm pl-2.5 pr-6 py-1.5 rounded-xl border border-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer max-w-[145px] sm:max-w-[210px] truncate"
+                title="구간 바로 이동"
+              >
+                {allSections
+                  .filter((s) => s.is_opened !== false)
+                  .map((s) => (
+                    <option
+                      key={s.section_id}
+                      value={s.section_id}
+                      className="bg-slate-900 text-white font-semibold"
+                    >
+                      {s.section_number} ({s.region.replace(/,/g, ' ').trim().split(/\s+/)[0]})
+                    </option>
+                  ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-slate-300">
+                <ChevronDown className="w-3.5 h-3.5 text-slate-300" />
+              </div>
+            </div>
+          ) : (currentStep === 'detail' || currentStep === 'map') ? (
             <div className="flex items-center gap-2">
               <h1 className="text-lg sm:text-xl font-black tracking-tight text-white">
                 {sectionNumber || '동서트레일'}
               </h1>
             </div>
-          )}
+          ) : null}
 
           {currentStep === 'all_map' && (
             <div className="flex items-center gap-2">

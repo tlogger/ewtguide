@@ -283,6 +283,9 @@ export const App: React.FC = () => {
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onSignOut={handleSignOut}
+        allSections={sectionsSummary}
+        currentSectionId={selectedSectionDetail?.section_id}
+        onSelectSection={handleOpenSectionMap}
       />
 
       <main className="flex-1">

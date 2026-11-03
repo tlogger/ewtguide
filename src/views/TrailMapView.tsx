@@ -1273,29 +1273,6 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
             )}
           </div>
 
-          {/* Section Direct Navigation Combo Box */}
-          {allSections && allSections.length > 0 && onNavigateSection && (
-            <div className="relative shrink-0">
-              <select
-                value={section.section_id}
-                onChange={(e) => onNavigateSection(Number(e.target.value))}
-                className="appearance-none bg-slate-900/95 text-emerald-400 font-extrabold text-xs pl-3 pr-6 py-2 rounded-xl border border-slate-700/80 shadow-lg backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-                title="구간 바로 이동"
-              >
-                {allSections
-                  .filter((s) => s.is_opened !== false)
-                  .map((s) => (
-                    <option key={s.section_id} value={s.section_id} className="bg-slate-900 text-white font-semibold">
-                      {s.section_number} ({s.region.replace(/,/g, ' ').trim().split(/\s+/)[0]})
-                    </option>
-                  ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-slate-400">
-                <ChevronDown className="w-3.5 h-3.5 text-slate-300" />
-              </div>
-            </div>
-          )}
-
           {/* 3-way Map Mode Switcher as Icons: Map / Layers / Mountain */}
           <div className="flex items-center bg-slate-900/95 p-1 rounded-xl border border-slate-700/80 shadow-lg backdrop-blur-md shrink-0 gap-1">
             <button
