@@ -1,6 +1,7 @@
 import React from 'react';
 import { Compass, List, MapPin, FileText, Map, LogIn, LogOut, User, ChevronDown } from 'lucide-react';
 import { UserAccount, SectionSummary } from '../types';
+import { EastWestIcon } from './EastWestIcon';
 
 interface HeaderProps {
   currentStep: 'title' | 'list' | 'detail' | 'map' | 'all_map';
@@ -35,12 +36,10 @@ export const Header: React.FC<HeaderProps> = ({
           {currentStep === 'list' && (
             <div
               onClick={() => onNavigate('title')}
-              className="flex items-center gap-2.5 cursor-pointer group"
+              className="flex items-center gap-2 cursor-pointer group"
               title="타이틀 스크린 보기"
             >
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center group-hover:border-emerald-400 transition-colors">
-                <Compass className="w-5 h-5 text-emerald-400 group-hover:rotate-45 transition-transform duration-300" />
-              </div>
+              <EastWestIcon size={32} variant="tile" className="group-hover:scale-105 transition-transform" />
               <h1 className="text-base sm:text-lg font-black tracking-tight leading-tight group-hover:text-emerald-300 transition-colors">
                 동서트레일 가이드
               </h1>
@@ -82,9 +81,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {currentStep === 'all_map' && (
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
-                <Map className="w-4 h-4 text-emerald-400" />
-              </div>
+              <EastWestIcon size={32} variant="tile" />
               <h1 className="text-lg sm:text-xl font-black tracking-tight text-white">
                 전체 지도
               </h1>

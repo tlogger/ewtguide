@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%" fill="none">
+  <defs>
+    <!-- East (Red) -->
+    <linearGradient id="fav-east" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff2a5f" />
+      <stop offset="100%" stop-color="#f43f5e" />
+    </linearGradient>
+    <!-- West (Blue) -->
+    <linearGradient id="fav-west" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#38bdf8" />
+    </linearGradient>
+  </defs>
+
+  <!-- Dark Tile Base for crisp contrast on light/dark browser tabs -->
+  <rect x="4" y="4" width="92" height="92" rx="24" fill="#090d16" stroke="#334155" stroke-width="2" />
+
+  <!-- 1. WEST BLUE LINE (Pointing West/Left ⬅️) -->
+  <path
+    d="M 50 50 C 65 50 75 62 70 72 C 65 82 43 82 28 72 C 22 67 17 60 17 52"
+    stroke="url(#fav-west)"
+    stroke-width="8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M 24 61 L 15 51 L 26 43"
+    stroke="url(#fav-west)"
+    stroke-width="7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- 2. EAST RED LINE (Pointing East/Right ➡️) -->
+  <path
+    d="M 50 50 C 35 50 25 38 30 28 C 35 18 57 18 72 28 C 78 33 83 40 83 48"
+    stroke="url(#fav-east)"
+    stroke-width="8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M 76 39 L 85 49 L 74 57"
+    stroke="url(#fav-east)"
+    stroke-width="7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Center Pin -->
+  <circle cx="50" cy="50" r="4.5" fill="#ffffff" />
+  <circle cx="50" cy="50" r="2" fill="#090d16" />
+</svg>
