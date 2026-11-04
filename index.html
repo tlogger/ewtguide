@@ -10,6 +10,13 @@
     <!-- Pretendard web font for crisp senior-friendly typography -->
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <script>
+      // GitHub Pages(tlogger.github.io) 접속 시 Vercel(ewtguide.vercel.app)로 즉시 자동 이동
+      if (window.location.hostname === 'tlogger.github.io') {
+        var newPath = window.location.pathname.replace(/^\/ewtguide(\/|$)/, '/');
+        window.location.replace('https://ewtguide.vercel.app' + (newPath === '/' ? '' : newPath) + window.location.search + window.location.hash);
+      }
+    </script>
+    <script>
       (function() {
         try {
           var hash = window.location.hash || '';

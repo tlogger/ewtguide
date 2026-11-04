@@ -19,62 +19,7 @@ export interface OAuthClientConfig {
   googleCallbackUrl: string;
 }
 
-/** 기본 및 로컬 저장된 OAuth 클라이언트 ID 조회 */
-export function getOAuthClientConfig(): OAuthClientConfig {
-  const envKakao = import.meta.env.VITE_KAKAO_CLIENT_ID || '354131879d586356f9c160db0f834840';
-  const envKakaoCallback = import.meta.env.VITE_KAKAO_CALLBACK_URL || 'https://ewtguide.vercel.app/kakaologin';
-  const envNaver = import.meta.env.VITE_NAVER_CLIENT_ID || 'ZlO4zT_XXNDHb24LQL5u';
-  const envNaverCallback = import.meta.env.VITE_NAVER_CALLBACK_URL || 'https://ewtguide.vercel.app/naverlogin';
-  const envGoogle = import.meta.env.VITE_GOOGLE_CLIENT_ID || '91988805001-t93p6nlfov5adjalmkjn3qlgvo6o1133.apps.googleusercontent.com';
-  const envGoogleCallback = import.meta.env.VITE_GOOGLE_CALLBACK_URL || 'https://ewtguide.vercel.app/googlelogin';
-
-  try {
-    const raw = localStorage.getItem(OAUTH_KEYS_STORAGE);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      // 구 GitHub Pages 콜백 URL이 저장되어 있다면 Vercel 도메인으로 자동 마이그레이션
-      const kakaoCb = (parsed.kakaoCallbackUrl && !parsed.kakaoCallbackUrl.includes('tlogger.github.io'))
-        ? parsed.kakaoCallbackUrl : envKakaoCallback;
-      const naverCb = (parsed.naverCallbackUrl && !parsed.naverCallbackUrl.includes('tlogger.github.io'))
-        ? parsed.naverCallbackUrl : envNaverCallback;
-      const googleCb = (parsed.googleCallbackUrl && !parsed.googleCallbackUrl.includes('tlogger.github.io'))
-        ? parsed.googleCallbackUrl : envGoogleCallback;
-
-      return {
-        kakaoClientId: parsed.kakaoClientId || envKakao,
-        kakaoCallbackUrl: kakaoCb,
-        naverClientId: parsed.naverClientId || envNaver,
-        naverCallbackUrl: naverCb,
-        googleClientId: parsed.googleClientId || envGoogle,
-        googleCallbackUrl: googleCb
-      };
-    }
-  } catch {
-    // fallback
-  }
-
-  return {
-    kakaoClientId: envKakao,
-    kakaoCallbackUrl: envKakaoCallback,
-    naverClientId: envNaver,
-    naverCallbackUrl: envNaverCallback,
-    googleClientId: envGoogle,
-    googleCallbackUrl: envGoogleCallback
-  };
-}
-
-/** 사용자 정의 OAuth 클라이언트 ID 저장 */
-export function saveOAuthClientConfig(config: Partial<OAuthClientConfig>): void {
-  const current = getOAuthClientConfig();
-  const merged = { ...current, ...config };
-  try {
-    localStorage.setItem(OAUTH_KEYS_STORAGE, JSON.stringify(merged));
-  } catch (e) {
-    console.warn('Failed to save OAuth config:', e);
-  }
-}
-
-/** 현재 실행 도메인의 리다이렉트 URI 산출 */
+/** 현재 실행 도메인의 리다이렉트 URI 산출 (항상 Vercel 도메인 또는 로컬 개발 환경으로 고정) */
 export function getOAuthRedirectUri(provider: AuthProvider = 'google'): string {
   if (Capacitor.isNativePlatform()) {
     return `https://ewtguide.vercel.app/${provider}login`;
@@ -83,11 +28,51 @@ export function getOAuthRedirectUri(provider: AuthProvider = 'google'): string {
   if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
     return `${origin}/${provider}login`;
   }
-  const config = getOAuthClientConfig();
-  if (provider === 'kakao') return config.kakaoCallbackUrl;
-  if (provider === 'naver') return config.naverCallbackUrl;
-  if (provider === 'google') return config.googleCallbackUrl;
-  return `${origin}/${provider}login`;
+  // Vercel 공식 도메인으로 확정 (구 GitHub Pages 주소 원천 차단)
+  return `https://ewtguide.vercel.app/${provider}login`;
+}
+
+/** 기본 및 로컬 저장된 OAuth 클라이언트 ID 조회 */
+export function getOAuthClientConfig(): OAuthClientConfig {
+  const envKakao = import.meta.env.VITE_KAKAO_CLIENT_ID || '354131879d586356f9c160db0f834840';
+  const envNaver = import.meta.env.VITE_NAVER_CLIENT_ID || 'ZlO4zT_XXNDHb24LQL5u';
+  const envGoogle = import.meta.env.VITE_GOOGLE_CLIENT_ID || '91988805001-t93p6nlfov5adjalmkjn3qlgvo6o1133.apps.googleusercontent.com';
+
+  const kakaoCallbackUrl = getOAuthRedirectUri('kakao');
+  const naverCallbackUrl = getOAuthRedirectUri('naver');
+  const googleCallbackUrl = getOAuthRedirectUri('google');
+
+  try {
+    const raw = localStorage.getItem(OAUTH_KEYS_STORAGE);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // 구 GitHub Pages 콜백 URL 잔재 완전 삭제
+      delete parsed.kakaoCallbackUrl;
+      delete parsed.naverCallbackUrl;
+      delete parsed.googleCallbackUrl;
+      localStorage.setItem(OAUTH_KEYS_STORAGE, JSON.stringify(parsed));
+
+      return {
+        kakaoClientId: parsed.kakaoClientId || envKakao,
+        kakaoCallbackUrl,
+        naverClientId: parsed.naverClientId || envNaver,
+        naverCallbackUrl,
+        googleClientId: parsed.googleClientId || envGoogle,
+        googleCallbackUrl
+      };
+    }
+  } catch {
+    // fallback
+  }
+
+  return {
+    kakaoClientId: envKakao,
+    kakaoCallbackUrl,
+    naverClientId: envNaver,
+    naverCallbackUrl,
+    googleClientId: envGoogle,
+    googleCallbackUrl
+  };
 }
 
 /** 소셜 공급자별 실제 공식 OAuth2 인가 URL 생성 */
