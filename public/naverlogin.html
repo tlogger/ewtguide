@@ -46,7 +46,6 @@
 
   <script type="text/javascript">
     (function() {
-      // 1. 해시(#) 또는 쿼리(?)에서 access_token 파싱
       var hash = window.location.hash || '';
       var search = window.location.search || '';
 
@@ -63,30 +62,41 @@
         window.location.replace(cleanTarget);
       }
 
-      // access_token이 없으면 바로 메인으로 복귀
       if (!accessToken) {
         redirectBack();
         return;
       }
 
-      // 2. 기본 세션 페이로드 즉시 준비 (JSONP 지연/차단 시에도 무한루프 방지 및 로그인 보장)
+      var isApp = false;
+      try {
+        var stateMatch = (hash.match(/state=([^&]+)/) || search.match(/state=([^&]+)/));
+        if (stateMatch) {
+          var stateObj = JSON.parse(decodeURIComponent(stateMatch[1]));
+          if (stateObj && stateObj.isApp) isApp = true;
+        }
+      } catch(e) {}
+
       var fallbackPayload = {
         provider: 'naver',
         id: 'naver_' + Date.now(),
-        name: '네이버 회원',
+        name: '네이버 트레커',
         email: 'naver_user@ewtguide.kr',
         access_token: accessToken,
         timestamp: Date.now()
       };
       localStorage.setItem('ewtguide_naver_auth_payload', JSON.stringify(fallbackPayload));
 
-      // 3. 네이버 공식 OpenAPI(nid/me) JSONP를 통해 실제 사용자 프로필(고유 ID, 닉네임, 이메일, 프로필사진) 조회
       var callbackName = '_naver_user_profile_' + Math.floor(Math.random() * 1000000);
       var script = document.createElement('script');
       var timeout = setTimeout(function() {
         cleanup();
-        redirectBack();
-      }, 1500);
+        if (isApp) {
+          window.location.href = 'com.ewtguide.app://oauth?provider=naver&payload=' + encodeURIComponent(JSON.stringify(fallbackPayload));
+          setTimeout(redirectBack, 2500);
+        } else {
+          redirectBack();
+        }
+      }, 1800);
 
       function cleanup() {
         clearTimeout(timeout);
@@ -103,7 +113,7 @@
             var profile = data.response;
             var realId = profile.id ? ('naver_' + profile.id) : fallbackPayload.id;
             var realEmail = profile.email || '';
-            var realName = profile.nickname || profile.name || (realEmail ? realEmail.split('@')[0] : '') || '네이버 회원';
+            var realName = profile.nickname || profile.name || (realEmail ? realEmail.split('@')[0] : '') || '네이버 트레커';
             var realPhoto = profile.profile_image || '';
 
             var successPayload = {
@@ -116,20 +126,37 @@
               timestamp: Date.now()
             };
             localStorage.setItem('ewtguide_naver_auth_payload', JSON.stringify(successPayload));
+
+            if (isApp) {
+              window.location.href = 'com.ewtguide.app://oauth?provider=naver&payload=' + encodeURIComponent(JSON.stringify(successPayload));
+              setTimeout(redirectBack, 2500);
+              return;
+            }
           }
-        } catch (e) {
-          console.error('Error handling Naver profile response:', e);
+        } catch (err) {
+          console.warn('Profile parse notice:', err);
         }
-        redirectBack();
+
+        if (isApp) {
+          window.location.href = 'com.ewtguide.app://oauth?provider=naver&payload=' + encodeURIComponent(JSON.stringify(fallbackPayload));
+          setTimeout(redirectBack, 2500);
+        } else {
+          redirectBack();
+        }
       };
 
       script.onerror = function() {
         cleanup();
-        redirectBack();
+        if (isApp) {
+          window.location.href = 'com.ewtguide.app://oauth?provider=naver&payload=' + encodeURIComponent(JSON.stringify(fallbackPayload));
+          setTimeout(redirectBack, 2500);
+        } else {
+          redirectBack();
+        }
       };
 
-      script.src = 'https://openapi.naver.com/v1/nid/me?access_token=' + encodeURIComponent(accessToken) + '&oauth_callback=' + encodeURIComponent(callbackName);
-      (document.head || document.documentElement).appendChild(script);
+      script.src = 'https://openapi.naver.com/v1/nid/me?oauth_token=' + encodeURIComponent(accessToken) + '&callback=' + callbackName;
+      document.head.appendChild(script);
     })();
   </script>
 </body>

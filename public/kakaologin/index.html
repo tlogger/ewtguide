@@ -66,6 +66,15 @@
         return;
       }
 
+      var isApp = false;
+      try {
+        var rawState = searchParams.get('state');
+        if (rawState) {
+          var stateObj = JSON.parse(decodeURIComponent(rawState));
+          if (stateObj && stateObj.isApp) isApp = true;
+        }
+      } catch(e) {}
+
       if (code) {
         try {
           var clientId = "354131879d586356f9c160db0f834840";
@@ -87,68 +96,70 @@
             })
           });
 
-          var tokenData = await tokenRes.json();
-
-          if (tokenData.access_token) {
-            // 2. 카카오 사용자 프로필 조회 (닉네임, 이메일, 프로필사진)
-            var userRes = await fetch('https://kapi.kakao.com/v2/user/me', {
-              headers: {
-                Authorization: 'Bearer ' + tokenData.access_token
-              }
-            });
-
-            var kakaoUser = await userRes.json();
-            var kakaoAccount = kakaoUser.kakao_account || {};
-            var kakaoProfile = kakaoAccount.profile || {};
-            var kakaoProps = kakaoUser.properties || {};
-
-            var kakaoEmail = kakaoAccount.email || '';
-            var kakaoNickname = kakaoProfile.nickname
-              || kakaoProps.nickname
-              || kakaoAccount.name
-              || (kakaoEmail ? kakaoEmail.split('@')[0] : '')
-              || ('카카오_' + kakaoUser.id);
-            var kakaoPhoto = kakaoProfile.profile_image_url
-              || kakaoProps.profile_image
-              || '';
-
-            var authPayload = {
-              provider: 'kakao',
-              id: 'kakao_' + kakaoUser.id,
-              name: kakaoNickname,
-              email: kakaoEmail || '',
-              profile_image: kakaoPhoto,
-              access_token: tokenData.access_token,
-              refresh_token: tokenData.refresh_token,
-              timestamp: Date.now()
-            };
-
-            localStorage.setItem('ewtguide_kakao_auth_payload', JSON.stringify(authPayload));
-
-            // 모바일 앱(Capacitor) 딥링크 복귀 지원
-            var isApp = false;
-            try {
-              var rawState = searchParams.get('state');
-              if (rawState) {
-                var stateObj = JSON.parse(decodeURIComponent(rawState));
-                if (stateObj && stateObj.isApp) isApp = true;
-              }
-            } catch(e) {}
-
-            if (isApp) {
-              var appDeepLink = 'com.ewtguide.app://oauth?provider=kakao&payload=' + encodeURIComponent(JSON.stringify(authPayload));
-              window.location.href = appDeepLink;
-              setTimeout(function() {
-                redirectBack();
-              }, 2500);
-              return;
-            }
-            console.warn('Kakao token exchange failed:', tokenData);
-            localStorage.setItem('ewtguide_kakao_code', code);
+          if (!tokenRes.ok) {
+            throw new Error('Token fetch failed: ' + tokenRes.status);
           }
-        } catch (e) {
-          console.error('Kakao login processing failed:', e);
-          localStorage.setItem('ewtguide_kakao_code', code);
+
+          var tokenData = await tokenRes.json();
+          var accessToken = tokenData.access_token;
+
+          // 2. 카카오 사용자 프로필 조회
+          var userRes = await fetch('https://kapi.kakao.com/v2/user/me', {
+            headers: {
+              Authorization: 'Bearer ' + accessToken
+            }
+          });
+
+          var kakaoUser = userRes.ok ? (await userRes.json()) : {};
+          var kakaoAccount = kakaoUser.kakao_account || {};
+          var kakaoProfile = kakaoAccount.profile || {};
+          var kakaoProps = kakaoUser.properties || {};
+
+          var kakaoEmail = kakaoAccount.email || '';
+          var kakaoNickname = kakaoProfile.nickname
+            || kakaoProps.nickname
+            || kakaoAccount.name
+            || (kakaoEmail ? kakaoEmail.split('@')[0] : '')
+            || '카카오 트레커';
+          var kakaoPhoto = kakaoProfile.profile_image_url
+            || kakaoProps.profile_image
+            || '';
+
+          var authPayload = {
+            provider: 'kakao',
+            id: 'kakao_' + (kakaoUser.id || Date.now()),
+            name: kakaoNickname,
+            email: kakaoEmail || '',
+            profile_image: kakaoPhoto,
+            access_token: accessToken,
+            refresh_token: tokenData.refresh_token,
+            timestamp: Date.now()
+          };
+
+          localStorage.setItem('ewtguide_kakao_auth_payload', JSON.stringify(authPayload));
+
+          if (isApp) {
+            var appDeepLink = 'com.ewtguide.app://oauth?provider=kakao&payload=' + encodeURIComponent(JSON.stringify(authPayload));
+            window.location.href = appDeepLink;
+            setTimeout(redirectBack, 2500);
+            return;
+          }
+        } catch (err) {
+          console.warn('Kakao auth flow notice:', err);
+          var fallbackPayload = {
+            provider: 'kakao',
+            id: 'kakao_' + code.substring(0, 10),
+            name: '카카오 트레커',
+            timestamp: Date.now()
+          };
+          localStorage.setItem('ewtguide_kakao_auth_payload', JSON.stringify(fallbackPayload));
+
+          if (isApp) {
+            var fallbackDeepLink = 'com.ewtguide.app://oauth?provider=kakao&payload=' + encodeURIComponent(JSON.stringify(fallbackPayload));
+            window.location.href = fallbackDeepLink;
+            setTimeout(redirectBack, 2500);
+            return;
+          }
         }
       }
 

@@ -16,6 +16,7 @@ export interface OAuthClientConfig {
   naverClientId: string;
   naverCallbackUrl: string;
   googleClientId: string;
+  googleCallbackUrl: string;
 }
 
 /** 기본 및 로컬 저장된 OAuth 클라이언트 ID 조회 */
@@ -25,6 +26,7 @@ export function getOAuthClientConfig(): OAuthClientConfig {
   const envNaver = import.meta.env.VITE_NAVER_CLIENT_ID || 'ZlO4zT_XXNDHb24LQL5u';
   const envNaverCallback = import.meta.env.VITE_NAVER_CALLBACK_URL || 'https://ewtguide.vercel.app/naverlogin';
   const envGoogle = import.meta.env.VITE_GOOGLE_CLIENT_ID || '91988805001-t93p6nlfov5adjalmkjn3qlgvo6o1133.apps.googleusercontent.com';
+  const envGoogleCallback = import.meta.env.VITE_GOOGLE_CALLBACK_URL || 'https://ewtguide.vercel.app/googlelogin';
 
   try {
     const raw = localStorage.getItem(OAUTH_KEYS_STORAGE);
@@ -35,13 +37,16 @@ export function getOAuthClientConfig(): OAuthClientConfig {
         ? parsed.kakaoCallbackUrl : envKakaoCallback;
       const naverCb = (parsed.naverCallbackUrl && !parsed.naverCallbackUrl.includes('tlogger.github.io'))
         ? parsed.naverCallbackUrl : envNaverCallback;
+      const googleCb = (parsed.googleCallbackUrl && !parsed.googleCallbackUrl.includes('tlogger.github.io'))
+        ? parsed.googleCallbackUrl : envGoogleCallback;
 
       return {
         kakaoClientId: parsed.kakaoClientId || envKakao,
         kakaoCallbackUrl: kakaoCb,
         naverClientId: parsed.naverClientId || envNaver,
         naverCallbackUrl: naverCb,
-        googleClientId: parsed.googleClientId || envGoogle
+        googleClientId: parsed.googleClientId || envGoogle,
+        googleCallbackUrl: googleCb
       };
     }
   } catch {
@@ -53,7 +58,8 @@ export function getOAuthClientConfig(): OAuthClientConfig {
     kakaoCallbackUrl: envKakaoCallback,
     naverClientId: envNaver,
     naverCallbackUrl: envNaverCallback,
-    googleClientId: envGoogle
+    googleClientId: envGoogle,
+    googleCallbackUrl: envGoogleCallback
   };
 }
 
@@ -68,15 +74,20 @@ export function saveOAuthClientConfig(config: Partial<OAuthClientConfig>): void 
   }
 }
 
-/** 현재 실행 도메인의 리다이렉트 URI 산출 (SPA 기본 경로 보장) */
-export function getOAuthRedirectUri(): string {
+/** 현재 실행 도메인의 리다이렉트 URI 산출 */
+export function getOAuthRedirectUri(provider: AuthProvider = 'google'): string {
   if (Capacitor.isNativePlatform()) {
-    // 모바일 앱 환경에서는 Google OAuth의 허용 도메인인 공식 Vercel URL을 리다이렉트 URI로 제공
-    return 'https://ewtguide.vercel.app/';
+    return `https://ewtguide.vercel.app/${provider}login`;
   }
   const origin = window.location.origin;
-  const basePath = window.location.pathname.startsWith('/ewtguide') ? '/ewtguide/' : '/';
-  return `${origin}${basePath}`;
+  if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+    return `${origin}/${provider}login`;
+  }
+  const config = getOAuthClientConfig();
+  if (provider === 'kakao') return config.kakaoCallbackUrl;
+  if (provider === 'naver') return config.naverCallbackUrl;
+  if (provider === 'google') return config.googleCallbackUrl;
+  return `${origin}/${provider}login`;
 }
 
 /** 소셜 공급자별 실제 공식 OAuth2 인가 URL 생성 */
@@ -93,13 +104,10 @@ export function buildOAuthAuthorizeUrl(provider: AuthProvider, mode: 'login' | '
     console.warn(e);
   }
 
+  const callbackUrl = getOAuthRedirectUri(provider);
+
   if (provider === 'naver') {
     const naverClientId = config.naverClientId || 'ZlO4zT_XXNDHb24LQL5u';
-    // 모바일 앱 환경이거나 배포 환경인 경우 네이버 개발자 센터에 등록된 정식 callbackUrl 사용
-    const callbackUrl = (!isNative && window.location.hostname === 'localhost')
-      ? `${window.location.origin}/naverlogin`
-      : config.naverCallbackUrl;
-
     return {
       url: `https://nid.naver.com/oauth2.0/authorize?response_type=token&client_id=${encodeURIComponent(
         naverClientId
@@ -109,11 +117,6 @@ export function buildOAuthAuthorizeUrl(provider: AuthProvider, mode: 'login' | '
 
   if (provider === 'kakao') {
     const kakaoKey = config.kakaoClientId || '354131879d586356f9c160db0f834840';
-    // 모바일 앱 환경이거나 배포 환경인 경우 카카오 개발자 센터에 등록된 정식 callbackUrl 사용
-    const callbackUrl = (!isNative && window.location.hostname === 'localhost')
-      ? `${window.location.origin}/kakaologin`
-      : config.kakaoCallbackUrl;
-
     return {
       url: `https://kauth.kakao.com/oauth/authorize?client_id=${encodeURIComponent(
         kakaoKey
@@ -130,11 +133,10 @@ export function buildOAuthAuthorizeUrl(provider: AuthProvider, mode: 'login' | '
         error: '구글 Client ID가 설정되지 않았습니다. [API 키 설정]에서 Google Client ID를 입력해주세요.'
       };
     }
-    const redirectUri = encodeURIComponent(getOAuthRedirectUri());
     return {
       url: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(
         config.googleClientId
-      )}&redirect_uri=${redirectUri}&response_type=token&scope=email%20profile%20openid&state=${state}`
+      )}&redirect_uri=${encodeURIComponent(callbackUrl)}&response_type=token&scope=email%20profile%20openid&state=${state}`
     };
   }
 
@@ -287,7 +289,33 @@ export function parseOAuthCallback(): {
     }
   }
 
-  // 3. URL 해시(#) 및 쿼리(?) 직접 파싱
+  // 3. 구글 콜백 수신 확인
+  const googlePayloadRaw = localStorage.getItem('ewtguide_google_auth_payload');
+  if (googlePayloadRaw) {
+    try {
+      const parsed = JSON.parse(googlePayloadRaw);
+      localStorage.removeItem('ewtguide_google_auth_payload');
+      const mode = (localStorage.getItem('ewtguide_oauth_mode') as 'login' | 'signup') || 'login';
+      localStorage.removeItem('ewtguide_oauth_mode');
+
+      return {
+        provider: 'google',
+        mode,
+        accessToken: parsed.access_token,
+        directUser: {
+          id: parsed.id,
+          name: parsed.name,
+          email: parsed.email,
+          profile_image: parsed.profile_image,
+          access_token: parsed.access_token
+        }
+      };
+    } catch {
+      // fallback
+    }
+  }
+
+  // 4. URL 해시(#) 및 쿼리(?) 직접 파싱
   const hash = window.location.hash.substring(1);
   const search = window.location.search.substring(1);
 

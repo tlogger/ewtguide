@@ -250,22 +250,48 @@ export const App: React.FC = () => {
   // 1. Title Screen View (Immersive illustrated map artwork)
   if (currentStep === 'title') {
     return (
-      <TitleScreenView
-        onStartList={() => {
-          setCurrentStep('list');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-        onOpenMap={() => {
-          setCurrentStep('all_map');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-        totalDistance="867.1"
-        totalSections={55}
-        openedSectionsCount={32}
-        currentUser={currentUser}
-        onOpenAuth={() => setIsAuthModalOpen(true)}
-        onSignOut={handleSignOut}
-      />
+      <>
+        <TitleScreenView
+          onStartList={() => {
+            setCurrentStep('list');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onOpenMap={() => {
+            setCurrentStep('all_map');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          totalDistance="867.1"
+          totalSections={55}
+          openedSectionsCount={32}
+          currentUser={currentUser}
+          onOpenAuth={() => setIsAuthModalOpen(true)}
+          onSignOut={handleSignOut}
+        />
+
+        {/* Global Auth Toast */}
+        {authToast && (
+          <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-2xl shadow-2xl text-xs sm:text-sm font-bold flex items-center gap-2 border animate-in slide-in-from-top-4 duration-200 max-w-sm w-full mx-4 select-none bg-slate-900/95 text-white border-slate-700">
+            <span>{authToast.type === 'success' ? '✅' : authToast.type === 'error' ? '⚠️' : 'ℹ️'}</span>
+            <span className="flex-1">{authToast.text}</span>
+            <button
+              onClick={() => setAuthToast(null)}
+              className="text-slate-400 hover:text-white p-1"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* Auth Modal */}
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+          currentUser={currentUser}
+          onAuthSuccess={(user) => {
+            setCurrentUser(user);
+          }}
+        />
+      </>
     );
   }
 
