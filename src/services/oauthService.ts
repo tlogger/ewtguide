@@ -21,20 +21,26 @@ export interface OAuthClientConfig {
 /** 기본 및 로컬 저장된 OAuth 클라이언트 ID 조회 */
 export function getOAuthClientConfig(): OAuthClientConfig {
   const envKakao = import.meta.env.VITE_KAKAO_CLIENT_ID || '354131879d586356f9c160db0f834840';
-  const envKakaoCallback = import.meta.env.VITE_KAKAO_CALLBACK_URL || 'https://tlogger.github.io/ewtguide/kakaologin';
+  const envKakaoCallback = import.meta.env.VITE_KAKAO_CALLBACK_URL || 'https://ewtguide.vercel.app/kakaologin';
   const envNaver = import.meta.env.VITE_NAVER_CLIENT_ID || 'ZlO4zT_XXNDHb24LQL5u';
-  const envNaverCallback = import.meta.env.VITE_NAVER_CALLBACK_URL || 'https://tlogger.github.io/ewtguide/naverlogin';
+  const envNaverCallback = import.meta.env.VITE_NAVER_CALLBACK_URL || 'https://ewtguide.vercel.app/naverlogin';
   const envGoogle = import.meta.env.VITE_GOOGLE_CLIENT_ID || '91988805001-t93p6nlfov5adjalmkjn3qlgvo6o1133.apps.googleusercontent.com';
 
   try {
     const raw = localStorage.getItem(OAUTH_KEYS_STORAGE);
     if (raw) {
       const parsed = JSON.parse(raw);
+      // 구 GitHub Pages 콜백 URL이 저장되어 있다면 Vercel 도메인으로 자동 마이그레이션
+      const kakaoCb = (parsed.kakaoCallbackUrl && !parsed.kakaoCallbackUrl.includes('tlogger.github.io'))
+        ? parsed.kakaoCallbackUrl : envKakaoCallback;
+      const naverCb = (parsed.naverCallbackUrl && !parsed.naverCallbackUrl.includes('tlogger.github.io'))
+        ? parsed.naverCallbackUrl : envNaverCallback;
+
       return {
         kakaoClientId: parsed.kakaoClientId || envKakao,
-        kakaoCallbackUrl: parsed.kakaoCallbackUrl || envKakaoCallback,
+        kakaoCallbackUrl: kakaoCb,
         naverClientId: parsed.naverClientId || envNaver,
-        naverCallbackUrl: parsed.naverCallbackUrl || envNaverCallback,
+        naverCallbackUrl: naverCb,
         googleClientId: parsed.googleClientId || envGoogle
       };
     }
@@ -65,8 +71,8 @@ export function saveOAuthClientConfig(config: Partial<OAuthClientConfig>): void 
 /** 현재 실행 도메인의 리다이렉트 URI 산출 (SPA 기본 경로 보장) */
 export function getOAuthRedirectUri(): string {
   if (Capacitor.isNativePlatform()) {
-    // 모바일 앱 환경에서는 Google OAuth의 허용 도메인인 공식 GitHub Pages URL을 리다이렉트 URI로 제공
-    return 'https://tlogger.github.io/ewtguide/';
+    // 모바일 앱 환경에서는 Google OAuth의 허용 도메인인 공식 Vercel URL을 리다이렉트 URI로 제공
+    return 'https://ewtguide.vercel.app/';
   }
   const origin = window.location.origin;
   const basePath = window.location.pathname.startsWith('/ewtguide') ? '/ewtguide/' : '/';
