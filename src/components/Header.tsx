@@ -103,16 +103,16 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          {/* Section Detail Screen: [구간], [지도], [전체 지도] */}
+          {/* Section Detail Screen: [목록], [지도], [전체 지도] */}
           {currentStep === 'detail' && (
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => onNavigate('list')}
                 className="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 text-slate-200 flex items-center gap-1.5 text-xs font-bold transition-all active:scale-95 cursor-pointer"
-                title="구간 목록으로 이동"
+                title="목록으로 이동"
               >
                 <List className="w-4 h-4 text-emerald-400" />
-                <span className="hidden sm:inline">구간</span>
+                <span className="hidden sm:inline">목록</span>
               </button>
 
               <button
@@ -135,16 +135,16 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
 
-          {/* Trail Map Screen: [구간], [상세], [전체 지도] */}
+          {/* Trail Map Screen: [목록], [상세], [전체 지도] */}
           {currentStep === 'map' && (
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => onNavigate('list')}
                 className="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 text-slate-200 flex items-center gap-1.5 text-xs font-bold transition-all active:scale-95 cursor-pointer"
-                title="구간 목록으로 이동"
+                title="목록으로 이동"
               >
                 <List className="w-4 h-4 text-emerald-400" />
-                <span className="hidden sm:inline">구간</span>
+                <span className="hidden sm:inline">목록</span>
               </button>
 
               <button

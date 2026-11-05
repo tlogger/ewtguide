@@ -25,13 +25,22 @@
   },
   "pois": [
     {
-      "name": "백월산간이대피소 : 충남 홍성군 구향면 오봉리 산 50-1",
-      "description": "백패킹장 남산산림욕장대피소 : 충남 홍성군 홍성읍 남장리 439-3 백패킹장, 화장실, 급수시설",
-      "category": "toilet",
+      "name": "백월산간이대피소",
+      "description": "홍성 백월산 정상 능선에 위치하여 서해 천수만과 내포신도시 전경을 감상할 수 있는 간이 백패킹 대피소입니다.",
+      "category": "shelter",
       "lat": 36.621981,
       "lng": 126.632143,
       "id": "poi_백월산간이대_3l8vyn",
-      "is_official": true
+      "is_official": true,
+      "phone": "041-630-1407",
+      "photo_url": "https://images.unsplash.com/photo-1426604966848-d7adac402bff?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "상시 개방",
+      "memo": "문의: 홍성군 산림녹지과(041-630-1407)",
+      "categories": [
+        "shelter",
+        "lodging",
+        "toilet"
+      ]
     },
     {
       "name": "이응노 생가",

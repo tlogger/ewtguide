@@ -25,22 +25,40 @@
   },
   "pois": [
     {
-      "name": "분지리간이대피소 : 충북 괴산군 연풍면 분지리 산 22-7",
-      "description": "백패킹, 화장실, 가스스토브 사용 가능, 급수시설",
-      "category": "toilet",
+      "name": "분지리간이대피소",
+      "description": "백두대간 백화산 자락 청정 분지골 계곡 가에 위치한 야영 대피소입니다. 야영 데크, 화장실, 급수시설, 가스스토브 취사 공간을 갖추고 있습니다.",
+      "category": "shelter",
       "lat": 36.7302076291738,
       "lng": 128.039721447175,
       "id": "poi_분지리간이대_76svp8",
-      "is_official": true
+      "is_official": true,
+      "phone": "043-830-3274",
+      "photo_url": "https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "상시 개방",
+      "memo": "문의: 괴산군 산림녹지과(043-830-3274)",
+      "categories": [
+        "shelter",
+        "lodging",
+        "toilet"
+      ]
     },
     {
-      "name": "분지리",
-      "description": "평전치 평전치오름길은 속리산둘레길 9구간과 중복되는 노선으로 때묻지않은 자연 속을 걸을 수 있습니다.",
-      "category": "other",
+      "name": "분지리간이대피소",
+      "description": "백두대간 백화산 자락 청정 분지골 계곡 가에 위치한 야영 대피소입니다. 야영 데크, 화장실, 급수시설, 가스스토브 취사 공간을 갖추고 있습니다.",
+      "category": "shelter",
       "lat": 36.71910039390348,
       "lng": 128.0256448180545,
       "id": "poi_분지리_c5arzi",
-      "is_official": true
+      "is_official": true,
+      "phone": "043-830-3274",
+      "photo_url": "https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "상시 개방",
+      "memo": "문의: 괴산군 산림녹지과(043-830-3274)",
+      "categories": [
+        "shelter",
+        "lodging",
+        "toilet"
+      ]
     }
   ],
   "points": [

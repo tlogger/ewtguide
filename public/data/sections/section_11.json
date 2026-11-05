@@ -25,22 +25,40 @@
   },
   "pois": [
     {
-      "name": "그림같은수목원간이대피소 : 충남 홍성군 광천읍 신진리 41-3",
-      "description": "백패킹장 오서산상담주차장대피소 : 충남 홍성군 광천읍 담산리 752 백패킹장, 화장실, 가스스토브 사용 가능, 급수시설",
-      "category": "toilet",
+      "name": "그림같은수목원간이대피소",
+      "description": "오서산 서쪽 자락 그림같은수목원 및 오서산 상담주차장 인근에 위치한 백패킹 쉼터 대피소입니다. 화장실과 휴식 공간이 제공됩니다.",
+      "category": "shelter",
       "lat": 36.5172197131578,
       "lng": 126.63118132742,
       "id": "poi_그림같은수목_1pgi9x",
-      "is_official": true
+      "is_official": true,
+      "phone": "041-641-8008",
+      "photo_url": "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "상시 개방",
+      "memo": "문의: 그림같은수목원(041-641-8008) / 홍성군(041-630-1407)",
+      "categories": [
+        "shelter",
+        "lodging",
+        "toilet"
+      ]
     },
     {
       "name": "내포문화숲길 홍성센터",
-      "description": "(사)내포문화숲길의 홍성센터는 남산산림욕장, 충령사 입구에 위치하며 방문객들의 등산을 안내합니다. 그림같은수목원 다양한 식물과 아름다운 정원이 조성된 수목원으로, 산책과 휴식을 취할 수 있는 공간입니다. *출처: 충청남도 광천읍 광천읍은 충남 서해안의 중심에 위치하여 예로부터 서해 도서 지방과 내륙에서 생산된 각종 농림수산물의 집산지로서 교통과 상업의 중심 도시입니다. *출처: 홍성군 오서산 상담마을 오서산상담마을은 오서산 등산로가 시작되는 오서산의 측면 초입에 위치하며 물과 공기가 좋아 예로부터 장수촌으로 널리 알려져 있는 마을입니다. *출처: 홍성군",
-      "category": "restaurant",
+      "description": "남산산림욕장 및 충령사 입구에 위치하여 홍성 지역 동서트레일과 내포문화숲길 원더길을 종합 안내하는 센터입니다. 휴게실 및 트레커 편의를 지원합니다.",
+      "category": "cert_center",
       "lat": 36.5758075443006,
       "lng": 126.654249503376,
       "id": "poi_내포문화숲길_b91pg5",
-      "is_official": true
+      "is_official": true,
+      "phone": "041-635-1661",
+      "photo_url": "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "화~일 09:00 ~ 18:00 (월요일 휴무)",
+      "memo": "홈페이지: https://www.naepotrail.org | 전화: 041-635-1661",
+      "categories": [
+        "cert_center",
+        "lodging",
+        "toilet"
+      ]
     }
   ],
   "points": [

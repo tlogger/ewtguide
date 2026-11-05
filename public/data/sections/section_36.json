@@ -25,13 +25,22 @@
   },
   "pois": [
     {
-      "name": "이목리간이대피소 : 경북 문경시 영순면 이목리 산 75",
-      "description": "백패킹, 화장실, 가스스토브 사용 가능",
-      "category": "toilet",
+      "name": "이목리간이대피소",
+      "description": "문경시 영순면 영강과 낙동강 수계가 만나는 청정 능선 숲길에 위치한 간이 백패킹 대피소입니다.",
+      "category": "shelter",
       "lat": 36.5514549803781,
       "lng": 128.26233767337,
       "id": "poi_이목리간이대_ygj1zm",
-      "is_official": true
+      "is_official": true,
+      "phone": "054-550-6575",
+      "photo_url": "https://images.unsplash.com/photo-1487730116645-74489c95b41b?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "상시 개방",
+      "memo": "문의: 문경시 산림녹지과(054-550-6575)",
+      "categories": [
+        "shelter",
+        "lodging",
+        "toilet"
+      ]
     },
     {
       "name": "점촌동",

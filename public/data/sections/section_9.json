@@ -25,22 +25,40 @@
   },
   "pois": [
     {
-      "name": "동서트레일 용봉산주차장안내소 : 충남 홍성군 홍북읍 상하리 564-18",
-      "description": "안내시설, 화장실, 급수시설",
+      "name": "동서트레일 용봉산주차장안내소",
+      "description": "기암괴석으로 유명한 제2의 금강산 용봉산 자연휴양림 입구 주차장에 위치한 안내센터입니다. 동서트레일 및 용봉산 등산로 코스 가이드와 편의시설을 제공합니다.",
       "category": "cert_center",
       "lat": 36.6303958318234,
       "lng": 126.651639776194,
       "id": "poi_동서트레일용_u5mn1x",
-      "is_official": true
+      "is_official": true,
+      "phone": "041-630-1785",
+      "photo_url": "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "09:00 ~ 18:00",
+      "memo": "홈페이지: https://www.hongseong.go.kr | 문의: 041-630-1785",
+      "categories": [
+        "cert_center",
+        "lodging",
+        "toilet"
+      ]
     },
     {
-      "name": "용봉산돌바위마을대피소 : 충남 홍성군 홍북읍 상하리 564-18",
-      "description": "백패킹장, 가스스토브 사용 가능, 용봉산주차장안내소 시설 사용",
-      "category": "cert_center",
+      "name": "용봉산돌바위마을대피소",
+      "description": "용봉산 돌바위마을 숲속에 조성된 백패킹 야영 대피소입니다. 야영 데크와 가스스토브 조리 편의, 용봉산 주차장 화장실 및 급수시설을 함께 이용할 수 있습니다.",
+      "category": "shelter",
       "lat": 36.6303958318234,
       "lng": 126.651639776194,
       "id": "poi_용봉산돌바위_sxexy9",
-      "is_official": true
+      "is_official": true,
+      "phone": "041-630-1785",
+      "photo_url": "https://images.unsplash.com/photo-1487730116645-74489c95b41b?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "상시 개방 (야영 가능)",
+      "memo": "문의: 용봉산휴양림(041-630-1785)",
+      "categories": [
+        "shelter",
+        "lodging",
+        "toilet"
+      ]
     },
     {
       "name": "충의사",

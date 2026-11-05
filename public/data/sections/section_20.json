@@ -25,13 +25,22 @@
   },
   "pois": [
     {
-      "name": "동서트레일 대전안내소 : 대전 대덕구 미호동 432-4",
-      "description": "안내시설, 화장실, 급수시설",
+      "name": "동서트레일 대전안내소",
+      "description": "대청호반의 아름다운 물빛을 품은 대청호 물문화관 인근 동서트레일 대전 공식 거점 안내소입니다. 대전 둘레산길 및 동서트레일 중부 코스 안내를 담당합니다.",
       "category": "cert_center",
       "lat": 36.4582124263793,
       "lng": 127.465865330458,
       "id": "poi_동서트레일대_9si0zf",
-      "is_official": true
+      "is_official": true,
+      "phone": "042-620-6300",
+      "photo_url": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "화~일 09:00 ~ 18:00",
+      "memo": "홈페이지: https://komount.or.kr | 문의: 한국등산트레킹지원센터(042-620-6300)",
+      "categories": [
+        "cert_center",
+        "lodging",
+        "toilet"
+      ]
     },
     {
       "name": "대청댐물문화관",

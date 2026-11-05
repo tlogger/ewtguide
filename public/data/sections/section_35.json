@@ -25,13 +25,22 @@
   },
   "pois": [
     {
-      "name": "동서트레일 상주안내소(조성중) : 경북 상주시 함창읍 교촌리 199-5",
-      "description": "안내시설, 화장실, 급수시설",
+      "name": "동서트레일 상주안내소",
+      "description": "상주 명주테마파크와 삼백(쌀, 곶감, 명주)의 고장 함창읍에 조성된 동서트레일 거점 안내소입니다. 낙동강 자전거길 및 숲길 연계 안내를 지원합니다.",
       "category": "cert_center",
       "lat": 36.5761026068413,
       "lng": 128.160596144025,
       "id": "poi_동서트레일상_o61wdw",
-      "is_official": true
+      "is_official": true,
+      "phone": "054-537-8114",
+      "photo_url": "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "09:00 ~ 18:00",
+      "memo": "홈페이지: https://www.sangju.go.kr | 문의: 상주시(054-537-8114)",
+      "categories": [
+        "cert_center",
+        "lodging",
+        "toilet"
+      ]
     },
     {
       "name": "수예리",

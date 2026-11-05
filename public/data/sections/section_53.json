@@ -25,13 +25,22 @@
   },
   "pois": [
     {
-      "name": "찬물내기간이대피소 : 37.01200, 129.23523 (위도, 경도)",
-      "description": "백패킹, 화장실",
-      "category": "toilet",
+      "name": "찬물내기간이대피소",
+      "description": "왕피천 유역 청정 협곡 찬물내기 계곡 숲길에 위치한 간이대피소입니다. 여름철 시원한 냉천과 깊은 숲속 트레커 쉼터를 제공합니다.",
+      "category": "shelter",
       "lat": 37.012,
       "lng": 129.23523,
       "id": "poi_찬물내기간이_wy94nz",
-      "is_official": true
+      "is_official": true,
+      "phone": "054-789-6832",
+      "photo_url": "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "상시 개방",
+      "memo": "문의: 울진군청 산림과(054-789-6832)",
+      "categories": [
+        "shelter",
+        "lodging",
+        "toilet"
+      ]
     },
     {
       "name": "소광2리",

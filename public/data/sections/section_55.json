@@ -25,22 +25,40 @@
   },
   "pois": [
     {
-      "name": "국립울진동서트레일센터(조성중) : 경북 울진군 근남면 수곡리 721-1",
-      "description": "안내시설, 화장실, 급수시설",
+      "name": "국립울진동서트레일센터",
+      "description": "대한민국 국토를 동서로 가로지르는 849km 동서트레일의 총괄 컨트롤타워이자 동쪽 종점 광역 거점센터입니다. 기획전시관, 트레커 종합지원센터, 장비 대여 및 교육 공간을 갖추고 있습니다.",
       "category": "cert_center",
       "lat": 36.9607323099598,
       "lng": 129.35031411952,
       "id": "poi_국립울진동서_dl4o7o",
-      "is_official": true
+      "is_official": true,
+      "phone": "054-780-3900",
+      "photo_url": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "화~일 09:00 ~ 18:00 (월요일 휴무)",
+      "memo": "홈페이지: https://www.foresttrip.go.kr | 문의: 산림청/울진국유림관리소(054-780-3900)",
+      "categories": [
+        "cert_center",
+        "lodging",
+        "toilet"
+      ]
     },
     {
-      "name": "하원리대피소 : 경북 울진군 금강송면 하원리 72번지",
-      "description": "백패킹, 화장실 산포리대피소 : 경북 울진군 근남면 산포리 556-1 백패킹, 화장실, 가스스토브 사용 가능, 급수시설",
-      "category": "toilet",
+      "name": "하원리대피소",
+      "description": "불영계곡 하류 및 망양정으로 향하는 숲길목 하원리에 위치한 야영 대피소입니다. 불영사 계곡의 절경과 함께 안전한 휴식을 제공합니다.",
+      "category": "shelter",
       "lat": 36.9480754255208,
       "lng": 129.285133514688,
       "id": "poi_하원리대피소_w5ponb",
-      "is_official": true
+      "is_official": true,
+      "phone": "054-789-6832",
+      "photo_url": "https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "상시 개방",
+      "memo": "문의: 울진군청 산림과(054-789-6832)",
+      "categories": [
+        "shelter",
+        "lodging",
+        "toilet"
+      ]
     },
     {
       "name": "중섬마을",

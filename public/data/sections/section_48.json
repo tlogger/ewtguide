@@ -25,22 +25,40 @@
   },
   "pois": [
     {
-      "name": "동서트레일 춘양안내소(조성중) : 경북 봉화군 춘양면 의양리 417-44",
-      "description": "안내시설, 화장실, 급수시설",
+      "name": "동서트레일 춘양안내소",
+      "description": "국립백두대간수목원과 억지춘양시장, 춘양역 길목에 위치한 봉화 중심 안내소입니다. 춘양목 금강송 숲길 및 동서트레일 탐방 안내를 제공합니다.",
       "category": "cert_center",
       "lat": 36.987296,
       "lng": 128.866318,
       "id": "poi_동서트레일춘_zclxva",
-      "is_official": true
+      "is_official": true,
+      "phone": "054-679-6382",
+      "photo_url": "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "09:00 ~ 18:00",
+      "memo": "홈페이지: https://www.bonghwa.go.kr | 문의: 054-679-6382",
+      "categories": [
+        "cert_center",
+        "lodging",
+        "toilet"
+      ]
     },
     {
-      "name": "춘양대피소 : 경북 봉화군 춘양면 의양리 417-41",
-      "description": "백패킹, 춘양안내소 시설 사용",
-      "category": "cert_center",
+      "name": "춘양대피소",
+      "description": "춘양안내소와 연계된 백패킹 야영 대피소입니다. 시장 및 대중교통 접근성이 우수하며 화장실, 음수대 등 편의시설을 갖추고 있습니다.",
+      "category": "shelter",
       "lat": 36.9342218528908,
       "lng": 128.913926719436,
       "id": "poi_춘양대피소경_vvhp3u",
-      "is_official": true
+      "is_official": true,
+      "phone": "054-679-6382",
+      "photo_url": "https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "상시 개방 (야영 가능)",
+      "memo": "문의: 봉화군 산림녹지과(054-679-6382)",
+      "categories": [
+        "shelter",
+        "lodging",
+        "toilet"
+      ]
     },
     {
       "name": "수진교",

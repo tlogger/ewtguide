@@ -25,13 +25,22 @@
   },
   "pois": [
     {
-      "name": "대현1리마을회관대피소 : 충남 홍성군 장곡면 대현리 458-9",
-      "description": "백패킹장, 화장실, 가스스토브 사용 가능, 급수시설",
-      "category": "toilet",
+      "name": "대현1리마을회관대피소",
+      "description": "장곡면 대현1리 마을공동체와 상생 운영되는 트레커 쉼터 대피소입니다. 깨끗한 화장실, 온수 급수, 가스스토브 취사 공간, 백패킹 야영 터를 제공합니다.",
+      "category": "shelter",
       "lat": 36.4967318745245,
       "lng": 126.725874778293,
       "id": "poi_대현1리마을_k627hm",
-      "is_official": true
+      "is_official": true,
+      "phone": "041-630-9286",
+      "photo_url": "https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "상시 개방",
+      "memo": "문의: 장곡면 행정복지센터(041-630-9286)",
+      "categories": [
+        "shelter",
+        "lodging",
+        "toilet"
+      ]
     },
     {
       "name": "오서산 상담마을",

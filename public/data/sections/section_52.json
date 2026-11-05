@@ -25,31 +25,58 @@
   },
   "pois": [
     {
-      "name": "동서트레일 전곡리안내소(조성중) : 경북 울진군 금강송면 전곡리 317-11",
-      "description": "안내시설, 화장실, 급수시설",
+      "name": "동서트레일 전곡리안내소",
+      "description": "울진 금강소나무숲길 서쪽 기점인 금강송면 전곡리에 위치한 동서트레일 거점 안내소입니다. 국유림 숲길 출입 및 예약 안내를 담당합니다.",
       "category": "cert_center",
       "lat": 36.963998,
       "lng": 129.136207,
       "id": "poi_동서트레일전_bkwua1",
-      "is_official": true
+      "is_official": true,
+      "phone": "054-780-3900",
+      "photo_url": "https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "09:00 ~ 18:00",
+      "memo": "홈페이지: https://www.foresttrip.go.kr | 문의: 울진국유림관리소(054-780-3900)",
+      "categories": [
+        "cert_center",
+        "lodging",
+        "toilet"
+      ]
     },
     {
-      "name": "전곡리대피소(조성중) : 경북 울진군 금강송면 전곡리 315-1",
-      "description": "백패킹, 가스스토브 사용 가능, 전곡리 안내소 시설 사용 넓재간이대피소 : 36.96657, 129.14506 (위도, 경도) 백패킹, 화장실 소광2리대피소(조성중) : 경북 울진군 금강송면 소광리 657 백패킹, 화장실, 급수시설",
-      "category": "cert_center",
+      "name": "전곡리대피소",
+      "description": "전곡리 안내소와 연계된 울진 금강송림 숲속 백패킹 대피소입니다. 화장실, 야영 데크, 취사 공간을 갖추고 있습니다.",
+      "category": "shelter",
       "lat": 36.9604623674712,
       "lng": 129.092438263386,
       "id": "poi_전곡리대피소_6snep5",
-      "is_official": true
+      "is_official": true,
+      "phone": "054-780-3900",
+      "photo_url": "https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "상시 개방 (야영 가능)",
+      "memo": "예약: 숲나들e(https://www.foresttrip.go.kr) | 문의: 054-780-3900",
+      "categories": [
+        "shelter",
+        "lodging",
+        "toilet"
+      ]
     },
     {
-      "name": "전곡리",
-      "description": "경상북도 울진군 금강송면에 속하며 전곡리의 북쪽에는 백병산(白柄山), 오미산(梧味山) 등이 높이 솟아 있습니다. 이 들 사이에서 발원한 여러 물줄기는 서쪽에 위치한 태백산맥 준령의 계곡인 낙동강 상류 등 하천으로 흘러 들고 있습니다. *출처: 한국학중앙연구원 - 향토문화전자대전 큰넓재 큰넓재는 십이령재 중 하나로 태백산 준령에 둘러싸인 산간오지이며 산꼭대기에 위치합니다. 한나무재의 서쪽에서 전곡리로 넘어가는 고개입니다. 울진시장에 온 상인들이 내륙지방 봉화군 춘양시장으로 통하는 십이령 중의 하나로 넓재에 인가가 있어서 쉬어가기도 하였습니다. *출처: 한국학중앙연구원 - 향토문화전자대전 소광2리 울진군 금강송면의 지역으로서, 1916년 3월 1일 후곡동(後谷洞)·소조동·광천동이 통합되어 소광리로 개편되었습니다. *출처: 한국학중앙연구원 - 향토문화전자대전",
-      "category": "other",
+      "name": "동서트레일 전곡리안내소",
+      "description": "울진 금강소나무숲길 서쪽 기점인 금강송면 전곡리에 위치한 동서트레일 거점 안내소입니다. 국유림 숲길 출입 및 예약 안내를 담당합니다.",
+      "category": "cert_center",
       "lat": 36.9598737715399,
       "lng": 129.091611598193,
       "id": "poi_전곡리_xyy3p",
-      "is_official": true
+      "is_official": true,
+      "phone": "054-780-3900",
+      "photo_url": "https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "09:00 ~ 18:00",
+      "memo": "홈페이지: https://www.foresttrip.go.kr | 문의: 울진국유림관리소(054-780-3900)",
+      "categories": [
+        "cert_center",
+        "lodging",
+        "toilet"
+      ]
     }
   ],
   "points": [

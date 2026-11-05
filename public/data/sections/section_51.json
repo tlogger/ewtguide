@@ -25,13 +25,22 @@
   },
   "pois": [
     {
-      "name": "척구마을간이대피소 : 경북 봉화군 소천면 분천리 2102 (위․경도 : 36.95112, 129.06065)",
-      "description": "백패킹, 화장실",
-      "category": "toilet",
+      "name": "척구마을간이대피소",
+      "description": "청정 봉화 소천면 분천리 척구마을 오지 숲길에 위치한 백패킹 간이대피소입니다. 깊은 산속 고요한 야영과 휴식이 가능합니다.",
+      "category": "shelter",
       "lat": 36.95112,
       "lng": 129.06065,
       "id": "poi_척구마을간이_m0ond1",
-      "is_official": true
+      "is_official": true,
+      "phone": "054-679-6382",
+      "photo_url": "https://images.unsplash.com/photo-1426604966848-d7adac402bff?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "상시 개방",
+      "memo": "문의: 봉화군 산림녹지과(054-679-6382)",
+      "categories": [
+        "shelter",
+        "lodging",
+        "toilet"
+      ]
     },
     {
       "name": "분천역",

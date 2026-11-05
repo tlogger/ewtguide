@@ -25,13 +25,22 @@
   },
   "pois": [
     {
-      "name": "영탑사대피소 : 충남 당진시 면천면 성하리557",
-      "description": "백패킹장, 화장실, 급수시설 고풍리대피소(조성중) : 충남 서산시 운산면 고풍리 323 백패킹장, 화장실, 급수시설",
-      "category": "toilet",
+      "name": "영탑사대피소",
+      "description": "당진 아미산-다솔산 자락 고찰 영탑사 인근에 조성된 산림 야영 대피소입니다. 화장실, 급수시설 및 백패킹 쉼터 공간이 완비되어 있습니다.",
+      "category": "shelter",
       "lat": 36.80972246281,
       "lng": 126.650850446827,
       "id": "poi_영탑사대피소_i9mktz",
-      "is_official": true
+      "is_official": true,
+      "phone": "041-356-3244",
+      "photo_url": "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "상시 개방",
+      "memo": "문의: 영탑사(041-356-3244) / 당진시 산림녹지과(041-350-4181)",
+      "categories": [
+        "shelter",
+        "lodging",
+        "toilet"
+      ]
     },
     {
       "name": "삼웅2리",

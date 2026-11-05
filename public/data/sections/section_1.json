@@ -25,13 +25,22 @@
   },
   "pois": [
     {
-      "name": "동서트레일 태안안내소 : 충남 태안군 안면읍 승언리 339-355",
-      "description": "안내시설, 화장실, 급수시설",
+      "name": "동서트레일 태안안내소",
+      "description": "동서트레일 849km 한반도 횡단 대장정의 서쪽 기점인 안면도 꽃지해변에 자리잡은 공식 거점 안내소입니다. 안내데스크, 스탬프 인증대, 화장실, 급수시설, 백패킹 쉼터를 완비하고 있습니다.",
       "category": "cert_center",
       "lat": 36.5034951283247,
       "lng": 126.336591032566,
       "id": "poi_동서트레일태_p3px44",
-      "is_official": true
+      "is_official": true,
+      "phone": "1588-3250",
+      "photo_url": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "연중무휴 09:00 ~ 18:00",
+      "memo": "홈페이지: https://www.foresttrip.go.kr | 문의: 숲나들e(1588-3250), 태안군청(041-670-2114)",
+      "categories": [
+        "cert_center",
+        "lodging",
+        "toilet"
+      ]
     },
     {
       "name": "안면도자연휴양림",

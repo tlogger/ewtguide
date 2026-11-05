@@ -25,13 +25,22 @@
   },
   "pois": [
     {
-      "name": "동서트레일 문경안내소 : 경북 문경시 가은읍 왕궁리 432-17",
-      "description": "안내시설, 화장실, 급수시설",
+      "name": "동서트레일 문경안내소",
+      "description": "문경에코랄라와 가은아자개시장 인근에 위치한 경북 문경 거점 안내소입니다. 문경새재와 선유동계곡으로 이어지는 숲길 탐방 정보를 제공합니다.",
       "category": "cert_center",
       "lat": 36.664047,
       "lng": 128.080922,
       "id": "poi_동서트레일문_5ivg29",
-      "is_official": true
+      "is_official": true,
+      "phone": "054-550-6575",
+      "photo_url": "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "09:00 ~ 18:00",
+      "memo": "홈페이지: https://www.gbmg.go.kr | 문의: 문경시 산림녹지과(054-550-6575)",
+      "categories": [
+        "cert_center",
+        "lodging",
+        "toilet"
+      ]
     },
     {
       "name": "문경에코월드",

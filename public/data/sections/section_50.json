@@ -25,22 +25,40 @@
   },
   "pois": [
     {
-      "name": "동서트레일 분천안내소 : 경북 봉화군 소천면 분천리 935-81",
-      "description": "안내시설, 화장실, 급수시설",
+      "name": "동서트레일 분천안내소",
+      "description": "분천역 산타마을 및 낙동정맥트레일 시발점에 위치한 이국적인 동서트레일 거점 안내센터입니다. 트레일 정보 안내와 스탬프 투어를 운영합니다.",
       "category": "cert_center",
       "lat": 36.9311651208379,
       "lng": 129.056705269595,
       "id": "poi_동서트레일분_b4s77p",
-      "is_official": true
+      "is_official": true,
+      "phone": "1588-3250",
+      "photo_url": "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "09:00 ~ 18:00",
+      "memo": "홈페이지: https://www.foresttrip.go.kr | 문의: 숲나들e(1588-3250)",
+      "categories": [
+        "cert_center",
+        "lodging",
+        "toilet"
+      ]
     },
     {
-      "name": "현동3리마을숲간이대피소 : 경북 봉화군 소천면 현동리 103-1",
-      "description": "백패킹, 화장실, 가스스토브 사용 가능",
-      "category": "toilet",
+      "name": "현동3리마을숲간이대피소",
+      "description": "봉화 소천면 현동3리 아름다운 마을숲에 마련된 백패킹 쉼터 대피소입니다. 화장실과 가스스토브 조리가 가능합니다.",
+      "category": "shelter",
       "lat": 36.9502238522943,
       "lng": 129.028566537383,
       "id": "poi_현동3리마을_q615fx",
-      "is_official": true
+      "is_official": true,
+      "phone": "054-679-6382",
+      "photo_url": "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "상시 개방",
+      "memo": "문의: 봉화군 산림녹지과(054-679-6382)",
+      "categories": [
+        "shelter",
+        "lodging",
+        "toilet"
+      ]
     },
     {
       "name": "현동삼거리",

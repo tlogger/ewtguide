@@ -48,7 +48,8 @@ import {
   FlaskConical,
   Volume2,
   VolumeX,
-  Compass
+  Target,
+  Globe
 } from 'lucide-react';
 
 const KAKAO_APP_KEY = import.meta.env.VITE_KAKAO_MAP_API_KEY || '61ebf0b7a0daf24cba357d92677c8d8a';
@@ -124,6 +125,15 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
   };
   const [hoveredPoint, setHoveredPoint] = useState<TrailPoint | null>(null);
   const [hoverCoord, setHoverCoord] = useState<{ x: number; y: number } | null>(null);
+  const elevationReturnTimerRef = useRef<any>(null);
+
+  // Multi-Target Selection State for Facilities
+  const [targetFacilityIds, setTargetFacilityIds] = useState<string[]>([]);
+  const toggleTargetFacility = (id: string) => {
+    setTargetFacilityIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
 
   // Adjacent 4 Sections (N-2, N-1, N+1, N+2) State
   const [allSectionsOverview, setAllSectionsOverview] = useState<any[]>([]);
@@ -484,6 +494,16 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
   // Combine official + user facilities (userFacilities already holds merged list from Supabase DB)
   const allFacilities: POI[] = userFacilities.length > 0 ? userFacilities : (section.pois || []);
 
+  // Active user position (Virtual test mock location or real GPS)
+  const activePosition = isTestMode && mockLocation ? mockLocation : userLocation;
+
+  // Nearest trail point for current position (synchronizes with elevation profile)
+  const currentNearestTrailPoint = useMemo(() => {
+    if (!activePosition || !section.points || section.points.length === 0) return null;
+    const res = findNearestTrailPoint(activePosition, section.points);
+    return res ? (res.nearest as TrailPoint) : null;
+  }, [activePosition, section.points]);
+
   // Path coordinates for Kakao Polyline
   const kakaoPath = useMemo(() => {
     return (section.points || []).map((p) => ({ lat: p.lat, lng: p.lng }));
@@ -789,16 +809,58 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     return { linePath: lPath, areaPath: aPath };
   }, [elevationSamples, minEle, maxEle]);
 
+  // Current user position projected onto the elevation SVG chart
+  const currentNearestSvgX = useMemo(() => {
+    if (!currentNearestTrailPoint || elevationSamples.length < 2) return null;
+    let closestIdx = 0;
+    let minD = Infinity;
+    elevationSamples.forEach((p, idx) => {
+      const d = Math.abs(p.dist - currentNearestTrailPoint.dist);
+      if (d < minD) {
+        minD = d;
+        closestIdx = idx;
+      }
+    });
+    return (closestIdx / (elevationSamples.length - 1)) * chartWidth;
+  }, [currentNearestTrailPoint, elevationSamples]);
+
+  // 5-Second Return Timer for Elevation Profile
+  const scheduleElevationReturn = () => {
+    if (elevationReturnTimerRef.current) {
+      clearTimeout(elevationReturnTimerRef.current);
+    }
+    elevationReturnTimerRef.current = setTimeout(() => {
+      setHoveredPoint(null);
+      setHoverCoord(null);
+      // 복귀 시 현재 위치(또는 최근접 트레일 지점)로 지도 중심 부드럽게 이동
+      if (activePosition && kakaoMapRef.current) {
+        const returnLatLon = new window.kakao.maps.LatLng(activePosition.lat, activePosition.lng);
+        kakaoMapRef.current.panTo(returnLatLon);
+      }
+    }, 5000);
+  };
+
   // Elevation SVG Hover & Mobile Touch tracking
   const updateElevationPoint = (clientX: number, clientY: number, target: SVGSVGElement | HTMLElement) => {
     if (elevationSamples.length === 0) return;
+    if (elevationReturnTimerRef.current) {
+      clearTimeout(elevationReturnTimerRef.current);
+      elevationReturnTimerRef.current = null;
+    }
     const rect = target.getBoundingClientRect();
     const relX = clientX - rect.left;
     const relY = clientY - rect.top;
     const ratio = Math.max(0, Math.min(1, relX / rect.width));
     const index = Math.min(elevationSamples.length - 1, Math.floor(ratio * elevationSamples.length));
-    setHoveredPoint(elevationSamples[index]);
+    const pt = elevationSamples[index];
+    setHoveredPoint(pt);
     setHoverCoord({ x: ratio * chartWidth, y: relY });
+
+    // 지도를 사용자가 찍은 고도 위치로 부드럽게 이동
+    if (kakaoMapRef.current && pt) {
+      const targetLatLon = new window.kakao.maps.LatLng(pt.lat, pt.lng);
+      kakaoMapRef.current.panTo(targetLatLon);
+    }
   };
 
   const handleSvgPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -810,6 +872,10 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     if (e.pointerType === 'mouse' || e.buttons > 0) {
       updateElevationPoint(e.clientX, e.clientY, e.currentTarget);
     }
+  };
+
+  const handleSvgPointerUp = () => {
+    scheduleElevationReturn();
   };
 
   const handleSvgTouchStart = (e: React.TouchEvent<SVGSVGElement>) => {
@@ -824,6 +890,10 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
     if (e.touches.length > 0) {
       updateElevationPoint(e.touches[0].clientX, e.touches[0].clientY, e.currentTarget);
     }
+  };
+
+  const handleSvgTouchEnd = () => {
+    scheduleElevationReturn();
   };
 
   return (
@@ -982,42 +1052,74 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
             {/* Facility Markers */}
             {allFacilities.map((fac, idx) => {
               if (!fac.lat || !fac.lng) return null;
+              const facKey = fac.id || `fac-${idx}`;
+              const isTarget = targetFacilityIds.includes(facKey);
               
               // 다중 카테고리 목록 정규화 (fac.categories 우선, 없으면 fac.category 단일)
               const catList: FacilityCategory[] = Array.isArray(fac.categories) && fac.categories.length > 0
                 ? (fac.categories as FacilityCategory[])
                 : [(fac.category as FacilityCategory) || 'other'];
 
+              // 목표 시설인 경우 현재 위치에서의 거리 & 시간 계산
+              let targetDistInfo: { distText: string; timeText: string } | null = null;
+              if (activePosition) {
+                const dMeters = getDistanceMeters(activePosition.lat, activePosition.lng, fac.lat, fac.lng);
+                const dText = dMeters >= 1000 ? `${(dMeters / 1000).toFixed(1)}km` : `${dMeters}m`;
+                const walkMin = Math.round((dMeters / 1000) * 15);
+                const tText = walkMin >= 60 ? `${Math.floor(walkMin / 60)}시간 ${walkMin % 60}분` : `${walkMin}분`;
+                targetDistInfo = { distText: dText, timeText: tText };
+              }
+
               return (
                 <CustomOverlayMap
-                  key={fac.id || idx}
+                  key={facKey}
                   position={{ lat: fac.lat, lng: fac.lng }}
-                  yAnchor={1.1}
+                  xAnchor={0.5}
+                  yAnchor={1.0}
+                  zIndex={isTarget ? 35 : 25}
                 >
                   <div
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedFacility(fac);
                     }}
-                    className="flex flex-col items-center group cursor-pointer hover:scale-110 hover:z-30 transition-all select-none"
+                    className="flex flex-col items-center group cursor-pointer hover:scale-115 hover:z-40 transition-transform select-none"
                   >
-                    {/* 상단: 약간 더 커진 시설 아이콘 뱃지들 (여러 개일 경우 가로 나열) */}
-                    <div className="flex items-center -space-x-1.5 p-0.5 bg-white/95 rounded-full shadow-md border border-slate-300 group-hover:border-emerald-500 transition-colors">
+                    {/* 목표 설정 뱃지 (목표로 지정된 시설일 때) */}
+                    {isTarget && targetDistInfo && (
+                      <div className="mb-0.5 px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[9px] shadow-lg border border-white whitespace-nowrap animate-bounce flex items-center gap-1 z-30">
+                        <span>🎯 {targetDistInfo.distText}</span>
+                        <span className="text-[8px] opacity-80">({targetDistInfo.timeText})</span>
+                      </div>
+                    )}
+
+                    {/* 상단: 시설명 라벨 캡슐 */}
+                    <div className="mb-0.5 px-1.5 py-0.5 bg-slate-900/90 text-white font-bold text-[9.5px] rounded-md shadow-md border border-slate-700/80 whitespace-nowrap leading-tight group-hover:bg-emerald-700 transition-colors">
+                      {fac.name}
+                    </div>
+
+                    {/* 중앙: 원형 시설 아이콘 뱃지 */}
+                    <div className={`flex items-center -space-x-1.5 p-1 rounded-full shadow-lg border-2 transition-all ${
+                      isTarget
+                        ? 'bg-amber-400 border-amber-300 ring-2 ring-amber-500 scale-105'
+                        : 'bg-white border-slate-300 group-hover:border-emerald-500'
+                    }`}>
                       {catList.map((catKey, cIdx) => (
                         <CategoryIcon
                           key={`${catKey}-${cIdx}`}
                           category={catKey}
                           size="sm"
                           variant="solid"
-                          className="border border-white shadow-xs"
                         />
                       ))}
                     </div>
 
-                    {/* 하단: 줄바꿈된 시설명 라벨 캡슐 */}
-                    <div className="mt-0.5 px-2 py-0.5 bg-slate-900/90 text-white font-bold text-[10px] sm:text-[11px] rounded-md shadow-md border border-slate-700/80 whitespace-nowrap leading-tight group-hover:bg-emerald-700 group-hover:border-emerald-400 transition-colors">
-                      {fac.name}
-                    </div>
+                    {/* 하단: 정밀 앵커 핀 화살표 꼭지점 (yAnchor=1.0이 정확히 가리키는 지점!) */}
+                    <div className={`w-2.5 h-2.5 rotate-45 -mt-1.5 shadow-sm border-r-2 border-b-2 z-10 ${
+                      isTarget
+                        ? 'bg-amber-400 border-amber-500'
+                        : 'bg-white border-slate-300 group-hover:bg-emerald-500 group-hover:border-emerald-600'
+                    }`} />
                   </div>
                 </CustomOverlayMap>
               );
@@ -1026,28 +1128,66 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
             {/* Adjacent Sections POIs (Excluding Start and End Points) */}
             {adjacentPois.map((fac, idx) => {
               if (!fac.lat || !fac.lng) return null;
+              const facKey = fac.id || `adj-${idx}`;
+              const isTarget = targetFacilityIds.includes(facKey);
+
               const catList: FacilityCategory[] = Array.isArray(fac.categories) && fac.categories.length > 0
                 ? (fac.categories as FacilityCategory[])
                 : [(fac.category as FacilityCategory) || 'other'];
 
+              let targetDistInfo: { distText: string; timeText: string } | null = null;
+              if (activePosition) {
+                const dMeters = getDistanceMeters(activePosition.lat, activePosition.lng, fac.lat, fac.lng);
+                const dText = dMeters >= 1000 ? `${(dMeters / 1000).toFixed(1)}km` : `${dMeters}m`;
+                const walkMin = Math.round((dMeters / 1000) * 15);
+                const tText = walkMin >= 60 ? `${Math.floor(walkMin / 60)}시간 ${walkMin % 60}분` : `${walkMin}분`;
+                targetDistInfo = { distText: dText, timeText: tText };
+              }
+
               return (
                 <CustomOverlayMap
-                  key={`adj-poi-${fac.id || idx}`}
+                  key={`adj-poi-${facKey}`}
                   position={{ lat: fac.lat, lng: fac.lng }}
-                  yAnchor={1.1}
-                  zIndex={28}
+                  xAnchor={0.5}
+                  yAnchor={1.0}
+                  zIndex={isTarget ? 35 : 28}
                 >
                   <div
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedFacility(fac);
                     }}
-                    className="flex flex-col items-center group cursor-pointer hover:scale-110 hover:z-30 transition-all select-none opacity-90 hover:opacity-100"
+                    className="flex flex-col items-center group cursor-pointer hover:scale-115 hover:z-40 transition-transform select-none opacity-90 hover:opacity-100"
                   >
-                    {/* 상단: 인접 구간 고유 색상 링이 둘러진 소형 아이콘 */}
+                    {/* 목표 설정 뱃지 (목표로 지정된 시설일 때) */}
+                    {isTarget && targetDistInfo && (
+                      <div className="mb-0.5 px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[9px] shadow-lg border border-white whitespace-nowrap animate-bounce flex items-center gap-1 z-30">
+                        <span>🎯 {targetDistInfo.distText}</span>
+                        <span className="text-[8px] opacity-80">({targetDistInfo.timeText})</span>
+                      </div>
+                    )}
+
+                    {/* 상단: 시설명 라벨 (인접 구간 번호 태그 포함) */}
+                    <div className="mb-0.5 px-1.5 py-0.5 bg-slate-900/85 text-slate-200 font-semibold text-[9px] rounded-md shadow border border-slate-700/60 whitespace-nowrap leading-tight group-hover:bg-slate-800 transition-colors flex items-center gap-1">
+                      {fac.sectionName && (
+                        <span
+                          style={{ color: fac.sectionColor || '#38bdf8' }}
+                          className="font-bold text-[8.5px]"
+                        >
+                          {fac.sectionName}
+                        </span>
+                      )}
+                      <span>{fac.name}</span>
+                    </div>
+
+                    {/* 중앙: 원형 아이콘 뱃지 */}
                     <div
                       style={{ borderColor: fac.sectionColor || '#94a3b8' }}
-                      className="flex items-center -space-x-1 p-0.5 bg-white/95 rounded-full shadow border-2 group-hover:scale-105 transition-transform"
+                      className={`flex items-center -space-x-1 p-0.5 rounded-full shadow border-2 transition-transform ${
+                        isTarget
+                          ? 'bg-amber-400 border-amber-300 ring-2 ring-amber-500 scale-105'
+                          : 'bg-white/95 group-hover:scale-105'
+                      }`}
                     >
                       {catList.map((catKey, cIdx) => (
                         <CategoryIcon
@@ -1060,18 +1200,11 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
                       ))}
                     </div>
 
-                    {/* 하단: 시설명 라벨 (인접 구간 번호 소형 태그 포함) */}
-                    <div className="mt-0.5 px-1.5 py-0.5 bg-slate-900/85 text-slate-200 font-semibold text-[9.5px] rounded-md shadow border border-slate-700/60 whitespace-nowrap leading-tight group-hover:bg-slate-800 transition-colors flex items-center gap-1">
-                      {fac.sectionName && (
-                        <span
-                          style={{ color: fac.sectionColor || '#38bdf8' }}
-                          className="font-bold text-[8.5px]"
-                        >
-                          {fac.sectionName}
-                        </span>
-                      )}
-                      <span>{fac.name}</span>
-                    </div>
+                    {/* 하단: 정밀 앵커 핀 화살표 꼭지점 */}
+                    <div
+                      style={{ backgroundColor: fac.sectionColor || '#94a3b8', borderColor: '#ffffff' }}
+                      className="w-2.5 h-2.5 rotate-45 -mt-1.5 shadow-sm border-r border-b z-10"
+                    />
                   </div>
                 </CustomOverlayMap>
               );
@@ -1151,13 +1284,12 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
                 <CustomOverlayMap position={mockLocation} yAnchor={1.15} zIndex={50}>
                   <div className="flex flex-col items-center select-none animate-in zoom-in-90 duration-150">
                     <div
-                      className={`px-2.5 py-1 rounded-xl shadow-xl border-2 border-white text-white font-black text-xs flex items-center gap-1.5 whitespace-nowrap ${
+                      className={`px-2.5 py-1 rounded-xl shadow-xl border-2 border-white text-white font-black text-xs flex items-center justify-center whitespace-nowrap ${
                         testNearestPoint.distance > 50
                           ? 'bg-rose-600 animate-bounce'
                           : 'bg-purple-600'
                       }`}
                     >
-                      <Compass className="w-3.5 h-3.5" />
                       <span>
                         {testBearingInfo ? `${testBearingInfo.arrow} ` : ''}{testNearestPoint.distance}m
                       </span>
@@ -1475,11 +1607,15 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
               <span className={`font-bold px-2 py-0.5 rounded-md text-[10px] shadow-xs transition-all ${
                 hoveredPoint
                   ? 'bg-amber-400 text-slate-950 font-black border-2 border-amber-300 scale-105'
-                  : 'text-emerald-300 bg-slate-900/80 border border-emerald-500/30'
+                  : currentNearestTrailPoint
+                    ? 'bg-emerald-500/20 text-emerald-300 font-extrabold border border-emerald-400/50'
+                    : 'text-emerald-300 bg-slate-900/80 border border-emerald-500/30'
               }`}>
                 {hoveredPoint
                   ? `📍 ${hoveredPoint.dist}km 지점 · ${hoveredPoint.ele}m`
-                  : `최고 ${section.max_elevation_m || maxEle}m · 최저 ${section.min_elevation_m || minEle}m`}
+                  : currentNearestTrailPoint
+                    ? `📍 현위치 ${currentNearestTrailPoint.dist}km · ${currentNearestTrailPoint.ele}m`
+                    : `최고 ${section.max_elevation_m || maxEle}m · 최저 ${section.min_elevation_m || minEle}m`}
               </span>
             </div>
 
@@ -1496,7 +1632,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
               <X className="w-3.5 h-3.5" />
             </button>
 
-            {/* SVG Chart (Touch drag enabled for mobile apps & pointer support) */}
+            {/* SVG Chart (Touch drag enabled for mobile apps & pointer support, 5s return) */}
             <svg
               viewBox={`0 0 ${chartWidth} ${chartHeight}`}
               preserveAspectRatio="none"
@@ -1504,12 +1640,13 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
               style={{ touchAction: 'none' }}
               onPointerDown={handleSvgPointerDown}
               onPointerMove={handleSvgPointerMove}
+              onPointerUp={handleSvgPointerUp}
               onTouchStart={handleSvgTouchStart}
               onTouchMove={handleSvgTouchMove}
+              onTouchEnd={handleSvgTouchEnd}
               onPointerLeave={(e) => {
                 if (e.pointerType === 'mouse') {
-                  setHoveredPoint(null);
-                  setHoverCoord(null);
+                  scheduleElevationReturn();
                 }
               }}
             >
@@ -1532,6 +1669,30 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
               {/* Area fill */}
               {areaPath && (
                 <path d={areaPath} fill="url(#elevationGrad)" />
+              )}
+
+              {/* Synchronized Current User Location Indicator on Chart (when not dragging) */}
+              {!hoverCoord && currentNearestSvgX !== null && (
+                <g pointerEvents="none" className="animate-in fade-in duration-200">
+                  <line
+                    x1={currentNearestSvgX}
+                    y1={0}
+                    x2={currentNearestSvgX}
+                    y2={chartHeight}
+                    stroke="#10b981"
+                    strokeWidth="2"
+                    strokeDasharray="3 3"
+                    opacity="0.9"
+                  />
+                  <circle
+                    cx={currentNearestSvgX}
+                    cy={10}
+                    r={4}
+                    fill="#10b981"
+                    stroke="#ffffff"
+                    strokeWidth="1.5"
+                  />
+                </g>
               )}
 
               {/* Symmetric high-contrast neon vertical band around drag line */}
@@ -1599,98 +1760,162 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
       </div>
 
       {/* Facility Selected Popup Modal with Photo Support */}
-      {selectedFacility && (
-        <div
-          onPointerDown={(e) => e.stopPropagation()}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
-        >
-          <div className="bg-slate-900 border border-slate-700 rounded-3xl p-5 max-w-sm w-full shadow-2xl space-y-3.5 text-white animate-in zoom-in-95 duration-150">
-            {/* Header */}
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {(selectedFacility.categories && selectedFacility.categories.length > 0
-                    ? selectedFacility.categories
-                    : [selectedFacility.category]
-                  ).map((cat) => (
-                    <span
-                      key={cat}
-                      className="text-[11px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold px-2 py-0.5 rounded"
-                    >
-                      {getCategoryLabel(cat)}
-                    </span>
-                  ))}
+      {selectedFacility && (() => {
+        const facKey = selectedFacility.id || selectedFacility.name;
+        const isTarget = targetFacilityIds.includes(facKey);
+        let targetDistInfo: { distText: string; timeText: string } | null = null;
+        if (activePosition && selectedFacility.lat && selectedFacility.lng) {
+          const dMeters = getDistanceMeters(activePosition.lat, activePosition.lng, selectedFacility.lat, selectedFacility.lng);
+          const dText = dMeters >= 1000 ? `${(dMeters / 1000).toFixed(1)}km` : `${dMeters}m`;
+          const walkMin = Math.round((dMeters / 1000) * 15);
+          const tText = walkMin >= 60 ? `${Math.floor(walkMin / 60)}시간 ${walkMin % 60}분` : `${walkMin}분`;
+          targetDistInfo = { distText: dText, timeText: tText };
+        }
+
+        return (
+          <div
+            onPointerDown={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+          >
+            <div className="bg-slate-900 border border-slate-700 rounded-3xl p-5 max-w-sm w-full shadow-2xl space-y-3.5 text-white animate-in zoom-in-95 duration-150">
+              {/* Header */}
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {(selectedFacility.categories && selectedFacility.categories.length > 0
+                      ? selectedFacility.categories
+                      : [selectedFacility.category]
+                    ).map((cat) => (
+                      <span
+                        key={cat}
+                        className="text-[11px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold px-2 py-0.5 rounded"
+                      >
+                        {getCategoryLabel(cat)}
+                      </span>
+                    ))}
+                  </div>
+                  <h3 className="text-lg font-black text-white mt-1.5">
+                    {selectedFacility.name}
+                  </h3>
                 </div>
-                <h3 className="text-lg font-black text-white mt-1.5">
-                  {selectedFacility.name}
-                </h3>
-              </div>
-              <button
-                onClick={() => setSelectedFacility(null)}
-                className="text-slate-400 hover:text-white text-xl font-bold p-1 cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Photo Preview if Available */}
-            {selectedFacility.photo_url ? (
-              <div className="w-full h-44 rounded-2xl overflow-hidden border border-slate-700 shadow-inner bg-slate-950">
-                <img
-                  src={selectedFacility.photo_url}
-                  alt={selectedFacility.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ) : (
-              <div className="w-full py-4 rounded-xl border border-dashed border-slate-800 flex items-center justify-center gap-2 text-slate-500 text-xs">
-                <Camera className="w-4 h-4" />
-                <span>등록된 사진 없음</span>
-              </div>
-            )}
-
-            {/* Description & Memo */}
-            {selectedFacility.description && (
-              <p className="text-xs text-slate-300 leading-relaxed">
-                {selectedFacility.description}
-              </p>
-            )}
-            {selectedFacility.memo && (
-              <p className="text-xs bg-slate-800 text-emerald-300 p-2.5 rounded-xl border border-slate-700">
-                💡 {selectedFacility.memo}
-              </p>
-            )}
-
-            {/* Actions: Phone & Edit & Delete */}
-            <div className="flex items-center gap-2 pt-1">
-              {selectedFacility.phone && (
-                <a
-                  href={`tel:${selectedFacility.phone}`}
-                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                <button
+                  onClick={() => setSelectedFacility(null)}
+                  className="text-slate-400 hover:text-white text-xl font-bold p-1 cursor-pointer"
                 >
-                  <Phone className="w-3.5 h-3.5" />
-                  <span>전화걸기</span>
-                </a>
+                  ✕
+                </button>
+              </div>
+
+              {/* Target Designated Distance & Time Card */}
+              {isTarget && targetDistInfo && (
+                <div className="p-3 bg-gradient-to-r from-amber-500/20 via-orange-500/10 to-transparent border border-amber-500/50 rounded-2xl flex items-center gap-2.5 text-xs animate-in fade-in duration-150">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/30 border border-amber-400/60 flex items-center justify-center text-base">
+                    🎯
+                  </div>
+                  <div>
+                    <div className="font-black text-amber-300">목표 시설로 지정됨</div>
+                    <div className="text-[11px] text-slate-300">
+                      현 위치에서 <strong className="text-white">{targetDistInfo.distText}</strong> · 예상 소요시간 <strong className="text-white">{targetDistInfo.timeText}</strong>
+                    </div>
+                  </div>
+                </div>
               )}
-              <button
-                onClick={() => handleOpenEditFacility(selectedFacility)}
-                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <Edit3 className="w-3.5 h-3.5 text-emerald-400" />
-                <span>수정</span>
-              </button>
-              <button
-                onClick={() => setFacilityToDelete(selectedFacility)}
-                className="px-3.5 py-2.5 bg-rose-950/70 hover:bg-rose-900 border border-rose-800/80 text-rose-300 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                title="시설 삭제"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>삭제</span>
-              </button>
+
+              {/* Photo Preview if Available */}
+              {selectedFacility.photo_url ? (
+                <div className="w-full h-44 rounded-2xl overflow-hidden border border-slate-700 shadow-inner bg-slate-950">
+                  <img
+                    src={selectedFacility.photo_url}
+                    alt={selectedFacility.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="w-full py-4 rounded-xl border border-dashed border-slate-800 flex items-center justify-center gap-2 text-slate-500 text-xs">
+                  <Camera className="w-4 h-4" />
+                  <span>등록된 사진 없음</span>
+                </div>
+              )}
+
+              {/* Description & Memo */}
+              {selectedFacility.description && (
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  {selectedFacility.description}
+                </p>
+              )}
+              {selectedFacility.memo && (
+                <p className="text-xs bg-slate-800 text-emerald-300 p-2.5 rounded-xl border border-slate-700">
+                  💡 {selectedFacility.memo}
+                </p>
+              )}
+
+              {/* Actions: Target Setting + Phone + Edit (Icon) + Delete (Icon) */}
+              <div className="flex items-center gap-2 pt-1">
+                {/* 1. 목표 설정 토글 버튼 */}
+                <button
+                  onClick={() => toggleTargetFacility(facKey)}
+                  className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer ${
+                    isTarget
+                      ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 font-black ring-2 ring-amber-300'
+                      : 'bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40'
+                  }`}
+                  title={isTarget ? '목표 해제' : '목표 설정'}
+                >
+                  <Target className="w-4 h-4" />
+                  <span>{isTarget ? '목표 해제' : '목표 설정'}</span>
+                </button>
+
+                {/* 2. 전화걸기 버튼 (있을 경우) */}
+                {selectedFacility.phone && (
+                  <a
+                    href={`tel:${selectedFacility.phone}`}
+                    className="p-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl flex items-center justify-center transition-colors shadow-xs"
+                    title={`전화걸기: ${selectedFacility.phone}`}
+                  >
+                    <Phone className="w-4 h-4" />
+                  </a>
+                )}
+
+                {/* 2-1. 홈페이지 바로가기 버튼 (있을 경우) */}
+                {(() => {
+                  const raw = `${selectedFacility.memo || ''} ${selectedFacility.description || ''}`;
+                  const match = raw.match(/https?:\/\/[^\s|)]+/);
+                  if (!match) return null;
+                  return (
+                    <a
+                      href={match[0]}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl flex items-center justify-center transition-colors shadow-xs"
+                      title={`홈페이지 바로가기 (${match[0]})`}
+                    >
+                      <Globe className="w-4 h-4" />
+                    </a>
+                  );
+                })()}
+
+                {/* 3. 수정 아이콘 버튼 */}
+                <button
+                  onClick={() => handleOpenEditFacility(selectedFacility)}
+                  className="p-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 rounded-xl flex items-center justify-center transition-colors cursor-pointer shadow-xs hover:border-emerald-500/50"
+                  title="시설 수정"
+                >
+                  <Edit3 className="w-4 h-4" />
+                </button>
+
+                {/* 4. 삭제 아이콘 버튼 */}
+                <button
+                  onClick={() => setFacilityToDelete(selectedFacility)}
+                  className="p-2.5 bg-rose-950/70 hover:bg-rose-900 border border-rose-800/80 text-rose-300 rounded-xl flex items-center justify-center transition-colors cursor-pointer shadow-xs hover:border-rose-600"
+                  title="시설 삭제"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* In-app Confirm Dialog for Facility Deletion */}
       {facilityToDelete && (

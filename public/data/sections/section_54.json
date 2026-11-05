@@ -25,13 +25,22 @@
   },
   "pois": [
     {
-      "name": "두천리대피소 : 경북 울진군 북면 두천리 230",
-      "description": "백패킹, 화장실, 가스스토브 사용 가능, 급수시설 들머리삼거리간이대피소 : 36.99694, 129.27579 (위도, 경도) 백패킹",
-      "category": "toilet",
+      "name": "두천리대피소",
+      "description": "조선 보부상 옛길이자 국가숲길인 울진 금강소나무숲길 1구간 출발점 두천리에 조성된 거점 대피소입니다. 야영 데크, 최신 화장실, 온수 샤워, 취사 편의를 완비하고 있습니다.",
+      "category": "shelter",
       "lat": 37.0353811605912,
       "lng": 129.290309693593,
       "id": "poi_두천리대피소_eca9or",
-      "is_official": true
+      "is_official": true,
+      "phone": "054-781-7118",
+      "photo_url": "https://images.unsplash.com/photo-1487730116645-74489c95b41b?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "상시 개방 (야영 가능)",
+      "memo": "홈페이지: https://www.uljintrail.or.kr | 문의: 금강소나무숲길(054-781-7118)",
+      "categories": [
+        "shelter",
+        "lodging",
+        "toilet"
+      ]
     },
     {
       "name": "두천1리",

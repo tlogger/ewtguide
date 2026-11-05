@@ -25,22 +25,40 @@
   },
   "pois": [
     {
-      "name": "동서트레일 서산안내소(조성중) : 충남 서산시 인지면 풍전리 23-4",
-      "description": "안내시설, 화장실, 급수시설",
+      "name": "동서트레일 서산안내소",
+      "description": "서산 풍전저수지 수변 산림공원에 위치한 동서트레일 서산 거점 안내센터입니다. 서산 숲길 지도, 완주 스탬프 날인, 편의시설 및 급수 안내를 제공합니다.",
       "category": "cert_center",
       "lat": 36.7850943836865,
       "lng": 126.432020601084,
       "id": "poi_동서트레일서_1ciyoh",
-      "is_official": true
+      "is_official": true,
+      "phone": "041-660-2441",
+      "photo_url": "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "09:00 ~ 18:00",
+      "memo": "홈페이지: https://www.seosan.go.kr | 문의: 서산시 산림공원과(041-660-2441)",
+      "categories": [
+        "cert_center",
+        "lodging",
+        "toilet"
+      ]
     },
     {
-      "name": "서산대피소(조성중) : 충남 서산시 인지면 풍전리 23-4",
-      "description": "백패킹장, 가스스토브 사용 가능, 서산안내소 시설 사용",
-      "category": "cert_center",
+      "name": "서산대피소 (풍전)",
+      "description": "서산안내소와 연계된 친환경 백패킹 야영 대피소입니다. 야영 데크와 안전 가스스토브 조리 공간, 화장실을 이용할 수 있습니다.",
+      "category": "shelter",
       "lat": 36.7850943836865,
       "lng": 126.432020601084,
       "id": "poi_서산대피소조_5ucahs",
-      "is_official": true
+      "is_official": true,
+      "phone": "041-660-2441",
+      "photo_url": "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "상시 개방 (야영 가능)",
+      "memo": "문의: 서산시 산림공원과(041-660-2441)",
+      "categories": [
+        "shelter",
+        "lodging",
+        "toilet"
+      ]
     },
     {
       "name": "팔봉산(어송리)",
