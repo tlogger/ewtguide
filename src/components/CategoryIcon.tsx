@@ -8,7 +8,8 @@ import {
   Info,
   ShoppingBag,
   MapPin,
-  HelpCircle
+  HelpCircle,
+  Home
 } from 'lucide-react';
 
 export interface CategoryMeta {
@@ -114,12 +115,12 @@ export const CATEGORY_DEFINITIONS: Record<FacilityCategory, CategoryMeta> = {
   },
   shelter: {
     key: 'shelter',
-    label: '기타',
-    bgClass: 'bg-slate-500',
-    textClass: 'text-slate-600',
-    borderClass: 'border-slate-400',
-    activeBgClass: 'bg-slate-700 text-white',
-    icon: HelpCircle
+    label: '대피소',
+    bgClass: 'bg-teal-600',
+    textClass: 'text-teal-700',
+    borderClass: 'border-teal-500',
+    activeBgClass: 'bg-teal-700 text-white',
+    icon: Home
   }
 };
 
@@ -129,6 +130,7 @@ export const SELECTABLE_CATEGORIES: CategoryMeta[] = [
   CATEGORY_DEFINITIONS.restaurant,
   CATEGORY_DEFINITIONS.transport,
   CATEGORY_DEFINITIONS.lodging,
+  CATEGORY_DEFINITIONS.shelter,
   CATEGORY_DEFINITIONS.cert_center,
   CATEGORY_DEFINITIONS.mart,
   CATEGORY_DEFINITIONS.toilet,

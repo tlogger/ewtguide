@@ -30,21 +30,21 @@ export const TitleScreenView: React.FC<TitleScreenViewProps> = ({
   };
 
   return (
-    <div className="min-h-screen w-full bg-slate-950 text-slate-100 flex flex-col items-center justify-center select-none relative overflow-hidden sm:p-4">
+    <div className="min-h-screen min-h-dvh w-full bg-slate-950 text-slate-100 flex flex-col items-center justify-center select-none relative overflow-hidden sm:p-4">
       {/* Modern Deep Ambient Glow */}
       <div className="absolute inset-0 bg-radial from-emerald-950/20 via-slate-950/80 to-slate-950 pointer-events-none z-0" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-72 bg-emerald-500/10 blur-3xl pointer-events-none z-0" />
 
       {/* Main Full-Screen (Mobile) & Card (Desktop) Map Artwork Container */}
-      <main className="relative z-10 w-full h-screen sm:h-auto sm:max-w-md mx-auto flex flex-col items-center justify-center">
+      <main className="relative z-10 w-full h-screen h-dvh sm:h-auto sm:max-w-md mx-auto flex flex-col items-center justify-center">
         <div className="relative w-full h-full sm:h-auto sm:rounded-3xl overflow-hidden shadow-2xl border-0 sm:border border-slate-800/80 bg-slate-950 flex flex-col">
           
           {/* Entire Title Image (Covers full screen on mobile, fit card on tablet/desktop) */}
-          <div className="relative w-full h-full min-h-screen sm:min-h-0 flex-1 flex items-center justify-center bg-slate-950">
+          <div className="relative w-full h-full min-h-screen min-h-dvh sm:min-h-0 flex-1 flex items-center justify-center bg-slate-950">
             <img
               src={`${import.meta.env.BASE_URL}images/title_screen.jpg`}
               alt="동서트레일 (서해의 노을, 동해의 일출)"
-              className="w-full h-full min-h-screen sm:min-h-0 max-h-screen sm:max-h-[82vh] object-cover sm:object-contain object-center sm:object-top block"
+              className="w-full h-full min-h-screen min-h-dvh sm:min-h-0 max-h-screen max-h-dvh sm:max-h-[82vh] object-cover sm:object-contain object-center sm:object-top block"
             />
 
             {/* 1. Login / Account Avatar Button Embedded INSIDE Title Image (Top Right) */}
@@ -87,7 +87,12 @@ export const TitleScreenView: React.FC<TitleScreenViewProps> = ({
             )}
 
             {/* 2. Embedded Bottom Action Controls & Skip Checkbox INSIDE Title Image Overlay */}
-            <div className="absolute inset-x-0 bottom-0 pt-10 pb-5 px-4 sm:px-5 bg-gradient-to-t from-slate-950 via-slate-950/85 to-transparent flex flex-col gap-3 z-20">
+            <div
+              style={{
+                paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))'
+              }}
+              className="absolute inset-x-0 bottom-0 pt-10 px-4 sm:px-5 bg-gradient-to-t from-slate-950 via-slate-950/85 to-transparent flex flex-col gap-3 z-20"
+            >
               {/* Action Buttons: '구간 목록' 및 '전체 지도' */}
               <div className="flex flex-row items-center gap-2.5">
                 <button

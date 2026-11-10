@@ -126,6 +126,16 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
   const [hoveredPoint, setHoveredPoint] = useState<TrailPoint | null>(null);
   const [hoverCoord, setHoverCoord] = useState<{ x: number; y: number } | null>(null);
   const elevationReturnTimerRef = useRef<any>(null);
+  const activePositionRef = useRef<{ lat: number; lng: number } | null>(null);
+
+  // Cleanup elevation return timer on unmount
+  useEffect(() => {
+    return () => {
+      if (elevationReturnTimerRef.current) {
+        clearTimeout(elevationReturnTimerRef.current);
+      }
+    };
+  }, []);
 
   // Multi-Target Selection State for Facilities
   const [targetFacilityIds, setTargetFacilityIds] = useState<string[]>([]);
@@ -496,6 +506,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
 
   // Active user position (Virtual test mock location or real GPS)
   const activePosition = isTestMode && mockLocation ? mockLocation : userLocation;
+  activePositionRef.current = activePosition;
 
   // Nearest trail point for current position (synchronizes with elevation profile)
   const currentNearestTrailPoint = useMemo(() => {
@@ -833,8 +844,9 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
       setHoveredPoint(null);
       setHoverCoord(null);
       // 복귀 시 현재 위치(또는 최근접 트레일 지점)로 지도 중심 부드럽게 이동
-      if (activePosition && kakaoMapRef.current) {
-        const returnLatLon = new window.kakao.maps.LatLng(activePosition.lat, activePosition.lng);
+      const pos = activePositionRef.current;
+      if (pos && kakaoMapRef.current && window.kakao?.maps) {
+        const returnLatLon = new window.kakao.maps.LatLng(pos.lat, pos.lng);
         kakaoMapRef.current.panTo(returnLatLon);
       }
     }, 5000);
@@ -1052,7 +1064,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
             {/* Facility Markers */}
             {allFacilities.map((fac, idx) => {
               if (!fac.lat || !fac.lng) return null;
-              const facKey = fac.id || `fac-${idx}`;
+              const facKey = getFacilityKey(fac);
               const isTarget = targetFacilityIds.includes(facKey);
               
               // 다중 카테고리 목록 정규화 (fac.categories 우선, 없으면 fac.category 단일)
@@ -1128,7 +1140,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
             {/* Adjacent Sections POIs (Excluding Start and End Points) */}
             {adjacentPois.map((fac, idx) => {
               if (!fac.lat || !fac.lng) return null;
-              const facKey = fac.id || `adj-${idx}`;
+              const facKey = getFacilityKey(fac);
               const isTarget = targetFacilityIds.includes(facKey);
 
               const catList: FacilityCategory[] = Array.isArray(fac.categories) && fac.categories.length > 0
@@ -1556,6 +1568,10 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
           setIsElevationOpen((prev) => {
             const next = !prev;
             if (!next) {
+              if (elevationReturnTimerRef.current) {
+                clearTimeout(elevationReturnTimerRef.current);
+                elevationReturnTimerRef.current = null;
+              }
               setHoveredPoint(null);
               setHoverCoord(null);
             }
@@ -1622,6 +1638,10 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
             {/* Close Button inside Chart */}
             <button
               onClick={() => {
+                if (elevationReturnTimerRef.current) {
+                  clearTimeout(elevationReturnTimerRef.current);
+                  elevationReturnTimerRef.current = null;
+                }
                 setIsElevationOpen(false);
                 setHoveredPoint(null);
                 setHoverCoord(null);
@@ -1761,7 +1781,7 @@ export const TrailMapView: React.FC<TrailMapViewProps> = ({
 
       {/* Facility Selected Popup Modal with Photo Support */}
       {selectedFacility && (() => {
-        const facKey = selectedFacility.id || selectedFacility.name;
+        const facKey = getFacilityKey(selectedFacility);
         const isTarget = targetFacilityIds.includes(facKey);
         let targetDistInfo: { distText: string; timeText: string } | null = null;
         if (activePosition && selectedFacility.lat && selectedFacility.lng) {
@@ -2043,8 +2063,16 @@ function getCategoryLabel(category?: string): string {
     case 'cert_center': return '안내소';
     case 'mart': return '마트';
     case 'toilet': return '화장실';
-    case 'shelter': return '기타';
+    case 'shelter': return '대피소';
     case 'other': return '기타';
     default: return '명소';
   }
+}
+
+export function getFacilityKey(fac: { id?: string; section_id?: number | string; name: string; lat?: number; lng?: number }): string {
+  if (fac.id) return fac.id;
+  const sec = fac.section_id ?? 'cur';
+  const latStr = fac.lat != null ? Number(fac.lat).toFixed(5) : '0';
+  const lngStr = fac.lng != null ? Number(fac.lng).toFixed(5) : '0';
+  return `poi-${sec}-${fac.name}-${latStr}-${lngStr}`;
 }

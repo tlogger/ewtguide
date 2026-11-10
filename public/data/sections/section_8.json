@@ -25,13 +25,22 @@
   },
   "pois": [
     {
-      "name": "내포문화숲길예산센터안내소 : 충남 예산군 덕산면 상가리 298",
-      "description": "안내시설, 화장실, 급수시설",
+      "name": "내포문화숲길 예산센터안내소",
+      "description": "사단법인 내포문화숲길 중앙사무국이자 가야산 들머리에 위치한 동서트레일 8구간 종합 안내소입니다. 숲길 해설 프로그램 및 상세 지도, 스탬프를 제공합니다.",
       "category": "cert_center",
       "lat": 36.7146069843796,
       "lng": 126.630652915287,
       "id": "poi_내포문화숲길_5jyrcp",
-      "is_official": true
+      "is_official": true,
+      "phone": "041-338-0773",
+      "photo_url": "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80",
+      "business_hours": "화~일 09:00 ~ 18:00 (월요일 휴무)",
+      "memo": "홈페이지: https://www.naepotrail.org | 전화: 041-338-0773",
+      "categories": [
+        "cert_center",
+        "lodging",
+        "toilet"
+      ]
     },
     {
       "name": "용현리",
