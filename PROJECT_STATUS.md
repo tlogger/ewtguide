@@ -54,9 +54,8 @@
     - 대피소 팝업 배지 및 `SELECTABLE_CATEGORIES` 지원, 목표 POI 식별 키 통합(`getFacilityKey`), 고도표 타이머 stale 클로저 및 언마운트 누수 차단
     - 첫 화면 모바일 뷰포트 최적화(`h-dvh`, Safe Area), 33/47/52/2구간 POI 중복·오염 데이터 무결성 복원
     - `update_shelters_info.cjs`: 퍼지 매칭 제거, 1:1 ID 매핑, `--dry-run` 모드 및 Supabase 페이징 기반 사용자 위키 편집본 보호 로직 탑재
-18. **Git Commit 연동 Vercel 원스톱 자동 배포 파이프라인 구축 (2026-11-14)**:
-    - `.githooks/post-commit` 및 `core.hooksPath` 연동: `git commit` 완료 즉시 GitHub 원격 저장소로 자동 푸시 트리거
-    - 별도의 `git push` 수동 입력 없이도 Vercel 프로덕션 웹(`https://ewtguide.vercel.app`) 자동 빌드 및 배포 완료 체계 확립
+18. **배포 정책 확립 (2026-11-14)**:
+    - 로컬 커밋은 자유롭게 유지하며, 사용자 요청("배포해줘") 시 원격 푸시 및 Vercel 프로덕션 배포(`https://ewtguide.vercel.app`)를 트리거하는 안전한 배포 제어 체계 확립
 
 ---
 
