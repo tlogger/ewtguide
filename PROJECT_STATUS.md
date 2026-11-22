@@ -56,6 +56,9 @@
     - `update_shelters_info.cjs`: 퍼지 매칭 제거, 1:1 ID 매핑, `--dry-run` 모드 및 Supabase 페이징 기반 사용자 위키 편집본 보호 로직 탑재
 18. **배포 정책 확립 (2026-11-14)**:
     - 로컬 커밋은 자유롭게 유지하며, 사용자 요청("배포해줘") 시 원격 푸시 및 Vercel 프로덕션 배포(`https://ewtguide.vercel.app`)를 트리거하는 안전한 배포 제어 체계 확립
+19. **v2 아키텍처 개편 Phase 1A & Phase 1B 구현 완료 (2026-11-22)**:
+    - **Phase 1A**: `api/pois.ts`(단일 스냅샷 `s-maxage=300`, `Range` 페이지네이션, `ETag`/304), `api/upload-photo.ts`(CORS + fail-fast 매직 바이트 검증 + Vercel Blob), `poiRepository.ts`(`local | cdn` 2모드, `local` 모드 Supabase Egress 0바이트, 서버 `updated_at` 기반 `pendingOverrides`), DB `CHECK` Base64 차단, k6 스크립트(`k6_baseline_10vu.js`, `k6_pois_cdn.js`).
+    - **Phase 1B**: `all_official_pois.json` 추출 및 `all_sections_overview.json` 61.6% 경량화, `trailGraph.ts` 1D 선형 내비게이션 엔진(50m 히스테리시스, 목적지 탭 자동 방향/ETA, 미개통 구간 경고), `UnifiedMapView`·`MapCanvas`·`OfflineHudView`·`NavigationHud`·`ElevationDrawer`·`SectionDetailSheet` 분해, 웹 전용 PWA SW(`dist/sw.js`) 활성화, 레거시 3개 뷰 삭제 및 Vitest 10/10 통과.
 
 ---
 

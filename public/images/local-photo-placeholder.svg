@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#ecfdf5"/>
+  <rect x="16" y="16" width="368" height="268" rx="16" fill="#d1fae5" stroke="#10b981" stroke-width="2" stroke-dasharray="6 4"/>
+  <path d="M120 210 L175 140 L220 185 L255 150 L290 210 Z" fill="#059669" opacity="0.75"/>
+  <circle cx="155" cy="110" r="16" fill="#f59e0b" opacity="0.85"/>
+  <text x="200" y="248" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="#065f46">Local Dev Photo Placeholder</text>
+</svg>

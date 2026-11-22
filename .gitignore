@@ -1,6 +1,8 @@
 node_modules
 dist
-dist-ssr
+coverage
+dist
+coverage-ssr
 *.local
 .env
 .env.local

@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS public.ewt_facilities (
     phone VARCHAR(100),                                 -- 연락처/전화번호
     business_hours VARCHAR(200),                        -- 운영 시간
     memo TEXT,                                          -- 메모 / 상세 설명 / 팁
-    photo_url TEXT,                                     -- 사진 데이터 (Base64 JPEG 또는 클라우드 URL)
+    photo_url TEXT CHECK (photo_url IS NULL OR photo_url NOT LIKE 'data:%'), -- 사진 HTTPS URL 전용 (Base64 저장 금지)
     registered_by UUID REFERENCES public.user_accounts(id) ON DELETE SET NULL, -- 등록자
     is_official BOOLEAN DEFAULT false,                  -- 공식 시설 여부
     is_deleted BOOLEAN DEFAULT false,                   -- 영구 삭제 여부

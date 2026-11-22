@@ -382,7 +382,7 @@ export const SectionDetailView: React.FC<SectionDetailViewProps> = ({
                     onClick={() => setPreviewPhoto(fac.photo_url!)}
                     className="w-24 h-24 rounded-xl overflow-hidden border border-gray-300 cursor-pointer hover:opacity-90 transition-opacity"
                   >
-                    <img src={fac.photo_url} alt={fac.name} className="w-full h-full object-cover" />
+                    <img src={fac.photo_url} alt={fac.name} loading="lazy" className="w-full h-full object-cover" />
                   </div>
                 )}
 

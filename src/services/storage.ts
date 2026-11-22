@@ -1,11 +1,10 @@
-import { TrekProgress, POI, Checkpoint } from '../types';
+import { TrekProgress, Checkpoint } from '../types';
 
 const PROGRESS_KEY = 'ewtguide_user_progress';
-const USER_FACILITIES_KEY = 'ewtguide_user_facilities';
 
 const defaultProgress: TrekProgress = {
   completedSections: [],
-  checkpoints: {}
+  checkpoints: {},
 };
 
 export const loadTrekProgress = (): TrekProgress => {
@@ -30,32 +29,35 @@ export const toggleSectionCompletion = (sectionId: number): TrekProgress => {
   const current = loadTrekProgress();
   const exists = current.completedSections.includes(sectionId);
   const updatedSections = exists
-    ? current.completedSections.filter(id => id !== sectionId)
+    ? current.completedSections.filter((id) => id !== sectionId)
     : [...current.completedSections, sectionId].sort((a, b) => a - b);
 
   const updatedProgress: TrekProgress = {
     ...current,
-    completedSections: updatedSections
+    completedSections: updatedSections,
   };
   saveTrekProgress(updatedProgress);
   return updatedProgress;
 };
 
-export const addCheckpoint = (sectionId: number, checkpoint: Omit<Checkpoint, 'id' | 'timestamp'>): TrekProgress => {
+export const addCheckpoint = (
+  sectionId: number,
+  checkpoint: Omit<Checkpoint, 'id' | 'timestamp'>
+): TrekProgress => {
   const current = loadTrekProgress();
   const list = current.checkpoints[sectionId] || [];
   const newCp: Checkpoint = {
     ...checkpoint,
     id: `cp_${Date.now()}`,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 
   const updatedProgress: TrekProgress = {
     ...current,
     checkpoints: {
       ...current.checkpoints,
-      [sectionId]: [...list, newCp]
-    }
+      [sectionId]: [...list, newCp],
+    },
   };
   saveTrekProgress(updatedProgress);
   return updatedProgress;
@@ -68,57 +70,9 @@ export const removeCheckpoint = (sectionId: number, checkpointId: string): TrekP
     ...current,
     checkpoints: {
       ...current.checkpoints,
-      [sectionId]: list.filter(cp => cp.id !== checkpointId)
-    }
+      [sectionId]: list.filter((cp) => cp.id !== checkpointId),
+    },
   };
   saveTrekProgress(updatedProgress);
   return updatedProgress;
-};
-
-// User-added Facilities
-export const loadUserFacilities = (sectionId: number): POI[] => {
-  try {
-    const raw = localStorage.getItem(`${USER_FACILITIES_KEY}_${sectionId}`);
-    return raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    console.error('Failed to load user facilities:', e);
-    return [];
-  }
-};
-
-export const addUserFacility = (sectionId: number, facility: POI): POI[] => {
-  const current = loadUserFacilities(sectionId);
-  let updated: POI[];
-
-  if (facility.id && current.some((f) => f.id === facility.id)) {
-    // Update existing user facility
-    updated = current.map((f) => (f.id === facility.id ? { ...f, ...facility } : f));
-  } else {
-    // Add new facility
-    const newFacility: POI = {
-      ...facility,
-      id: facility.id || `user_fac_${Date.now()}`,
-      is_official: false,
-      created_at: facility.created_at || new Date().toISOString()
-    };
-    updated = [newFacility, ...current];
-  }
-
-  try {
-    localStorage.setItem(`${USER_FACILITIES_KEY}_${sectionId}`, JSON.stringify(updated));
-  } catch (e) {
-    console.error('Failed to save user facility:', e);
-  }
-  return updated;
-};
-
-export const removeUserFacility = (sectionId: number, facilityId: string): POI[] => {
-  const current = loadUserFacilities(sectionId);
-  const updated = current.filter((f) => f.id !== facilityId);
-  try {
-    localStorage.setItem(`${USER_FACILITIES_KEY}_${sectionId}`, JSON.stringify(updated));
-  } catch (e) {
-    console.error('Failed to remove user facility:', e);
-  }
-  return updated;
 };

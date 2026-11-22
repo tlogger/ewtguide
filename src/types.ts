@@ -5,7 +5,7 @@ export interface TrailPoint {
   dist: number; // cumulative distance in km from start
 }
 
-export type FacilityCategory = 
+export type FacilityCategory =
   | 'viewpoint'    // 명소 (구 뷰포인트/명소)
   | 'toilet'       // 화장실
   | 'restaurant'   // 음식료 (구 식당/카페)
@@ -18,7 +18,7 @@ export type FacilityCategory =
 
 export interface POI {
   id?: string;
-  section_id?: number; // 속한 구간 ID (인접 구간 POI 지원)
+  section_id?: number; // 속한 구간 ID
   name: string;
   category: FacilityCategory;
   categories?: FacilityCategory[]; // 다중 카테고리 지원
@@ -28,7 +28,7 @@ export interface POI {
   phone?: string;
   business_hours?: string;
   memo?: string;
-  photo_url?: string; // Base64 or URL
+  photo_url?: string; // HTTPS URL 전용 (Base64 저장 금지)
   is_official?: boolean;
   is_deleted?: boolean;
   created_at?: string;
@@ -69,16 +69,62 @@ export interface SectionSummary {
   max_elevation_m?: number;
   hiking_time_hours?: number;
   hiking_time_text?: string;
-  start_point?: { lat: number; lng: number };
-  end_point?: { lat: number; lng: number };
+  start_point?: { lat: number; lng: number } | null;
+  end_point?: { lat: number; lng: number } | null;
   pois_count?: number;
   poi_count?: number;
   points_count?: number;
 }
 
+export interface OverviewSection {
+  section_id: number;
+  section_number: string;
+  title: string;
+  region: string;
+  course: string;
+  start_name?: string;
+  end_name?: string;
+  is_opened: boolean;
+  distance_km: number;
+  elevation_gain_m?: number;
+  elevation_loss_m?: number;
+  start_point?: { lat: number; lng: number } | null;
+  end_point?: { lat: number; lng: number } | null;
+  path: Array<{ lat: number; lng: number; ele?: number }>;
+}
+
 export interface SectionDetail extends SectionSummary {
   pois: POI[];
   points: TrailPoint[];
+}
+
+export interface TrailProjection {
+  sectionId: number;
+  trailKm: number;
+  offTrailM: number;
+  snappedPoint: { lat: number; lng: number };
+}
+
+export interface NavigationTarget {
+  kind: 'poi' | 'point';
+  label: string;
+  sectionId: number;
+  trailKm: number;
+  lat: number;
+  lng: number;
+  poiId?: string;
+}
+
+export interface NavigationState {
+  current: TrailProjection;
+  target: NavigationTarget | null;
+  direction: 'east' | 'west' | null;
+  approachDistanceM: number;
+  trailDistanceKm: number;
+  etaMinutes: number;
+  unopenedSectionIds: number[];
+  toSectionStartKm?: number;
+  toSectionEndKm?: number;
 }
 
 export interface Checkpoint {

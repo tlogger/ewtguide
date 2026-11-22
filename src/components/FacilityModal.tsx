@@ -2,6 +2,9 @@ import React, { useState, useRef } from 'react';
 import { FacilityCategory, POI } from '../types';
 import { SELECTABLE_CATEGORIES, CategoryIcon } from './CategoryIcon';
 import { X, Phone, Clock, FileText, CheckCircle2, Camera, Image } from 'lucide-react';
+import { compressPoiPhotoToWebP } from '../utils/imageCompress';
+import { getApiBaseUrl, getPoiDataMode } from '../utils/apiBase';
+import { getCurrentUser } from '../services/facilityDb';
 
 interface FacilityModalProps {
   isOpen: boolean;
@@ -73,46 +76,57 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
     });
   };
 
-  // Handle image selection and client-side canvas compression
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle image selection: compress to WebP (<= 300KB) and upload binary to Vercel Blob (or local placeholder)
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setFormError('');
     setIsCompressing(true);
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new window.Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_DIM = 1024;
-        let width = img.width;
-        let height = img.height;
 
-        if (width > height) {
-          if (width > MAX_DIM) {
-            height = Math.round((height * MAX_DIM) / width);
-            width = MAX_DIM;
-          }
-        } else {
-          if (height > MAX_DIM) {
-            width = Math.round((width * MAX_DIM) / height);
-            height = MAX_DIM;
-          }
-        }
+    try {
+      const compressedBlob = await compressPoiPhotoToWebP(file);
 
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-          setPhotoUrl(compressedDataUrl);
-        }
-        setIsCompressing(false);
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+      if (getPoiDataMode() === 'local') {
+        setPhotoUrl('/images/local-photo-placeholder.svg');
+        return;
+      }
+
+      const currentUser = getCurrentUser();
+      if (!currentUser?.id) {
+        setFormError('사진을 업로드하려면 먼저 로그인해 주세요.');
+        return;
+      }
+
+      const sectionIdHeader = String(initialFacility?.section_id ?? 0);
+      const uploadRes = await fetch(`${getApiBaseUrl()}/api/upload-photo`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': compressedBlob.type || 'image/webp',
+          'x-user-id': currentUser.id,
+          'x-section-id': sectionIdHeader,
+        },
+        body: compressedBlob,
+      });
+
+      if (!uploadRes.ok) {
+        const errPayload = (await uploadRes.json().catch(() => ({}))) as { error?: string };
+        throw new Error(errPayload.error || `사진 업로드 실패 (${uploadRes.status})`);
+      }
+
+      const { url } = (await uploadRes.json()) as { url?: string };
+      if (!url) {
+        throw new Error('업로드된 사진 URL을 받지 못했습니다.');
+      }
+      setPhotoUrl(url);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : '사진 처리 중 오류가 발생했습니다.');
+    } finally {
+      setIsCompressing(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -267,7 +281,7 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
             />
             {photoUrl ? (
               <div className="relative w-full h-36 rounded-xl overflow-hidden border border-gray-200 group">
-                <img src={photoUrl} alt="첨부 사진" className="w-full h-full object-cover" />
+                <img src={photoUrl} alt="첨부 사진" loading="lazy" className="w-full h-full object-cover" />
                 <button
                   type="button"
                   onClick={() => setPhotoUrl(null)}
@@ -359,10 +373,11 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
 
             <button
               type="submit"
-              className="flex-1 py-4 px-6 bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white font-bold text-base sm:text-lg rounded-2xl shadow-lg transition-transform active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
+              disabled={isCompressing}
+              className="flex-1 py-4 px-6 bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold text-base sm:text-lg rounded-2xl shadow-lg transition-transform active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
             >
               <CheckCircle2 className="w-6 h-6" />
-              <span>저장</span>
+              <span>{isCompressing ? '사진 처리 중...' : '저장'}</span>
             </button>
           </div>
         </form>

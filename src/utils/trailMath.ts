@@ -2,8 +2,8 @@
  * 동서트레일 거리, 방위각, 보행 소요시간 및 경보음 유틸리티
  */
 
-/** 위경도 좌표 간 거리 계산 (Haversine 공식, 미터 단위) */
-export function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+/** 위경도 좌표 간 정밀 거리 계산 (Haversine 공식, 비반올림 미터 단위) */
+export function getExactDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371000; // 지구 반지름 (m)
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
@@ -14,7 +14,12 @@ export function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2
       Math.sin(dLon / 2) *
       Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return Math.round(R * c);
+  return R * c;
+}
+
+/** 위경도 좌표 간 거리 계산 (Haversine 공식, 반올림 미터 단위) */
+export function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  return Math.round(getExactDistanceMeters(lat1, lon1, lat2, lon2));
 }
 
 /** 두 좌표 간 방위각 계산 (0° ~ 360°, 북쪽 0°, 시계 방향) */

@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.api.json --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "preview": "vite preview",
     "deploy:vercel": "vercel --prod",
     "enrich:retry": "python scripts/enrich_elevations_reliable.py",
@@ -18,6 +21,7 @@
     "@capacitor/browser": "^8.0.5",
     "@capacitor/core": "^8.6.0",
     "@supabase/supabase-js": "^2.118.0",
+    "@vercel/blob": "^2.9.0",
     "canvas-confetti": "^1.9.3",
     "clsx": "^2.1.1",
     "lucide-react": "^1.16.0",
@@ -33,12 +37,16 @@
     "@types/node": "^22.8.1",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@vercel/node": "^32.0.0",
     "@vitejs/plugin-react": "^4.3.3",
+    "@vitest/coverage-v8": "^2.1.8",
     "autoprefixer": "^10.4.20",
+    "jsdom": "^31.0.1",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
     "typescript": "^5.6.3",
     "vite": "^5.4.10",
-    "vite-plugin-pwa": "^0.20.5"
+    "vite-plugin-pwa": "^0.20.5",
+    "vitest": "^2.1.8"
   }
 }
