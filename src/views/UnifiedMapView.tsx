@@ -90,6 +90,34 @@ export const UnifiedMapView: React.FC<UnifiedMapViewProps> = ({
 
   const mapRef = useRef<kakao.maps.Map | null>(null);
   const lastBeepAtRef = useRef<number>(0);
+  const levelRef = useRef<number>(level);
+  const boundsRef = useRef<MapBounds | null>(bounds);
+
+  const handleViewportChange = useCallback(
+    (nextLevel: number, nextBounds: MapBounds | null, isDrag: boolean) => {
+      if (nextLevel !== levelRef.current) {
+        levelRef.current = nextLevel;
+        setLevel(nextLevel);
+      }
+      if (nextBounds) {
+        const prev = boundsRef.current;
+        const changed =
+          !prev ||
+          Math.abs(prev.swLat - nextBounds.swLat) > 1e-5 ||
+          Math.abs(prev.swLng - nextBounds.swLng) > 1e-5 ||
+          Math.abs(prev.neLat - nextBounds.neLat) > 1e-5 ||
+          Math.abs(prev.neLng - nextBounds.neLng) > 1e-5;
+        if (changed) {
+          boundsRef.current = nextBounds;
+          setBounds(nextBounds);
+        }
+      }
+      if (isDrag) {
+        setIsFollowingGps(false);
+      }
+    },
+    []
+  );
 
   // 1. Tier 1 static loads: overview polylines + 55-section official POI index + 3-Tier user POIs
   useEffect(() => {
@@ -408,11 +436,7 @@ export const UnifiedMapView: React.FC<UnifiedMapViewProps> = ({
           onMapReady={(map) => {
             mapRef.current = map;
           }}
-          onViewportChange={(nextLevel, nextBounds, isDrag) => {
-            setLevel(nextLevel);
-            if (nextBounds) setBounds(nextBounds);
-            if (isDrag) setIsFollowingGps(false);
-          }}
+          onViewportChange={handleViewportChange}
           onSelectPoi={setSelectedPoi}
           onSelectSectionBadge={(sectionId) => {
             const sec = overviewSections.find((s) => s.section_id === sectionId);

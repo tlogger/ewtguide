@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Map as KakaoMap,
   Polyline,
@@ -109,6 +109,22 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
 
   const showOfflineHud = forceOffline || isOffline || Boolean(sdkError) || sdkTimedOut;
 
+  // Stabilize Polyline path arrays so react-kakao-maps-sdk does not re-set paths on every render
+  const stabilizedLines = useMemo(() => {
+    return overviewSections
+      .map((sec) => {
+        const detailPts = loadedDetailPaths[sec.section_id];
+        const raw = detailPts && detailPts.length > 0 ? detailPts : sec.path;
+        if (!raw || raw.length < 2) return null;
+        return {
+          sectionId: sec.section_id,
+          isOpened: sec.is_opened,
+          path: raw.map((p) => ({ lat: p.lat, lng: p.lng })),
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+  }, [overviewSections, loadedDetailPaths]);
+
   if (showOfflineHud) {
     return (
       <OfflineHudView
@@ -164,7 +180,9 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
         className="w-full h-full"
         onCreate={(map) => {
           onMapReady(map);
-          onViewportChange(map.getLevel(), readBounds(map), false);
+          requestAnimationFrame(() => {
+            onViewportChange(map.getLevel(), readBounds(map), false);
+          });
         }}
         onDragStart={(map) => {
           onViewportChange(map.getLevel(), readBounds(map), true);
@@ -186,29 +204,25 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
         {mapMode === 'TERRAIN' && <MapTypeId type={kakao.maps.MapTypeId.TERRAIN} />}
 
         {/* 55-section polylines (Tier 2 high-res when loaded, else Tier 1 overview) */}
-        {overviewSections.map((sec) => {
-          const detailPts = loadedDetailPaths[sec.section_id];
-          const path = detailPts && detailPts.length > 0 ? detailPts : sec.path;
-          if (!path || path.length < 2) return null;
-
-          const isActive = activeSectionId === sec.section_id;
-          const isCompleted = completedSectionIds.includes(sec.section_id);
+        {stabilizedLines.map((line) => {
+          const isActive = activeSectionId === line.sectionId;
+          const isCompleted = completedSectionIds.includes(line.sectionId);
           const strokeColor = isActive
             ? '#ef4444'
             : isCompleted
             ? '#10b981'
-            : sec.is_opened
+            : line.isOpened
             ? '#2563eb'
             : '#94a3b8';
 
           return (
             <Polyline
-              key={`sec-line-${sec.section_id}`}
-              path={path.map((p) => ({ lat: p.lat, lng: p.lng }))}
+              key={`sec-line-${line.sectionId}`}
+              path={line.path}
               strokeWeight={isActive ? 6 : 3.5}
               strokeColor={strokeColor}
-              strokeOpacity={isActive ? 0.95 : sec.is_opened ? 0.78 : 0.55}
-              strokeStyle={sec.is_opened ? 'solid' : 'shortdash'}
+              strokeOpacity={isActive ? 0.95 : line.isOpened ? 0.78 : 0.55}
+              strokeStyle={line.isOpened ? 'solid' : 'shortdash'}
             />
           );
         })}
